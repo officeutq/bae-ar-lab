@@ -8,6 +8,7 @@ import { createFaceLandmarker } from '@engine/mediapipe/createFaceLandmarker';
 import type { FaceLandmarksFrame, FaceLandmarkerRuntimeState } from '@engine/mediapipe/types';
 import { createLandmarkOverlay, type LandmarkOverlay } from '@engine/overlay/createLandmarkOverlay';
 import { createRendererBackend } from '@engine/render/createRendererBackend';
+import { replaceRendererBackend } from '@engine/render/replaceRendererBackend';
 import type { WarpOperation } from '@app-types/preset';
 import type { RendererBackend, RendererBackendMode, RendererBackendState } from '@engine/render/types';
 import { resolveOperationBindings } from '@engine/algorithms/resolveOperationBindings';
@@ -141,8 +142,7 @@ export function useBeautyLabRuntime(
       return;
     }
 
-    rendererRef.current?.stop();
-    const renderer = createRendererBackend({
+    const renderer = replaceRendererBackend(rendererRef.current, () => createRendererBackend({
       mode: rendererMode,
       video: videoElement,
       canvas2d: canvas2dRef.current!,
@@ -158,7 +158,7 @@ export function useBeautyLabRuntime(
       getRenderScale: () => QUALITY_PRESETS[resolveRuntimeQuality(adaptiveQualityRef.current)].renderScale,
       getFrameSkip: () => QUALITY_PRESETS[resolveRuntimeQuality(adaptiveQualityRef.current)].frameSkip,
       getSmoothingSampleCount: () => QUALITY_PRESETS[resolveRuntimeQuality(adaptiveQualityRef.current)].smoothingSampleCount,
-    });
+    }));
     renderer.start();
     rendererRef.current = renderer;
     setRendererState(renderer.getState());
@@ -285,8 +285,7 @@ export function useBeautyLabRuntime(
       const overlayCanvasElement = overlayCanvasRef.current;
 
       if (videoElement && canvasElement) {
-        rendererRef.current?.stop();
-        const renderer = createRendererBackend({
+        const renderer = replaceRendererBackend(rendererRef.current, () => createRendererBackend({
           mode: rendererModeRef.current,
           video: videoElement,
           canvas2d: canvas2dRef.current!,
@@ -302,7 +301,7 @@ export function useBeautyLabRuntime(
           getRenderScale: () => QUALITY_PRESETS[resolveRuntimeQuality(adaptiveQualityRef.current)].renderScale,
           getFrameSkip: () => QUALITY_PRESETS[resolveRuntimeQuality(adaptiveQualityRef.current)].frameSkip,
           getSmoothingSampleCount: () => QUALITY_PRESETS[resolveRuntimeQuality(adaptiveQualityRef.current)].smoothingSampleCount,
-        });
+        }));
         renderer.start();
         rendererRef.current = renderer;
         setRendererState(renderer.getState());

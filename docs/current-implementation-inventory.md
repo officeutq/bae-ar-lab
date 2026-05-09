@@ -3,7 +3,7 @@
 本資料は、`/workspace/bae-ar-lab` 時点のコードを対象に、Butterflyve 組み込み前の顔加工エンジン開発環境としての完成度を整理したもの。
 
 - 対象: runtime / renderer / UI / preset / animation / capture / performance / build
-- 実施コマンド: `npm install`, `npm run build`, `timeout 10s npm run dev`
+- 実施コマンド: `npm install`, `npm run build`, `npm run test`, `timeout 10s npm run dev`
 
 ## 1. 全体構成
 - エントリポイント: `src/main.tsx` → `src/app/App.tsx`。
@@ -115,8 +115,23 @@
 - package: Vite + React + TS、`@mediapipe/tasks-vision` は `0.10.22` に固定。
 - `npm install`: 成功。
 - `npm run build`: 成功。
+- `npm run test`: 成功（Vitest, jsdom）。
 - `npm run dev`: 起動確認（10秒タイムアウトで意図終了）。
 - 既知ログ: npm の `Unknown env config "http-proxy"` warning。
+
+## 10.1 Renderer lifecycle 回帰テスト（追加）
+- テスト基盤: Vitest + jsdom（`package.json` の `test` script）。
+- 対象:
+  - `createRendererBackend` factory（`canvas2d` / `cpu_warp_debug` / `webgl`）。
+  - `createCanvasRenderer` の contract（`mode`, `stop`, `getState`）と `stop()` 冪等性。
+  - backend 切替ヘルパー `replaceRendererBackend`（旧renderer stop→新renderer create順序）。
+- WebGLの扱い:
+  - jsdom では実WebGL2 context を扱わず、factory testでは `createWebglRenderer` をmockして contract を固定。
+  - 実GPU context / context conflict は手動確認対象に残す。
+- canvas context conflict 再発防止方針:
+  - processed preview の canvas2d / webgl canvas は分離維持。
+  - 同一canvasで 2d と webgl context を取り直さない。
+  - backend切替時は `old.stop()` → `new create` の順序をテストと実装で固定。
 
 ## 11. Runtime品質検証シナリオ
 - 追加ドキュメント: `docs/runtime-quality-scenarios.md` を追加。
