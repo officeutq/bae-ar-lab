@@ -75,7 +75,10 @@ export type WarpOperation = {
 };
 
 export type WarpPreset = {
-  version: number;
+  schemaVersion: number;
+  id: string;
+  name: string;
+  description?: string;
   operations: WarpOperation[];
   animations?: AnimationClip[];
   appearance?: {

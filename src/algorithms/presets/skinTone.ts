@@ -1,7 +1,9 @@
 import type { WarpPreset } from '@app-types/preset';
 
 export const skinTonePreset: WarpPreset = {
-  version: 1,
+  schemaVersion: 1,
+  id: 'skin_tone',
+  name: 'Skin Tone',
   appearance: {
     skinSmoothing: {
       type: 'skin_smoothing',

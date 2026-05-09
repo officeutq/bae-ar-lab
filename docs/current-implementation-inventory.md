@@ -64,7 +64,9 @@
 ## 5. Preset
 - 型定義: `WarpPreset` + `WarpOperation` がJSONシリアライズ可能設計。
 - sample preset: `src/algorithms/presets/*` に複数。
-- save/load/import/export: `presetStorage.ts` で実装済み。
+- save/load/import/export: `presetStorage.ts` で実装済み（load/import時にmigrationを適用）。
+- schema versioning: `CURRENT_PRESET_SCHEMA_VERSION = 1`。`schemaVersion` 未指定のlegacy presetは v0 として v1 へ migration。
+- migration: `src/engine/presets/presetSchema.ts` の `migratePreset` で必須項目補完（id/name/operations など）と不正operation除外。
 - 永続化: `localStorage` (`beauty-lab-presets`)。
 - intensity/blend:
   - beauty intensity: `blendPresetByIntensity`
