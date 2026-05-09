@@ -1,13 +1,12 @@
 import type { MutableRefObject } from 'react';
-import type { CanvasRendererState } from '@engine/render/createCanvasRenderer';
-import { getRendererModeLabel, type RendererMode } from '@engine/render/types';
+import { getRendererModeLabel, type RendererBackendMode, type RendererBackendState } from '@engine/render/types';
 import { Panel } from '@ui/Panel';
 
 type Props = {
   canvas2dRef: MutableRefObject<HTMLCanvasElement | null>;
   webglCanvasRef: MutableRefObject<HTMLCanvasElement | null>;
-  rendererState: CanvasRendererState;
-  rendererMode: RendererMode;
+  rendererState: RendererBackendState;
+  rendererMode: RendererBackendMode;
   onCaptureProcessed: () => void;
   previewAspectRatio: string;
 };

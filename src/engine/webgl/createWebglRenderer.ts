@@ -6,13 +6,7 @@ import type { WarpOperation } from '@app-types/preset';
 import type { FaceGeometry } from '@engine/geometry/types';
 import { getWarpTargetGeometry } from '@engine/render/getWarpTargetGeometry';
 
-export type WebglRendererState = 'idle' | 'running' | 'stopped';
-
-export type WebglRenderer = {
-  start: () => void;
-  stop: () => void;
-  getState: () => WebglRendererState;
-};
+import type { RendererBackend, RendererBackendState } from '@engine/render/types';
 
 type CreateWebglRendererOptions = {
   video: HTMLVideoElement;
@@ -41,7 +35,7 @@ function getFalloffUniformValue(type: WarpOperation['falloff']['type']) {
   return 2;
 }
 
-export function createWebglRenderer({ video, canvas, getOperations, getFaceGeometry, getSkinSmoothing, getSkinTone, getRenderScale, getFrameSkip, getSmoothingSampleCount, onRenderFrame }: CreateWebglRendererOptions): WebglRenderer {
+export function createWebglRenderer({ video, canvas, getOperations, getFaceGeometry, getSkinSmoothing, getSkinTone, getRenderScale, getFrameSkip, getSmoothingSampleCount, onRenderFrame }: CreateWebglRendererOptions): RendererBackend {
   const gl = canvas.getContext('webgl2');
 
   if (!gl) {
@@ -112,7 +106,7 @@ export function createWebglRenderer({ video, canvas, getOperations, getFaceGeome
   const videoTexture = createTexture(gl);
 
   let animationFrameId: number | null = null;
-  let state: WebglRendererState = 'idle';
+  let state: RendererBackendState = 'idle';
   let frameCounter = 0;
 
   const syncCanvasSize = () => {
@@ -303,5 +297,5 @@ export function createWebglRenderer({ video, canvas, getOperations, getFaceGeome
 
   const getState = () => state;
 
-  return { start, stop, getState };
+  return { mode: 'webgl', start, stop, getState };
 }

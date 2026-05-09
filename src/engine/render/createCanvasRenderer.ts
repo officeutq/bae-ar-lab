@@ -1,14 +1,7 @@
 import type { WarpOperation } from '@app-types/preset';
 import type { FaceGeometry } from '@engine/geometry/types';
 import { createCpuWarpRenderer } from './createCpuWarpRenderer';
-
-export type CanvasRendererState = 'idle' | 'running' | 'stopped';
-
-export type CanvasRenderer = {
-  start: () => void;
-  stop: () => void;
-  getState: () => CanvasRendererState;
-};
+import type { RendererBackend, RendererBackendState } from './types';
 
 type CreateCanvasRendererOptions = {
   video: HTMLVideoElement;
@@ -32,7 +25,7 @@ export function createCanvasRenderer({
   onRenderFrame,
   getRenderScale,
   getFrameSkip,
-}: CreateCanvasRendererOptions): CanvasRenderer {
+}: CreateCanvasRendererOptions): RendererBackend {
   const context = canvas.getContext('2d');
 
   if (!context) {
@@ -40,7 +33,7 @@ export function createCanvasRenderer({
   }
 
   let animationFrameId: number | null = null;
-  let state: CanvasRendererState = 'idle';
+  let state: RendererBackendState = 'idle';
   let frameCounter = 0;
   const cpuWarpRenderer = createCpuWarpRenderer();
 
@@ -117,6 +110,7 @@ export function createCanvasRenderer({
   const getState = () => state;
 
   return {
+    mode: 'canvas2d',
     start,
     stop,
     getState,
