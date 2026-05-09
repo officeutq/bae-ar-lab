@@ -79,6 +79,28 @@ export function createWarpVisualization(context: CanvasRenderingContext2D) {
       return;
     }
 
+    if (operation.type === 'line_warp') {
+      const startX = clamp01(operation.lineStart.x) * canvas.width;
+      const startY = clamp01(operation.lineStart.y) * canvas.height;
+      const endX = clamp01(operation.lineEnd.x) * canvas.width;
+      const endY = clamp01(operation.lineEnd.y) * canvas.height;
+      const halfWidthPx = Math.max(1, operation.width * Math.min(canvas.width, canvas.height));
+      context.beginPath();
+      context.moveTo(startX, startY);
+      context.lineTo(endX, endY);
+      context.strokeStyle = 'rgba(255, 120, 40, 0.95)';
+      context.lineWidth = 2;
+      context.stroke();
+      context.beginPath();
+      context.moveTo(startX, startY);
+      context.lineTo(endX, endY);
+      context.strokeStyle = 'rgba(255, 180, 120, 0.25)';
+      context.lineWidth = halfWidthPx * 2;
+      context.stroke();
+      drawDirectionArrow(context, (startX + endX) * 0.5, (startY + endY) * 0.5, operation.direction.x, operation.direction.y, halfWidthPx);
+      return;
+    }
+
     const target = getTargetGeometry(operation.target, geometry);
     const centerX = clamp01(target.center.x) * canvas.width;
     const centerY = clamp01(target.center.y) * canvas.height;

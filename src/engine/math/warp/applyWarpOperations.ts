@@ -2,6 +2,7 @@ import type { WarpOperation } from '@app-types/preset';
 import type { FaceGeometry } from '@engine/geometry/types';
 import { getWarpTargetGeometry } from '@engine/render/getWarpTargetGeometry';
 import { applyDirectionalWarp } from './applyDirectionalWarp';
+import { applyLineWarp } from './applyLineWarp';
 import { applyRadialWarp } from './applyRadialWarp';
 import type { Vec2 } from './types';
 
@@ -19,6 +20,18 @@ export function applyWarpOperations(uv: Vec2, operations: WarpOperation[], geome
     const target = getWarpTargetGeometry(operation.target, geometry);
     const warpCenter = { x: clamp01(target.center.x), y: clamp01(target.center.y) };
     const warpRadius = Math.max(FALLBACK_SIZE, target.baseSize) * operation.radius;
+
+    if (operation.type === 'line_warp') {
+      return applyLineWarp({
+        uv: currentUv,
+        lineStart: operation.lineStart,
+        lineEnd: operation.lineEnd,
+        width: operation.width,
+        strength: operation.strength,
+        direction: operation.direction,
+        falloff: operation.falloff.type,
+      }).warpedUv;
+    }
 
     if (operation.type === 'directional_warp') {
       return applyDirectionalWarp({

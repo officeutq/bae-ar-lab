@@ -71,6 +71,9 @@ export function App() {
       falloff: { type: 'smoothstep' },
       axis: { x: 1, y: 1 },
       direction: { x: 0, y: 0 },
+      lineStart: { x: 0.3, y: 0.5 },
+      lineEnd: { x: 0.7, y: 0.5 },
+      width: 0.12,
     };
     setActivePreset((currentPreset) => {
       const nextIndex = currentPreset.operations.length;

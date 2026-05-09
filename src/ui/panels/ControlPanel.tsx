@@ -110,7 +110,7 @@ export function ControlPanel(props: Props) {
         <label><input type="checkbox" checked={op?.enabled ?? false} onChange={(e) => props.updateOperation('enabled', e.target.checked)} />Operation enabled</label>
         <label>Operation type
           <select value={op?.type ?? 'radial_warp'} onChange={(e) => props.updateOperation('type', e.target.value as WarpOperationType)}>
-            <option value="radial_warp">radial_warp</option><option value="directional_warp">directional_warp</option>
+            <option value="radial_warp">radial_warp</option><option value="directional_warp">directional_warp</option><option value="line_warp">line_warp</option>
           </select>
         </label>
         <label>Target
@@ -124,6 +124,25 @@ export function ControlPanel(props: Props) {
         <label>Radius: {(op?.radius ?? 0).toFixed(2)}
           <input type="range" min={0.1} max={5} step={0.1} value={op?.radius ?? 1} onChange={(e) => props.updateOperation('radius', Number(e.target.value))} />
         </label>
+        {op?.type === 'line_warp' && (
+          <>
+            <label>Line Start X: {(op?.lineStart.x ?? 0).toFixed(2)}
+              <input type="range" min={0} max={1} step={0.01} value={op?.lineStart.x ?? 0.3} onChange={(e) => props.updateOperation('lineStart', { ...(op?.lineStart ?? { x: 0.3, y: 0.5 }), x: Number(e.target.value) })} />
+            </label>
+            <label>Line Start Y: {(op?.lineStart.y ?? 0).toFixed(2)}
+              <input type="range" min={0} max={1} step={0.01} value={op?.lineStart.y ?? 0.5} onChange={(e) => props.updateOperation('lineStart', { ...(op?.lineStart ?? { x: 0.3, y: 0.5 }), y: Number(e.target.value) })} />
+            </label>
+            <label>Line End X: {(op?.lineEnd.x ?? 0).toFixed(2)}
+              <input type="range" min={0} max={1} step={0.01} value={op?.lineEnd.x ?? 0.7} onChange={(e) => props.updateOperation('lineEnd', { ...(op?.lineEnd ?? { x: 0.7, y: 0.5 }), x: Number(e.target.value) })} />
+            </label>
+            <label>Line End Y: {(op?.lineEnd.y ?? 0).toFixed(2)}
+              <input type="range" min={0} max={1} step={0.01} value={op?.lineEnd.y ?? 0.5} onChange={(e) => props.updateOperation('lineEnd', { ...(op?.lineEnd ?? { x: 0.7, y: 0.5 }), y: Number(e.target.value) })} />
+            </label>
+            <label>Width: {(op?.width ?? 0).toFixed(2)}
+              <input type="range" min={0.01} max={1} step={0.01} value={op?.width ?? 0.12} onChange={(e) => props.updateOperation('width', Number(e.target.value))} />
+            </label>
+          </>
+        )}
         <label>Falloff
           <select value={op?.falloff.type ?? 'smoothstep'} onChange={(e) => props.updateFalloffType(e.target.value as WarpFalloffType)}>
             <option value="linear">linear</option><option value="smoothstep">smoothstep</option><option value="gaussian">gaussian</option>

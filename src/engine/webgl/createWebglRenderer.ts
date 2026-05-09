@@ -49,11 +49,14 @@ export function createWebglRenderer({ video, canvas, getOperations, getFaceGeome
   const warpStrengthsLocation = gl.getUniformLocation(program, 'uWarpStrengths');
   const warpAxesLocation = gl.getUniformLocation(program, 'uWarpAxes');
   const warpDirectionsLocation = gl.getUniformLocation(program, 'uWarpDirections');
+  const lineStartsLocation = gl.getUniformLocation(program, 'uLineStarts');
+  const lineEndsLocation = gl.getUniformLocation(program, 'uLineEnds');
+  const lineWidthsLocation = gl.getUniformLocation(program, 'uLineWidths');
   const operationTypesLocation = gl.getUniformLocation(program, 'uOperationTypes');
   const falloffTypesLocation = gl.getUniformLocation(program, 'uFalloffTypes');
   const enabledOpsLocation = gl.getUniformLocation(program, 'uEnabledOps');
 
-  if (positionLocation < 0 || !videoTextureLocation || !warpCentersLocation || !warpRadiiLocation || !warpStrengthsLocation || !warpAxesLocation || !warpDirectionsLocation || !operationTypesLocation || !falloffTypesLocation || !enabledOpsLocation) {
+  if (positionLocation < 0 || !videoTextureLocation || !warpCentersLocation || !warpRadiiLocation || !warpStrengthsLocation || !warpAxesLocation || !warpDirectionsLocation || !lineStartsLocation || !lineEndsLocation || !lineWidthsLocation || !operationTypesLocation || !falloffTypesLocation || !enabledOpsLocation) {
     gl.deleteProgram(program);
     throw new Error('Failed to resolve shader attributes or uniforms.');
   }
@@ -122,6 +125,9 @@ export function createWebglRenderer({ video, canvas, getOperations, getFaceGeome
       const operationTypes = new Int32Array(MAX_OPERATIONS);
       const falloffTypes = new Int32Array(MAX_OPERATIONS);
       const enabledOps = new Int32Array(MAX_OPERATIONS);
+      const lineStarts = new Float32Array(MAX_OPERATIONS * 2);
+      const lineEnds = new Float32Array(MAX_OPERATIONS * 2);
+      const lineWidths = new Float32Array(MAX_OPERATIONS);
 
       for (let i = 0; i < MAX_OPERATIONS; i += 1) {
         warpAxes[i * 2] = 1;
@@ -130,6 +136,7 @@ export function createWebglRenderer({ video, canvas, getOperations, getFaceGeome
         warpDirections[i * 2 + 1] = 0;
         operationTypes[i] = 0;
         falloffTypes[i] = 1;
+        lineWidths[i] = 0.0001;
       }
 
       if (geometry) {
@@ -145,7 +152,7 @@ export function createWebglRenderer({ video, canvas, getOperations, getFaceGeome
           const warpAxisY = Math.max(0.0001, operation.axis.y);
           const directionX = operation.direction.x;
           const directionY = operation.direction.y;
-          const operationType = operation.type === 'directional_warp' ? 1 : 0;
+          const operationType = operation.type === 'directional_warp' ? 1 : operation.type === 'line_warp' ? 2 : 0;
           const falloffType = getFalloffUniformValue(operation.falloff.type);
 
           if (![warpCenterX, warpCenterY, warpRadius, warpStrength, warpAxisX, warpAxisY, directionX, directionY].every(Number.isFinite)) {
@@ -163,6 +170,11 @@ export function createWebglRenderer({ video, canvas, getOperations, getFaceGeome
           operationTypes[index] = operationType;
           falloffTypes[index] = falloffType;
           enabledOps[index] = 1;
+          lineStarts[index * 2] = clamp01(operation.lineStart.x);
+          lineStarts[index * 2 + 1] = clamp01(operation.lineStart.y);
+          lineEnds[index * 2] = clamp01(operation.lineEnd.x);
+          lineEnds[index * 2 + 1] = clamp01(operation.lineEnd.y);
+          lineWidths[index] = Math.max(0.0001, operation.width);
         });
       }
 
@@ -175,6 +187,9 @@ export function createWebglRenderer({ video, canvas, getOperations, getFaceGeome
       gl.uniform1iv(operationTypesLocation, operationTypes);
       gl.uniform1iv(falloffTypesLocation, falloffTypes);
       gl.uniform1iv(enabledOpsLocation, enabledOps);
+      gl.uniform2fv(lineStartsLocation, lineStarts);
+      gl.uniform2fv(lineEndsLocation, lineEnds);
+      gl.uniform1fv(lineWidthsLocation, lineWidths);
       gl.bindVertexArray(vao);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
       gl.bindVertexArray(null);
