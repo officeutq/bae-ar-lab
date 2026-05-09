@@ -7,6 +7,7 @@ export type TargetGeometry = {
 };
 
 export function getWarpTargetGeometry(target: WarpTarget, geometry: FaceGeometry): TargetGeometry {
+  const cheekBaseSize = geometry.faceWidth * 0.22;
   switch (target) {
     case 'left_eye':
       return { center: geometry.leftEyeCenter, baseSize: geometry.leftEyeWidth };
@@ -22,6 +23,12 @@ export function getWarpTargetGeometry(target: WarpTarget, geometry: FaceGeometry
       return { center: geometry.rightJawLine.start, baseSize: geometry.faceWidth * 0.3 };
     case 'chin_line':
       return { center: geometry.chinLine.start, baseSize: geometry.faceWidth * 0.2 };
+    case 'left_cheek':
+      return { center: geometry.leftJawLine.start, baseSize: cheekBaseSize };
+    case 'right_cheek':
+      return { center: geometry.rightJawLine.start, baseSize: cheekBaseSize };
+    case 'jaw_region':
+      return { center: geometry.chinLine.start, baseSize: geometry.faceWidth * 0.35 };
     case 'face_center':
     default:
       return { center: geometry.faceCenter, baseSize: geometry.faceWidth };

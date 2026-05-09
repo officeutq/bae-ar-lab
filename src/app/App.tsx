@@ -167,12 +167,16 @@ export function App() {
   const resolvedActiveOperation = runtime.resolved.getActiveOperation();
   const debugOperation = resolvedActiveOperation;
   const debugCenter = { x: 0.5, y: 0.5 };
-  const debugWarpResult = applyWarpOperations(debugUv, debugOperation ? [debugOperation] : [], {
+  const debugGeometry = {
     leftEyeCenter: debugCenter, rightEyeCenter: debugCenter, mouthCenter: debugCenter, noseCenter: debugCenter, faceCenter: debugCenter, leftEyeWidth: 1, rightEyeWidth: 1, mouthWidth: 1, faceWidth: 1, leftJawLine: { start: debugCenter, end: debugCenter }, rightJawLine: { start: debugCenter, end: debugCenter }, chinLine: { start: debugCenter, end: debugCenter },
-  });
+    leftCheekPolygon: [debugCenter, debugCenter, debugCenter],
+    rightCheekPolygon: [debugCenter, debugCenter, debugCenter],
+    jawPolygon: [debugCenter, debugCenter, debugCenter],
+  };
+  const debugWarpResult = applyWarpOperations(debugUv, debugOperation ? [debugOperation] : [], debugGeometry);
   const debugGridPoints = Array.from({ length: DEBUG_GRID_SIZE * DEBUG_GRID_SIZE }, (_, index) => {
     const gx = index % DEBUG_GRID_SIZE; const gy = Math.floor(index / DEBUG_GRID_SIZE); const uv = { x: gx / (DEBUG_GRID_SIZE - 1), y: gy / (DEBUG_GRID_SIZE - 1) };
-    const warpedUv = applyWarpOperations(uv, debugOperation ? [debugOperation] : [], { leftEyeCenter: debugCenter, rightEyeCenter: debugCenter, mouthCenter: debugCenter, noseCenter: debugCenter, faceCenter: debugCenter, leftEyeWidth: 1, rightEyeWidth: 1, mouthWidth: 1, faceWidth: 1, leftJawLine: { start: debugCenter, end: debugCenter }, rightJawLine: { start: debugCenter, end: debugCenter }, chinLine: { start: debugCenter, end: debugCenter } });
+    const warpedUv = applyWarpOperations(uv, debugOperation ? [debugOperation] : [], debugGeometry);
     return { uv, warpedUv };
   });
 
