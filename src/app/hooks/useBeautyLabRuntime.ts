@@ -89,7 +89,12 @@ export function useBeautyLabRuntime(activeOperation: WarpOperation | null, overl
 
     rendererRef.current?.stop();
     const renderer = enableWebglRenderer
-      ? createWebglRenderer({ video: videoElement, canvas: canvasElement })
+      ? createWebglRenderer({
+        video: videoElement,
+        canvas: canvasElement,
+        getActiveOperation: () => activeOperationRef.current,
+        getFaceGeometry: () => faceGeometryRef.current,
+      })
       : createCanvasRenderer({
         video: videoElement,
         canvas: canvasElement,
@@ -159,7 +164,12 @@ export function useBeautyLabRuntime(activeOperation: WarpOperation | null, overl
       if (videoElement && canvasElement) {
         rendererRef.current?.stop();
         const renderer = webglRendererEnabledRef.current
-          ? createWebglRenderer({ video: videoElement, canvas: canvasElement })
+          ? createWebglRenderer({
+        video: videoElement,
+        canvas: canvasElement,
+        getActiveOperation: () => activeOperationRef.current,
+        getFaceGeometry: () => faceGeometryRef.current,
+      })
           : createCanvasRenderer({
             video: videoElement,
             canvas: canvasElement,
