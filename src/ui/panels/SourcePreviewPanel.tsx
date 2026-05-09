@@ -15,8 +15,8 @@ type Props = {
 export function SourcePreviewPanel({ videoRef, overlayCanvasRef, cameraState, landmarkerState, cameraErrorMessage, onCaptureSource, previewAspectRatio }: Props) {
   return (
     <Panel title="入力プレビュー">
-      <div className="source-preview" style={{ aspectRatio: previewAspectRatio }}>
-        <video className="source-video preview-mirror" ref={videoRef} autoPlay playsInline muted />
+      <div className="source-preview preview-mirror" style={{ aspectRatio: previewAspectRatio }}>
+        <video className="source-video" ref={videoRef} autoPlay playsInline muted />
         <canvas className="overlay-canvas" ref={overlayCanvasRef} />
       </div>
       <p className="camera-status">カメラ状態: {cameraState}</p>
