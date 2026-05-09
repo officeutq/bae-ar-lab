@@ -3,6 +3,7 @@ import type { StoredPreset } from '@engine/presets/types';
 import type { RendererMode } from '@engine/render/types';
 import type { SamplePresetId } from '@algorithms/presets';
 import type { QualityLevel } from '@engine/performance/adaptiveQuality';
+import type { DeviceCapabilities } from '@engine/performance/detectDeviceCapabilities';
 import { Panel } from '@ui/Panel';
 import { FalloffGraph } from '@ui/components/FalloffGraph';
 
@@ -56,6 +57,7 @@ type Props = {
   selectedQuality: QualityLevel;
   currentQuality: QualityLevel;
   onSelectedQualityChange: (value: QualityLevel) => void;
+  capabilities: DeviceCapabilities;
 };
 
 export function ControlPanel(props: Props) {
@@ -116,6 +118,9 @@ export function ControlPanel(props: Props) {
           </select>
         </label>
         <p className="camera-status">Current quality: {props.currentQuality}</p>
+        <p className="camera-status">Device: {props.capabilities.deviceType} / WebGL2: {props.capabilities.webgl2Available ? 'yes' : 'no'}</p>
+        <p className="camera-status">Recommended: {props.capabilities.recommendedRendererMode}, {props.capabilities.recommendedQuality} (max ops {props.capabilities.maxRecommendedOperationCount})</p>
+        <p className="camera-status">Memory/Cores: {props.capabilities.deviceMemoryGb ?? 'n/a'} GB / {props.capabilities.hardwareConcurrency ?? 'n/a'}</p>
         <label><input type="checkbox" checked={props.showLandmarks} onChange={(e) => props.setShowLandmarks(e.target.checked)} />Show landmarks</label>
         <label><input type="checkbox" checked={props.showCenters} onChange={(e) => props.setShowCenters(e.target.checked)} />Show centers</label>
         <label><input type="checkbox" checked={props.showWarpInfluence} onChange={(e) => props.setShowWarpInfluence(e.target.checked)} />Show warp influence</label>
@@ -125,7 +130,7 @@ export function ControlPanel(props: Props) {
           <select value={props.rendererMode} onChange={(e) => props.setRendererMode(e.target.value as RendererMode)}>
             <option value="canvas2d">Canvas 2D</option>
             <option value="cpu_warp_debug">CPU Warp Debug</option>
-            <option value="webgl">WebGL</option>
+            <option value="webgl" disabled={!props.capabilities.webgl2Available}>WebGL</option>
           </select>
         </label>
       </div>

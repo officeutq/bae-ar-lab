@@ -12,6 +12,7 @@ import { SourcePreviewPanel } from '@ui/panels/SourcePreviewPanel';
 import { WarpMathDebugPanel } from '@ui/panels/WarpMathDebugPanel';
 import { useBeautyLabRuntime } from './hooks/useBeautyLabRuntime';
 import type { RendererMode } from '@engine/render/types';
+import { detectDeviceCapabilities } from '@engine/performance/detectDeviceCapabilities';
 import type { WarpOperation, WarpPreset } from '@app-types/preset';
 import {
   deletePreset,
@@ -42,8 +43,15 @@ export function App() {
   const [showWarpInfluence, setShowWarpInfluence] = useState(true);
   const [showWarpCenter, setShowWarpCenter] = useState(true);
   const [showFalloffRings, setShowFalloffRings] = useState(true);
-  const [rendererMode, setRendererMode] = useState<RendererMode>('canvas2d');
+  const capabilities = useMemo(() => detectDeviceCapabilities(), []);
+  const [rendererMode, setRendererMode] = useState<RendererMode>(capabilities.recommendedRendererMode);
   const [debugUv, setDebugUv] = useState({ x: 0.5, y: 0.5 });
+  useEffect(() => {
+    if (!capabilities.webgl2Available && rendererMode === 'webgl') {
+      setRendererMode('canvas2d');
+    }
+  }, [capabilities.webgl2Available, rendererMode]);
+
   const skinSmoothing = activePreset.appearance?.skinSmoothing ?? {
     type: 'skin_smoothing' as const, enabled: true, strength: 0.35, radius: 1, maskOpacity: 1, showMaskPreview: false,
   };
@@ -54,7 +62,7 @@ export function App() {
   const activeOperation = activePreset.operations[activeOperationIndex] ?? null;
   const runtime = useBeautyLabRuntime(activeOperation, activePreset.operations, {
     showLandmarks, showCenters, showWarpInfluence, showWarpCenter, showFalloffRings,
-  }, rendererMode, skinSmoothing, skinTone);
+  }, rendererMode, skinSmoothing, skinTone, capabilities.recommendedQuality, capabilities.adaptiveQualityDefaultEnabled);
 
   const updateOperation = <K extends keyof (typeof activePreset.operations)[number]>(key: K, value: (typeof activePreset.operations)[number][K]) => {
     setActivePreset((currentPreset) => ({ ...currentPreset, operations: currentPreset.operations.map((operation, index) => index === activeOperationIndex ? { ...operation, [key]: value } : operation) }));
@@ -248,9 +256,14 @@ export function App() {
             <div>Operation count: {runtime.profiler.operationCount}</div>
             <div>Quality: {runtime.quality.runtimeQuality}</div>
             <div>Render scale: {runtime.quality.runtimePreset.renderScale.toFixed(2)}</div>
+            <div>Device: {capabilities.deviceType}</div>
+            <div>WebGL2: {capabilities.webgl2Available ? 'available' : 'unavailable'}</div>
+            <div>Memory (GB): {capabilities.deviceMemoryGb ?? 'n/a'}</div>
+            <div>Cores: {capabilities.hardwareConcurrency ?? 'n/a'}</div>
+            <div>Recommended quality: {capabilities.recommendedQuality}</div>
           </div>
         </Panel>
-        <ControlPanel activePreset={activePreset} presetNameInput={presetNameInput} setPresetNameInput={setPresetNameInput} presets={presets} activeStoredPresetId={activeStoredPresetId} onSavePreset={onSavePreset} onCreatePreset={onCreatePreset} onDeletePreset={onDeletePreset} onRenamePreset={onRenamePreset} onLoadPreset={onLoadPreset} selectedSamplePresetId={selectedSamplePresetId} onSelectSamplePreset={onSelectSamplePreset} onExportPreset={onExportPreset} onImportPresetText={onImportPresetText} presetMessage={presetMessage} pipelineStatus={pipelineState.status} onStartCamera={runtime.actions.startCamera} onStopCamera={runtime.actions.stopCamera} cameraState={runtime.state.cameraState} showLandmarks={showLandmarks} setShowLandmarks={setShowLandmarks} showCenters={showCenters} setShowCenters={setShowCenters} showWarpInfluence={showWarpInfluence} setShowWarpInfluence={setShowWarpInfluence} showWarpCenter={showWarpCenter} setShowWarpCenter={setShowWarpCenter} showFalloffRings={showFalloffRings} setShowFalloffRings={setShowFalloffRings} rendererMode={rendererMode} setRendererMode={setRendererMode} activeOperationIndex={activeOperationIndex} setActiveOperationIndex={setActiveOperationIndex} addOperation={addOperation} removeOperation={removeOperation} updateOperation={updateOperation} updateAxis={updateAxis} updateFalloffType={updateFalloffType} updateDirection={updateDirection} resolvedActiveOperation={resolvedActiveOperation} skinSmoothing={skinSmoothing} updateSkinSmoothing={updateSkinSmoothing} skinTone={skinTone} updateSkinTone={updateSkinTone} adaptiveQualityEnabled={runtime.quality.adaptiveQuality.enabled} onAdaptiveQualityEnabledChange={runtime.quality.setAdaptiveEnabled} selectedQuality={runtime.quality.adaptiveQuality.selectedQuality} currentQuality={runtime.quality.runtimeQuality} onSelectedQualityChange={runtime.quality.setSelectedQuality} />
+        <ControlPanel activePreset={activePreset} presetNameInput={presetNameInput} setPresetNameInput={setPresetNameInput} presets={presets} activeStoredPresetId={activeStoredPresetId} onSavePreset={onSavePreset} onCreatePreset={onCreatePreset} onDeletePreset={onDeletePreset} onRenamePreset={onRenamePreset} onLoadPreset={onLoadPreset} selectedSamplePresetId={selectedSamplePresetId} onSelectSamplePreset={onSelectSamplePreset} onExportPreset={onExportPreset} onImportPresetText={onImportPresetText} presetMessage={presetMessage} pipelineStatus={pipelineState.status} onStartCamera={runtime.actions.startCamera} onStopCamera={runtime.actions.stopCamera} cameraState={runtime.state.cameraState} showLandmarks={showLandmarks} setShowLandmarks={setShowLandmarks} showCenters={showCenters} setShowCenters={setShowCenters} showWarpInfluence={showWarpInfluence} setShowWarpInfluence={setShowWarpInfluence} showWarpCenter={showWarpCenter} setShowWarpCenter={setShowWarpCenter} showFalloffRings={showFalloffRings} setShowFalloffRings={setShowFalloffRings} rendererMode={rendererMode} setRendererMode={setRendererMode} activeOperationIndex={activeOperationIndex} setActiveOperationIndex={setActiveOperationIndex} addOperation={addOperation} removeOperation={removeOperation} updateOperation={updateOperation} updateAxis={updateAxis} updateFalloffType={updateFalloffType} updateDirection={updateDirection} resolvedActiveOperation={resolvedActiveOperation} skinSmoothing={skinSmoothing} updateSkinSmoothing={updateSkinSmoothing} skinTone={skinTone} updateSkinTone={updateSkinTone} adaptiveQualityEnabled={runtime.quality.adaptiveQuality.enabled} onAdaptiveQualityEnabledChange={runtime.quality.setAdaptiveEnabled} selectedQuality={runtime.quality.adaptiveQuality.selectedQuality} currentQuality={runtime.quality.runtimeQuality} onSelectedQualityChange={runtime.quality.setSelectedQuality} capabilities={capabilities} />
         <WarpMathDebugPanel debugUv={debugUv} debugCenter={debugCenter} debugWarpResult={{ warpedUv: debugWarpResult, influence: 0 }} debugGridPoints={debugGridPoints} onMouseMove={(event: MouseEvent<HTMLDivElement>) => { const rect = event.currentTarget.getBoundingClientRect(); setDebugUv({ x: clamp01((event.clientX - rect.left) / Math.max(1, rect.width)), y: clamp01((event.clientY - rect.top) / Math.max(1, rect.height)) }); }} />
         <JsonOutputPanel preset={pipelineState.activePreset} geometry={runtime.state.faceGeometry} />
       </div>

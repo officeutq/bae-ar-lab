@@ -55,6 +55,8 @@ export function useBeautyLabRuntime(
   rendererMode: RendererMode,
   skinSmoothing: { enabled: boolean; strength: number; radius: number; maskOpacity: number; showMaskPreview: boolean },
   skinTone: { enabled: boolean; brightness: number; saturation: number; warmth: number; blend: number },
+  initialQuality: QualityLevel = 'high',
+  adaptiveQualityEnabledByDefault = true,
 ) {
   const cameraController = useMemo(() => createCameraController(), []);
   const faceLandmarkerController = useMemo(() => createFaceLandmarker(), []);
@@ -73,8 +75,8 @@ export function useBeautyLabRuntime(
   const profilerRef = useRef(createProfiler({ sampleWindow: 30 }));
   const detectFrameCountRef = useRef(0);
   const lastLandmarkFrameRef = useRef<FaceLandmarksFrame | null>(null);
-  const adaptiveQualityControllerRef = useRef(createAdaptiveQualityController('high'));
-  const adaptiveQualityRef = useRef<AdaptiveQualityState>({ enabled: true, selectedQuality: 'high', currentQuality: 'high' });
+  const adaptiveQualityControllerRef = useRef(createAdaptiveQualityController(initialQuality));
+  const adaptiveQualityRef = useRef<AdaptiveQualityState>({ enabled: adaptiveQualityEnabledByDefault, selectedQuality: initialQuality, currentQuality: initialQuality });
 
   const [cameraState, setCameraState] = useState<CameraViewState>('idle');
   const [cameraErrorMessage, setCameraErrorMessage] = useState<string | null>(null);
