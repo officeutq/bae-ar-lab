@@ -475,6 +475,8 @@ export function App() {
             <div>MediaPipe (ms): {runtime.profiler.mediapipeMs.toFixed(2)}</div>
             <div>Render (ms): {runtime.profiler.renderMs.toFixed(2)}</div>
             <div>Operation count: {runtime.profiler.operationCount}</div>
+            <div>Face stability: {runtime.faceStability.status}</div>
+            <div>Stability fade: {runtime.faceStability.fade.toFixed(2)}</div>
             <div>Quality: {runtime.quality.runtimeQuality}</div>
             <div>Render scale: {runtime.quality.runtimePreset.renderScale.toFixed(2)}</div>
             <div>Device: {capabilities.deviceType}</div>
