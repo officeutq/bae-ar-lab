@@ -87,6 +87,7 @@ export function App() {
     const next = flattened[nextIndex];
     selectKeyframe(next.trackIndex, next.keyframeIndex);
   };
+  const sortKeyframesByTime = <T extends { time: number }>(keyframes: T[]) => [...keyframes].sort((a, b) => a.time - b.time);
 
   const syncTimelineSnapshot = () => {
     const snapshot = timelineRef.getSnapshot();
@@ -257,6 +258,37 @@ export function App() {
         ...currentPreset,
         animations: animations.map((clip) => clip.id === selectedAnimationClipId ? updater(clip) : clip),
       };
+    });
+  };
+  const addKeyframeAtTime = (trackIndex: number, time: number) => {
+    const clampedTime = clampKeyframeTime(time, loadedAnimationClip.duration);
+    updateSelectedAnimationClip((clip) => {
+      const nextTracks = clip.tracks.map((track, tIndex) => {
+        if (tIndex !== trackIndex) return track;
+        const currentValue = Number(timelineSnapshot.values[track.track] ?? 0);
+        const nextKeyframes = sortKeyframesByTime([...track.keyframes, { time: clampedTime, value: currentValue }]);
+        const insertedIndex = nextKeyframes.findIndex((keyframe) => keyframe.time === clampedTime && keyframe.value === currentValue);
+        setSelectedTrackIndex(trackIndex);
+        setSelectedKeyframeIndex(insertedIndex >= 0 ? insertedIndex : nextKeyframes.length - 1);
+        return { ...track, keyframes: nextKeyframes };
+      });
+      return { ...clip, tracks: nextTracks };
+    });
+  };
+  const addSelectedTrackKeyframe = () => {
+    const trackIndex = selectedTrackIndex ?? 0;
+    if (!loadedAnimationClip.tracks[trackIndex]) return;
+    addKeyframeAtTime(trackIndex, animationTime);
+  };
+  const deleteSelectedKeyframe = () => {
+    if (selectedTrackIndex === null || selectedKeyframeIndex === null) return;
+    updateSelectedAnimationClip((clip) => {
+      const track = clip.tracks[selectedTrackIndex];
+      if (!track || !track.keyframes[selectedKeyframeIndex]) return clip;
+      const nextKeyframes = track.keyframes.filter((_, index) => index !== selectedKeyframeIndex);
+      const nextTracks = clip.tracks.map((item, index) => index === selectedTrackIndex ? { ...item, keyframes: nextKeyframes } : item);
+      setSelectedKeyframeIndex(nextKeyframes.length === 0 ? null : Math.min(selectedKeyframeIndex, nextKeyframes.length - 1));
+      return { ...clip, tracks: nextTracks };
     });
   };
 
@@ -445,10 +477,13 @@ export function App() {
                 ? { ...keyframe, time: clampKeyframeTime(value, clip.duration) }
                 : keyframe
             ));
-            nextKeyframes.sort((a, b) => a.time - b.time);
+            const sortedKeyframes = sortKeyframesByTime(nextKeyframes);
+            const nextSelectedIndex = sortedKeyframes.findIndex((keyframe) => keyframe === nextKeyframes[keyframeIndex]);
+            setSelectedTrackIndex(trackIndex);
+            setSelectedKeyframeIndex(nextSelectedIndex >= 0 ? nextSelectedIndex : keyframeIndex);
             return {
               ...track,
-              keyframes: nextKeyframes,
+              keyframes: sortedKeyframes,
             };
           });
           return {
@@ -461,11 +496,11 @@ export function App() {
             ...track,
             keyframes: track.keyframes.map((keyframe, kIndex) => kIndex === keyframeIndex ? { ...keyframe, value } : keyframe),
           } : track),
-        }))} onPlayAnimation={() => { timelineRef.play(); syncTimelineSnapshot(); }} onPauseAnimation={() => { timelineRef.pause(); syncTimelineSnapshot(); }} onStopAnimation={() => { timelineRef.stop(); syncTimelineSnapshot(); }} onTimelineTimeChange={(value) => { timelineRef.seek(value); syncTimelineSnapshot(); }} setAnimationLoop={setAnimationLoop} onCaptureCompare={onCaptureCompare} presetNameInput={presetNameInput} setPresetNameInput={setPresetNameInput} presets={presets} activeStoredPresetId={activeStoredPresetId} onSavePreset={onSavePreset} onCreatePreset={onCreatePreset} onDeletePreset={onDeletePreset} onRenamePreset={onRenamePreset} onLoadPreset={onLoadPreset} selectedSamplePresetId={selectedSamplePresetId} onSelectSamplePreset={onSelectSamplePreset} onExportPreset={onExportPreset} onImportPresetText={onImportPresetText} presetMessage={presetMessage} pipelineStatus={pipelineState.status} onStartCamera={runtime.actions.startCamera} onStopCamera={runtime.actions.stopCamera} cameraState={runtime.state.cameraState} showLandmarks={showLandmarks} setShowLandmarks={setShowLandmarks} showCenters={showCenters} setShowCenters={setShowCenters} showWarpInfluence={showWarpInfluence} setShowWarpInfluence={setShowWarpInfluence} showWarpCenter={showWarpCenter} setShowWarpCenter={setShowWarpCenter} showFalloffRings={showFalloffRings} setShowFalloffRings={setShowFalloffRings} rendererMode={rendererMode} setRendererMode={setRendererMode} activeOperationIndex={activeOperationIndex} setActiveOperationIndex={setActiveOperationIndex} addOperation={addOperation} removeOperation={removeOperation} updateOperation={updateOperation} updateAxis={updateAxis} updateFalloffType={updateFalloffType} updateDirection={updateDirection} resolvedActiveOperation={resolvedActiveOperation} skinSmoothing={skinSmoothing} updateSkinSmoothing={updateSkinSmoothing} skinTone={skinTone} updateSkinTone={updateSkinTone} adaptiveQualityEnabled={runtime.quality.adaptiveQuality.enabled} onAdaptiveQualityEnabledChange={runtime.quality.setAdaptiveEnabled} selectedQuality={runtime.quality.adaptiveQuality.selectedQuality} currentQuality={runtime.quality.runtimeQuality} onSelectedQualityChange={runtime.quality.setSelectedQuality} capabilities={capabilities} />
+        }))} onAddKeyframe={addSelectedTrackKeyframe} onDeleteKeyframe={deleteSelectedKeyframe} onPlayAnimation={() => { timelineRef.play(); syncTimelineSnapshot(); }} onPauseAnimation={() => { timelineRef.pause(); syncTimelineSnapshot(); }} onStopAnimation={() => { timelineRef.stop(); syncTimelineSnapshot(); }} onTimelineTimeChange={(value) => { timelineRef.seek(value); syncTimelineSnapshot(); }} setAnimationLoop={setAnimationLoop} onCaptureCompare={onCaptureCompare} presetNameInput={presetNameInput} setPresetNameInput={setPresetNameInput} presets={presets} activeStoredPresetId={activeStoredPresetId} onSavePreset={onSavePreset} onCreatePreset={onCreatePreset} onDeletePreset={onDeletePreset} onRenamePreset={onRenamePreset} onLoadPreset={onLoadPreset} selectedSamplePresetId={selectedSamplePresetId} onSelectSamplePreset={onSelectSamplePreset} onExportPreset={onExportPreset} onImportPresetText={onImportPresetText} presetMessage={presetMessage} pipelineStatus={pipelineState.status} onStartCamera={runtime.actions.startCamera} onStopCamera={runtime.actions.stopCamera} cameraState={runtime.state.cameraState} showLandmarks={showLandmarks} setShowLandmarks={setShowLandmarks} showCenters={showCenters} setShowCenters={setShowCenters} showWarpInfluence={showWarpInfluence} setShowWarpInfluence={setShowWarpInfluence} showWarpCenter={showWarpCenter} setShowWarpCenter={setShowWarpCenter} showFalloffRings={showFalloffRings} setShowFalloffRings={setShowFalloffRings} rendererMode={rendererMode} setRendererMode={setRendererMode} activeOperationIndex={activeOperationIndex} setActiveOperationIndex={setActiveOperationIndex} addOperation={addOperation} removeOperation={removeOperation} updateOperation={updateOperation} updateAxis={updateAxis} updateFalloffType={updateFalloffType} updateDirection={updateDirection} resolvedActiveOperation={resolvedActiveOperation} skinSmoothing={skinSmoothing} updateSkinSmoothing={updateSkinSmoothing} skinTone={skinTone} updateSkinTone={updateSkinTone} adaptiveQualityEnabled={runtime.quality.adaptiveQuality.enabled} onAdaptiveQualityEnabledChange={runtime.quality.setAdaptiveEnabled} selectedQuality={runtime.quality.adaptiveQuality.selectedQuality} currentQuality={runtime.quality.runtimeQuality} onSelectedQualityChange={runtime.quality.setSelectedQuality} capabilities={capabilities} />
         <TimelinePanel clip={loadedAnimationClip} currentTime={animationTime} currentValues={timelineSnapshot.values} selectedTrackIndex={selectedTrackIndex} selectedKeyframeIndex={selectedKeyframeIndex} onSelectKeyframe={selectKeyframe} onSeek={(time) => {
           timelineRef.seek(time);
           syncTimelineSnapshot();
-        }} onScrubStart={() => {
+        }} onInsertKeyframe={addKeyframeAtTime} onScrubStart={() => {
           timelineRef.setPlaying(false);
           syncTimelineSnapshot();
         }} />

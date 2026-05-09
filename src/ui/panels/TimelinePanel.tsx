@@ -11,6 +11,7 @@ type Props = {
   onSeek: (time: number) => void;
   onScrubStart: () => void;
   onSelectKeyframe: (trackIndex: number, keyframeIndex: number) => void;
+  onInsertKeyframe: (trackIndex: number, time: number) => void;
 };
 
 const TIMELINE_WIDTH = 100;
@@ -26,7 +27,7 @@ function toTimelinePercent(time: number, duration: number) {
   return clamp01(time / duration) * TIMELINE_WIDTH;
 }
 
-export function TimelinePanel({ clip, currentTime, currentValues, selectedTrackIndex, selectedKeyframeIndex, onSeek, onScrubStart, onSelectKeyframe }: Props) {
+export function TimelinePanel({ clip, currentTime, currentValues, selectedTrackIndex, selectedKeyframeIndex, onSeek, onScrubStart, onSelectKeyframe, onInsertKeyframe }: Props) {
   const scrubRef = useRef(false);
   const playheadPercent = toTimelinePercent(currentTime, clip.duration);
   const timeFromClientX = (clientX: number, rect: DOMRect) => clamp01((clientX - rect.left) / Math.max(1, rect.width)) * clip.duration;
@@ -77,6 +78,10 @@ export function TimelinePanel({ clip, currentTime, currentValues, selectedTrackI
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerEnd}
                 onPointerCancel={handlePointerEnd}
+                onDoubleClick={(event) => {
+                  const rect = event.currentTarget.getBoundingClientRect();
+                  onInsertKeyframe(trackIndex, timeFromClientX(event.clientX, rect));
+                }}
               >
                 {track.keyframes.map((keyframe, keyframeIndex) => {
                   const left = toTimelinePercent(keyframe.time, clip.duration);

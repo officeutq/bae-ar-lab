@@ -37,6 +37,8 @@ type Props = {
   onSelectKeyframe: (trackIndex: number, keyframeIndex: number) => void;
   onSelectPrevKeyframe: () => void;
   onSelectNextKeyframe: () => void;
+  onAddKeyframe: () => void;
+  onDeleteKeyframe: () => void;
   setAnimationLoop: (value: boolean) => void;
   pipelineStatus: string;
   onStartCamera: () => void;
@@ -181,6 +183,8 @@ export function ControlPanel(props: Props) {
             <div className="camera-controls">
               <button type="button" onClick={props.onSelectPrevKeyframe}>Prev keyframe</button>
               <button type="button" onClick={props.onSelectNextKeyframe}>Next keyframe</button>
+              <button type="button" onClick={props.onAddKeyframe}>Add keyframe</button>
+              <button type="button" onClick={props.onDeleteKeyframe} disabled={props.selectedTrackIndex === null || props.selectedKeyframeIndex === null}>Delete keyframe</button>
             </div>
             <p className="camera-status">Tracks (read-only path / editable keyframe time/value)</p>
             <ul>
