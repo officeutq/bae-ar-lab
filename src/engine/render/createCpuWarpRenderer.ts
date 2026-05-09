@@ -1,6 +1,7 @@
-import type { WarpOperation, WarpTarget } from '@app-types/preset';
-import type { FaceGeometry, Point2D } from '@engine/geometry/types';
+import type { WarpOperation } from '@app-types/preset';
+import type { FaceGeometry } from '@engine/geometry/types';
 import { applyRadialWarp } from '@engine/math/warp/applyRadialWarp';
+import { getWarpTargetGeometry } from './getWarpTargetGeometry';
 
 const FALLBACK_SIZE = 0.05;
 const PREVIEW_WIDTH = 320;
@@ -9,26 +10,6 @@ function clamp01(value: number) {
   return Math.min(1, Math.max(0, value));
 }
 
-type TargetGeometry = {
-  center: Point2D;
-  baseSize: number;
-};
-
-function getTargetGeometry(target: WarpTarget, geometry: FaceGeometry): TargetGeometry {
-  switch (target) {
-    case 'left_eye':
-      return { center: geometry.leftEyeCenter, baseSize: geometry.leftEyeWidth };
-    case 'right_eye':
-      return { center: geometry.rightEyeCenter, baseSize: geometry.rightEyeWidth };
-    case 'mouth':
-      return { center: geometry.mouthCenter, baseSize: geometry.mouthWidth };
-    case 'nose':
-      return { center: geometry.noseCenter, baseSize: geometry.faceWidth * 0.15 };
-    case 'face_center':
-    default:
-      return { center: geometry.faceCenter, baseSize: geometry.faceWidth };
-  }
-}
 
 export type CpuWarpRenderInput = {
   video: HTMLVideoElement;
@@ -79,7 +60,7 @@ export function createCpuWarpRenderer() {
     const src = sourceData.data;
     const dst = outputData.data;
 
-    const target = getTargetGeometry(operation.target, geometry);
+    const target = getWarpTargetGeometry(operation.target, geometry);
     const warpCenter = { x: clamp01(target.center.x), y: clamp01(target.center.y) };
     const warpRadius = Math.max(FALLBACK_SIZE, target.baseSize) * operation.radius;
 
