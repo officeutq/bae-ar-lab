@@ -93,7 +93,7 @@ export function useBeautyLabRuntime(activeOperation: WarpOperation | null, opera
       ? createWebglRenderer({
         video: videoElement,
         canvas: canvasElement,
-        getActiveOperation: () => activeOperationRef.current,
+        getOperations: () => operationsRef.current,
         getFaceGeometry: () => faceGeometryRef.current,
       })
       : createCanvasRenderer({
@@ -169,7 +169,7 @@ export function useBeautyLabRuntime(activeOperation: WarpOperation | null, opera
           ? createWebglRenderer({
             video: videoElement,
             canvas: canvasElement,
-            getActiveOperation: () => activeOperationRef.current,
+            getOperations: () => operationsRef.current,
             getFaceGeometry: () => faceGeometryRef.current,
           })
           : createCanvasRenderer({

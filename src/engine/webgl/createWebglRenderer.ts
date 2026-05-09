@@ -17,11 +17,12 @@ export type WebglRenderer = {
 type CreateWebglRendererOptions = {
   video: HTMLVideoElement;
   canvas: HTMLCanvasElement;
-  getActiveOperation: () => WarpOperation | null;
+  getOperations: () => WarpOperation[];
   getFaceGeometry: () => FaceGeometry | null;
 };
 
 const FALLBACK_SIZE = 0.05;
+const MAX_OPERATIONS = 8;
 
 function clamp01(value: number) {
   return Math.min(1, Math.max(0, value));
@@ -33,7 +34,7 @@ function getFalloffUniformValue(type: WarpOperation['falloff']['type']) {
   return 2;
 }
 
-export function createWebglRenderer({ video, canvas, getActiveOperation, getFaceGeometry }: CreateWebglRendererOptions): WebglRenderer {
+export function createWebglRenderer({ video, canvas, getOperations, getFaceGeometry }: CreateWebglRendererOptions): WebglRenderer {
   const gl = canvas.getContext('webgl2');
 
   if (!gl) {
@@ -43,13 +44,14 @@ export function createWebglRenderer({ video, canvas, getActiveOperation, getFace
   const program = createShaderProgram(gl, fullscreenVertexShader, videoFragmentShader);
   const positionLocation = gl.getAttribLocation(program, 'a_position');
   const videoTextureLocation = gl.getUniformLocation(program, 'uVideoTexture');
-  const warpCenterLocation = gl.getUniformLocation(program, 'uWarpCenter');
-  const warpRadiusLocation = gl.getUniformLocation(program, 'uWarpRadius');
-  const warpStrengthLocation = gl.getUniformLocation(program, 'uWarpStrength');
-  const warpAxisLocation = gl.getUniformLocation(program, 'uWarpAxis');
-  const falloffTypeLocation = gl.getUniformLocation(program, 'uFalloffType');
+  const warpCentersLocation = gl.getUniformLocation(program, 'uWarpCenters');
+  const warpRadiiLocation = gl.getUniformLocation(program, 'uWarpRadii');
+  const warpStrengthsLocation = gl.getUniformLocation(program, 'uWarpStrengths');
+  const warpAxesLocation = gl.getUniformLocation(program, 'uWarpAxes');
+  const falloffTypesLocation = gl.getUniformLocation(program, 'uFalloffTypes');
+  const enabledOpsLocation = gl.getUniformLocation(program, 'uEnabledOps');
 
-  if (positionLocation < 0 || !videoTextureLocation || !warpCenterLocation || !warpRadiusLocation || !warpStrengthLocation || !warpAxisLocation || !falloffTypeLocation) {
+  if (positionLocation < 0 || !videoTextureLocation || !warpCentersLocation || !warpRadiiLocation || !warpStrengthsLocation || !warpAxesLocation || !falloffTypesLocation || !enabledOpsLocation) {
     gl.deleteProgram(program);
     throw new Error('Failed to resolve shader attributes or uniforms.');
   }
@@ -109,27 +111,55 @@ export function createWebglRenderer({ video, canvas, getActiveOperation, getFace
       gl.bindTexture(gl.TEXTURE_2D, videoTexture);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
 
-      const operation = getActiveOperation();
       const geometry = getFaceGeometry();
-      const target = operation?.enabled && geometry ? getWarpTargetGeometry(operation.target, geometry) : null;
-      const warpCenterX = target ? clamp01(target.center.x) : 0.5;
-      const warpCenterY = target ? clamp01(target.center.y) : 0.5;
-      const warpRadius = target && operation ? Math.max(FALLBACK_SIZE, target.baseSize) * operation.radius : 0;
-      const warpStrength = operation?.enabled ? operation.strength : 0;
-      const warpAxisX = operation?.enabled ? Math.max(0.0001, operation.axis.x) : 1;
-      const warpAxisY = operation?.enabled ? Math.max(0.0001, operation.axis.y) : 1;
-      const falloffType = operation?.enabled ? getFalloffUniformValue(operation.falloff.type) : 1;
+      const warpCenters = new Float32Array(MAX_OPERATIONS * 2);
+      const warpRadii = new Float32Array(MAX_OPERATIONS);
+      const warpStrengths = new Float32Array(MAX_OPERATIONS);
+      const warpAxes = new Float32Array(MAX_OPERATIONS * 2);
+      const falloffTypes = new Int32Array(MAX_OPERATIONS);
+      const enabledOps = new Int32Array(MAX_OPERATIONS);
 
-      if (![warpCenterX, warpCenterY, warpRadius, warpStrength, warpAxisX, warpAxisY].every(Number.isFinite)) {
-        throw new Error('Invalid warp uniform values detected.');
+      for (let i = 0; i < MAX_OPERATIONS; i += 1) {
+        warpAxes[i * 2] = 1;
+        warpAxes[i * 2 + 1] = 1;
+        falloffTypes[i] = 1;
+      }
+
+      if (geometry) {
+        const operations = getOperations().filter((operation) => operation.enabled && operation.type === 'radial_warp').slice(0, MAX_OPERATIONS);
+
+        operations.forEach((operation, index) => {
+          const target = getWarpTargetGeometry(operation.target, geometry);
+          const warpCenterX = clamp01(target.center.x);
+          const warpCenterY = clamp01(target.center.y);
+          const warpRadius = Math.max(FALLBACK_SIZE, target.baseSize) * operation.radius;
+          const warpStrength = operation.strength;
+          const warpAxisX = Math.max(0.0001, operation.axis.x);
+          const warpAxisY = Math.max(0.0001, operation.axis.y);
+          const falloffType = getFalloffUniformValue(operation.falloff.type);
+
+          if (![warpCenterX, warpCenterY, warpRadius, warpStrength, warpAxisX, warpAxisY].every(Number.isFinite)) {
+            return;
+          }
+
+          warpCenters[index * 2] = warpCenterX;
+          warpCenters[index * 2 + 1] = warpCenterY;
+          warpRadii[index] = warpRadius;
+          warpStrengths[index] = warpStrength;
+          warpAxes[index * 2] = warpAxisX;
+          warpAxes[index * 2 + 1] = warpAxisY;
+          falloffTypes[index] = falloffType;
+          enabledOps[index] = 1;
+        });
       }
 
       gl.uniform1i(videoTextureLocation, 0);
-      gl.uniform2f(warpCenterLocation, warpCenterX, warpCenterY);
-      gl.uniform1f(warpRadiusLocation, warpRadius);
-      gl.uniform1f(warpStrengthLocation, warpStrength);
-      gl.uniform2f(warpAxisLocation, warpAxisX, warpAxisY);
-      gl.uniform1i(falloffTypeLocation, falloffType);
+      gl.uniform2fv(warpCentersLocation, warpCenters);
+      gl.uniform1fv(warpRadiiLocation, warpRadii);
+      gl.uniform1fv(warpStrengthsLocation, warpStrengths);
+      gl.uniform2fv(warpAxesLocation, warpAxes);
+      gl.uniform1iv(falloffTypesLocation, falloffTypes);
+      gl.uniform1iv(enabledOpsLocation, enabledOps);
       gl.bindVertexArray(vao);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
       gl.bindVertexArray(null);
