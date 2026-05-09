@@ -1,21 +1,17 @@
 import type { WarpOperation } from '@app-types/preset';
 import type { FaceGeometry } from '@engine/geometry/types';
-import { applyRadialWarp } from '@engine/math/warp/applyRadialWarp';
-import { getWarpTargetGeometry } from './getWarpTargetGeometry';
-
-const FALLBACK_SIZE = 0.05;
+import { applyRadialWarpOperations } from '@engine/math/warp/applyRadialWarpOperations';
 const PREVIEW_WIDTH = 320;
 
 function clamp01(value: number) {
   return Math.min(1, Math.max(0, value));
 }
 
-
 export type CpuWarpRenderInput = {
   video: HTMLVideoElement;
   canvas: HTMLCanvasElement;
   context: CanvasRenderingContext2D;
-  operation: WarpOperation | null;
+  operations: WarpOperation[];
   geometry: FaceGeometry | null;
 };
 
@@ -27,7 +23,7 @@ export function createCpuWarpRenderer() {
     throw new Error('2D offscreen context is not available.');
   }
 
-  const render = ({ video, canvas, context, operation, geometry }: CpuWarpRenderInput) => {
+  const render = ({ video, canvas, context, operations, geometry }: CpuWarpRenderInput) => {
     const { videoWidth, videoHeight } = video;
     if (videoWidth === 0 || videoHeight === 0) {
       return;
@@ -49,7 +45,7 @@ export function createCpuWarpRenderer() {
 
     sourceContext.drawImage(video, 0, 0, targetWidth, targetHeight);
 
-    if (!operation?.enabled || !geometry) {
+    if (operations.length === 0 || !geometry) {
       context.clearRect(0, 0, targetWidth, targetHeight);
       context.drawImage(sourceCanvas, 0, 0, targetWidth, targetHeight);
       return;
@@ -60,25 +56,14 @@ export function createCpuWarpRenderer() {
     const src = sourceData.data;
     const dst = outputData.data;
 
-    const target = getWarpTargetGeometry(operation.target, geometry);
-    const warpCenter = { x: clamp01(target.center.x), y: clamp01(target.center.y) };
-    const warpRadius = Math.max(FALLBACK_SIZE, target.baseSize) * operation.radius;
-
     for (let y = 0; y < targetHeight; y += 1) {
       const v = y / Math.max(1, targetHeight - 1);
       for (let x = 0; x < targetWidth; x += 1) {
         const u = x / Math.max(1, targetWidth - 1);
-        const warped = applyRadialWarp({
-          uv: { x: u, y: v },
-          center: warpCenter,
-          radius: warpRadius,
-          strength: operation.strength,
-          axis: operation.axis,
-          falloff: operation.falloff.type,
-        });
+        const warpedUv = applyRadialWarpOperations({ x: u, y: v }, operations, geometry);
 
-        const sx = Math.round(clamp01(warped.warpedUv.x) * (targetWidth - 1));
-        const sy = Math.round(clamp01(warped.warpedUv.y) * (targetHeight - 1));
+        const sx = Math.round(clamp01(warpedUv.x) * (targetWidth - 1));
+        const sy = Math.round(clamp01(warpedUv.y) * (targetHeight - 1));
         const srcIndex = (sy * targetWidth + sx) * 4;
         const dstIndex = (y * targetWidth + x) * 4;
 

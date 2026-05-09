@@ -39,7 +39,7 @@ function getCameraErrorMessage(error: CameraError) {
 
 type PreviewRenderer = CanvasRenderer | WebglRenderer;
 
-export function useBeautyLabRuntime(activeOperation: WarpOperation | null, overlayToggles: OverlayToggles, rendererMode: RendererMode) {
+export function useBeautyLabRuntime(activeOperation: WarpOperation | null, operations: WarpOperation[], overlayToggles: OverlayToggles, rendererMode: RendererMode) {
   const cameraController = useMemo(() => createCameraController(), []);
   const faceLandmarkerController = useMemo(() => createFaceLandmarker(), []);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -51,6 +51,7 @@ export function useBeautyLabRuntime(activeOperation: WarpOperation | null, overl
   const activeOperationRef = useRef<WarpOperation | null>(activeOperation);
   const faceGeometryRef = useRef<FaceGeometry | null>(null);
   const rendererModeRef = useRef<RendererMode>(rendererMode);
+  const operationsRef = useRef<WarpOperation[]>(operations);
 
   const [cameraState, setCameraState] = useState<CameraViewState>('idle');
   const [cameraErrorMessage, setCameraErrorMessage] = useState<string | null>(null);
@@ -66,6 +67,10 @@ export function useBeautyLabRuntime(activeOperation: WarpOperation | null, overl
   useEffect(() => {
     rendererModeRef.current = rendererMode;
   }, [rendererMode]);
+
+  useEffect(() => {
+    operationsRef.current = operations;
+  }, [operations]);
 
   useEffect(() => {
     overlayRef.current?.updateToggles(overlayToggles);
@@ -97,6 +102,7 @@ export function useBeautyLabRuntime(activeOperation: WarpOperation | null, overl
         getCpuWarpPreviewEnabled: () => rendererModeRef.current === 'cpu_warp_debug',
         getActiveOperation: () => activeOperationRef.current,
         getFaceGeometry: () => faceGeometryRef.current,
+        getOperations: () => operationsRef.current,
       });
     renderer.start();
     rendererRef.current = renderer;
@@ -172,6 +178,7 @@ export function useBeautyLabRuntime(activeOperation: WarpOperation | null, overl
             getCpuWarpPreviewEnabled: () => rendererModeRef.current === 'cpu_warp_debug',
             getActiveOperation: () => activeOperationRef.current,
             getFaceGeometry: () => faceGeometryRef.current,
+            getOperations: () => operationsRef.current,
           });
         renderer.start();
         rendererRef.current = renderer;
