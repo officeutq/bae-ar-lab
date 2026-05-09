@@ -78,6 +78,30 @@ Supported workflow:
 
 Built-in sample presets are provided under `src/algorithms/presets` for quick comparison and tuning of warp/filter behavior.
 
+## [QA] current runtime behavior checklist
+
+- [ ] Camera start / stop
+- [ ] Source preview
+- [ ] Processed preview
+- [ ] WebGL renderer
+- [ ] CPU warp debug
+- [ ] Landmark overlay
+- [ ] Warp visualization
+- [ ] Preset save/load/export/import
+- [ ] Sample preset switching
+- [ ] Skin smoothing
+- [ ] Skin tone
+- [ ] Beauty intensity
+- [ ] Animation playback
+- [ ] Timeline scrub
+- [ ] Keyframe add/delete/drag
+- [ ] Temporal smoothing
+- [ ] Face stability fade
+- [ ] Pose attenuation
+- [ ] Adaptive quality
+- [ ] Snapshot capture
+- [ ] Compare panel
+
 ## Development Commands
 
 - Install dependencies: `npm install`
