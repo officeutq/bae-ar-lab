@@ -20,6 +20,8 @@ type Props = {
   setShowFalloffRings: (value: boolean) => void;
   enableCpuWarpPreview: boolean;
   setEnableCpuWarpPreview: (value: boolean) => void;
+  enableWebglRenderer: boolean;
+  setEnableWebglRenderer: (value: boolean) => void;
   updateOperation: <K extends keyof WarpPreset['operations'][number]>(key: K, value: WarpPreset['operations'][number][K]) => void;
   updateAxis: (axisKey: 'x' | 'y', value: number) => void;
   updateFalloffType: (type: WarpFalloffType) => void;
@@ -41,6 +43,7 @@ export function ControlPanel(props: Props) {
         <label><input type="checkbox" checked={props.showWarpCenter} onChange={(e) => props.setShowWarpCenter(e.target.checked)} />Show warp center</label>
         <label><input type="checkbox" checked={props.showFalloffRings} onChange={(e) => props.setShowFalloffRings(e.target.checked)} />Show falloff rings</label>
         <label><input type="checkbox" checked={props.enableCpuWarpPreview} onChange={(e) => props.setEnableCpuWarpPreview(e.target.checked)} />Enable CPU warp preview</label>
+        <label><input type="checkbox" checked={props.enableWebglRenderer} onChange={(e) => props.setEnableWebglRenderer(e.target.checked)} />Enable WebGL renderer</label>
       </div>
       <div className="operation-controls">
         <label><input type="checkbox" checked={op?.enabled ?? false} onChange={(e) => props.updateOperation('enabled', e.target.checked)} />Operation enabled</label>
