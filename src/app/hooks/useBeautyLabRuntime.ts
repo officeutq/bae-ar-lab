@@ -12,6 +12,7 @@ import {
 } from '@engine/render/createCanvasRenderer';
 import { createWebglRenderer, type WebglRenderer } from '@engine/webgl/createWebglRenderer';
 import type { WarpOperation } from '@app-types/preset';
+import type { RendererMode } from '@engine/render/types';
 
 type CameraViewState = 'idle' | 'starting' | 'running' | 'error';
 
@@ -38,7 +39,7 @@ function getCameraErrorMessage(error: CameraError) {
 
 type PreviewRenderer = CanvasRenderer | WebglRenderer;
 
-export function useBeautyLabRuntime(activeOperation: WarpOperation | null, overlayToggles: OverlayToggles, enableCpuWarpPreview: boolean, enableWebglRenderer: boolean) {
+export function useBeautyLabRuntime(activeOperation: WarpOperation | null, overlayToggles: OverlayToggles, rendererMode: RendererMode) {
   const cameraController = useMemo(() => createCameraController(), []);
   const faceLandmarkerController = useMemo(() => createFaceLandmarker(), []);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -49,8 +50,7 @@ export function useBeautyLabRuntime(activeOperation: WarpOperation | null, overl
   const detectAnimationRef = useRef<number | null>(null);
   const activeOperationRef = useRef<WarpOperation | null>(activeOperation);
   const faceGeometryRef = useRef<FaceGeometry | null>(null);
-  const cpuWarpPreviewEnabledRef = useRef(enableCpuWarpPreview);
-  const webglRendererEnabledRef = useRef(enableWebglRenderer);
+  const rendererModeRef = useRef<RendererMode>(rendererMode);
 
   const [cameraState, setCameraState] = useState<CameraViewState>('idle');
   const [cameraErrorMessage, setCameraErrorMessage] = useState<string | null>(null);
@@ -64,12 +64,8 @@ export function useBeautyLabRuntime(activeOperation: WarpOperation | null, overl
   }, [activeOperation]);
 
   useEffect(() => {
-    cpuWarpPreviewEnabledRef.current = enableCpuWarpPreview;
-  }, [enableCpuWarpPreview]);
-
-  useEffect(() => {
-    webglRendererEnabledRef.current = enableWebglRenderer;
-  }, [enableWebglRenderer]);
+    rendererModeRef.current = rendererMode;
+  }, [rendererMode]);
 
   useEffect(() => {
     overlayRef.current?.updateToggles(overlayToggles);
@@ -88,7 +84,7 @@ export function useBeautyLabRuntime(activeOperation: WarpOperation | null, overl
     }
 
     rendererRef.current?.stop();
-    const renderer = enableWebglRenderer
+    const renderer = rendererMode === 'webgl'
       ? createWebglRenderer({
         video: videoElement,
         canvas: canvasElement,
@@ -98,14 +94,14 @@ export function useBeautyLabRuntime(activeOperation: WarpOperation | null, overl
       : createCanvasRenderer({
         video: videoElement,
         canvas: canvasElement,
-        getCpuWarpPreviewEnabled: () => cpuWarpPreviewEnabledRef.current,
+        getCpuWarpPreviewEnabled: () => rendererModeRef.current === 'cpu_warp_debug',
         getActiveOperation: () => activeOperationRef.current,
         getFaceGeometry: () => faceGeometryRef.current,
       });
     renderer.start();
     rendererRef.current = renderer;
     setRendererState(renderer.getState());
-  }, [cameraState, enableWebglRenderer]);
+  }, [cameraState, rendererMode]);
 
   useEffect(() => () => {
     if (detectAnimationRef.current !== null) {
@@ -163,17 +159,17 @@ export function useBeautyLabRuntime(activeOperation: WarpOperation | null, overl
 
       if (videoElement && canvasElement) {
         rendererRef.current?.stop();
-        const renderer = webglRendererEnabledRef.current
+        const renderer = rendererModeRef.current === 'webgl'
           ? createWebglRenderer({
-        video: videoElement,
-        canvas: canvasElement,
-        getActiveOperation: () => activeOperationRef.current,
-        getFaceGeometry: () => faceGeometryRef.current,
-      })
+            video: videoElement,
+            canvas: canvasElement,
+            getActiveOperation: () => activeOperationRef.current,
+            getFaceGeometry: () => faceGeometryRef.current,
+          })
           : createCanvasRenderer({
             video: videoElement,
             canvas: canvasElement,
-            getCpuWarpPreviewEnabled: () => cpuWarpPreviewEnabledRef.current,
+            getCpuWarpPreviewEnabled: () => rendererModeRef.current === 'cpu_warp_debug',
             getActiveOperation: () => activeOperationRef.current,
             getFaceGeometry: () => faceGeometryRef.current,
           });
