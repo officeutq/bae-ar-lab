@@ -11,6 +11,7 @@ import { ComparePanel, type CompareCapture } from '@ui/panels/ComparePanel';
 import { JsonOutputPanel } from '@ui/panels/JsonOutputPanel';
 import { ProcessedPreviewPanel } from '@ui/panels/ProcessedPreviewPanel';
 import { SourcePreviewPanel } from '@ui/panels/SourcePreviewPanel';
+import { TimelinePanel } from '@ui/panels/TimelinePanel';
 import { WarpMathDebugPanel } from '@ui/panels/WarpMathDebugPanel';
 import { useBeautyLabRuntime } from './hooks/useBeautyLabRuntime';
 import type { RendererMode } from '@engine/render/types';
@@ -93,7 +94,8 @@ export function App() {
     return { preset: nextPreset, beautyIntensity: nextIntensity };
   };
 
-  const animated = applyAnimatedValues(activePreset, beautyIntensity, timelineRef.getSnapshot().values);
+  const timelineSnapshot = timelineRef.getSnapshot();
+  const animated = applyAnimatedValues(activePreset, beautyIntensity, timelineSnapshot.values);
   const runtimePreset = useMemo(() => blendPresetByIntensity(animated.preset, animated.beautyIntensity), [animated.preset, animated.beautyIntensity]);
   const pipelineState = useMemo(() => createInitialPipelineState(runtimePreset), [runtimePreset]);
   const [showLandmarks, setShowLandmarks] = useState(true);
@@ -415,6 +417,7 @@ export function App() {
             keyframes: track.keyframes.map((keyframe, kIndex) => kIndex === keyframeIndex ? { ...keyframe, value } : keyframe),
           } : track),
         }))} onPlayAnimation={() => timelineRef.play()} onPauseAnimation={() => timelineRef.pause()} onStopAnimation={() => timelineRef.stop()} onTimelineTimeChange={(value) => timelineRef.setTime(value)} setAnimationLoop={setAnimationLoop} onCaptureCompare={onCaptureCompare} presetNameInput={presetNameInput} setPresetNameInput={setPresetNameInput} presets={presets} activeStoredPresetId={activeStoredPresetId} onSavePreset={onSavePreset} onCreatePreset={onCreatePreset} onDeletePreset={onDeletePreset} onRenamePreset={onRenamePreset} onLoadPreset={onLoadPreset} selectedSamplePresetId={selectedSamplePresetId} onSelectSamplePreset={onSelectSamplePreset} onExportPreset={onExportPreset} onImportPresetText={onImportPresetText} presetMessage={presetMessage} pipelineStatus={pipelineState.status} onStartCamera={runtime.actions.startCamera} onStopCamera={runtime.actions.stopCamera} cameraState={runtime.state.cameraState} showLandmarks={showLandmarks} setShowLandmarks={setShowLandmarks} showCenters={showCenters} setShowCenters={setShowCenters} showWarpInfluence={showWarpInfluence} setShowWarpInfluence={setShowWarpInfluence} showWarpCenter={showWarpCenter} setShowWarpCenter={setShowWarpCenter} showFalloffRings={showFalloffRings} setShowFalloffRings={setShowFalloffRings} rendererMode={rendererMode} setRendererMode={setRendererMode} activeOperationIndex={activeOperationIndex} setActiveOperationIndex={setActiveOperationIndex} addOperation={addOperation} removeOperation={removeOperation} updateOperation={updateOperation} updateAxis={updateAxis} updateFalloffType={updateFalloffType} updateDirection={updateDirection} resolvedActiveOperation={resolvedActiveOperation} skinSmoothing={skinSmoothing} updateSkinSmoothing={updateSkinSmoothing} skinTone={skinTone} updateSkinTone={updateSkinTone} adaptiveQualityEnabled={runtime.quality.adaptiveQuality.enabled} onAdaptiveQualityEnabledChange={runtime.quality.setAdaptiveEnabled} selectedQuality={runtime.quality.adaptiveQuality.selectedQuality} currentQuality={runtime.quality.runtimeQuality} onSelectedQualityChange={runtime.quality.setSelectedQuality} capabilities={capabilities} />
+        <TimelinePanel clip={loadedAnimationClip} currentTime={animationTime} currentValues={timelineSnapshot.values} />
         <ComparePanel capture={compareCapture} />
         <WarpMathDebugPanel debugUv={debugUv} debugCenter={debugCenter} debugWarpResult={{ warpedUv: debugWarpResult, influence: 0 }} debugGridPoints={debugGridPoints} onMouseMove={(event: MouseEvent<HTMLDivElement>) => { const rect = event.currentTarget.getBoundingClientRect(); setDebugUv({ x: clamp01((event.clientX - rect.left) / Math.max(1, rect.width)), y: clamp01((event.clientY - rect.top) / Math.max(1, rect.height)) }); }} />
         <JsonOutputPanel preset={pipelineState.activePreset} geometry={runtime.state.faceGeometry} />
