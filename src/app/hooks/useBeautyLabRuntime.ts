@@ -69,7 +69,8 @@ export function useBeautyLabRuntime(
   const faceLandmarkerController = useMemo(() => createFaceLandmarker(), []);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const overlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const processedCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const canvas2dRef = useRef<HTMLCanvasElement | null>(null);
+  const webglCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const rendererRef = useRef<PreviewRenderer | null>(null);
   const overlayRef = useRef<LandmarkOverlay | null>(null);
   const detectAnimationRef = useRef<number | null>(null);
@@ -139,7 +140,7 @@ export function useBeautyLabRuntime(
     }
 
     const videoElement = videoRef.current;
-    const canvasElement = processedCanvasRef.current;
+    const canvasElement = rendererMode === 'webgl' ? webglCanvasRef.current : canvas2dRef.current;
 
     if (!videoElement || !canvasElement) {
       return;
@@ -291,7 +292,7 @@ export function useBeautyLabRuntime(
       }
 
       const videoElement = videoRef.current;
-      const canvasElement = processedCanvasRef.current;
+      const canvasElement = rendererModeRef.current === 'webgl' ? webglCanvasRef.current : canvas2dRef.current;
       const overlayCanvasElement = overlayCanvasRef.current;
 
       if (videoElement && canvasElement) {
@@ -378,7 +379,7 @@ export function useBeautyLabRuntime(
   };
 
   return {
-    refs: { videoRef, overlayCanvasRef, processedCanvasRef },
+    refs: { videoRef, overlayCanvasRef, canvas2dRef, webglCanvasRef },
     state: { cameraState, cameraErrorMessage, rendererState, landmarkerState, landmarkFrame, faceGeometry },
     pose: { facePose, poseAttenuation },
     profiler: profilerSnapshot,
