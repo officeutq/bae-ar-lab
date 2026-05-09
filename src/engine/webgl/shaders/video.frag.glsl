@@ -8,6 +8,9 @@ uniform float uWarpRadii[MAX_OPERATIONS];
 uniform float uWarpStrengths[MAX_OPERATIONS];
 uniform vec2 uWarpAxes[MAX_OPERATIONS];
 uniform vec2 uWarpDirections[MAX_OPERATIONS];
+uniform vec2 uLineStarts[MAX_OPERATIONS];
+uniform vec2 uLineEnds[MAX_OPERATIONS];
+uniform float uLineWidths[MAX_OPERATIONS];
 uniform int uOperationTypes[MAX_OPERATIONS];
 uniform int uFalloffTypes[MAX_OPERATIONS];
 uniform int uEnabledOps[MAX_OPERATIONS];
@@ -29,15 +32,30 @@ void main() {
   for (int i = 0; i < MAX_OPERATIONS; i++) {
     if (uEnabledOps[i] == 0) continue;
 
-    vec2 axis = max(uWarpAxes[i], vec2(0.0001));
-    vec2 delta = warpedUv - uWarpCenters[i];
-    vec2 scaled = vec2(delta.x / axis.x, delta.y / axis.y);
-    float distance = length(scaled);
+    float normalizedDistance = 2.0;
+    vec2 delta = vec2(0.0);
+    if (uOperationTypes[i] == 2) {
+      vec2 a = uLineStarts[i];
+      vec2 b = uLineEnds[i];
+      vec2 ab = b - a;
+      float denom = max(dot(ab, ab), 0.000001);
+      float t = clamp(dot(warpedUv - a, ab) / denom, 0.0, 1.0);
+      vec2 p = a + ab * t;
+      float lineDistance = length(warpedUv - p);
+      normalizedDistance = lineDistance / max(0.0001, uLineWidths[i]);
+    } else {
+      vec2 axis = max(uWarpAxes[i], vec2(0.0001));
+      delta = warpedUv - uWarpCenters[i];
+      vec2 scaled = vec2(delta.x / axis.x, delta.y / axis.y);
+      float distance = length(scaled);
+      if (uWarpRadii[i] > 0.0) {
+        normalizedDistance = distance / uWarpRadii[i];
+      }
+    }
 
-    if (uWarpRadii[i] > 0.0 && distance <= uWarpRadii[i]) {
-      float normalizedDistance = distance / uWarpRadii[i];
+    if (normalizedDistance <= 1.0) {
       float influence = getFalloff(normalizedDistance, uFalloffTypes[i]);
-      if (uOperationTypes[i] == 1) {
+      if (uOperationTypes[i] == 1 || uOperationTypes[i] == 2) {
         warpedUv = clamp(warpedUv + uWarpDirections[i] * (uWarpStrengths[i] * influence), 0.0, 1.0);
       } else {
         vec2 displacement = delta * (uWarpStrengths[i] * influence);
