@@ -13,6 +13,7 @@ import {
 import { createWebglRenderer, type WebglRenderer } from '@engine/webgl/createWebglRenderer';
 import type { WarpOperation } from '@app-types/preset';
 import type { RendererMode } from '@engine/render/types';
+import { resolveOperationBindings } from '@engine/algorithms/resolveOperationBindings';
 
 type CameraViewState = 'idle' | 'starting' | 'running' | 'error';
 
@@ -52,6 +53,8 @@ export function useBeautyLabRuntime(activeOperation: WarpOperation | null, opera
   const faceGeometryRef = useRef<FaceGeometry | null>(null);
   const rendererModeRef = useRef<RendererMode>(rendererMode);
   const operationsRef = useRef<WarpOperation[]>(operations);
+  const resolvedOperationsRef = useRef<WarpOperation[]>(operations);
+  const resolvedActiveOperationRef = useRef<WarpOperation | null>(activeOperation);
 
   const [cameraState, setCameraState] = useState<CameraViewState>('idle');
   const [cameraErrorMessage, setCameraErrorMessage] = useState<string | null>(null);
@@ -70,6 +73,9 @@ export function useBeautyLabRuntime(activeOperation: WarpOperation | null, opera
 
   useEffect(() => {
     operationsRef.current = operations;
+    resolvedOperationsRef.current = operations;
+    const activeIndex = operations.findIndex((op) => op.id === activeOperationRef.current?.id);
+    resolvedActiveOperationRef.current = activeIndex >= 0 ? operations[activeIndex] : null;
   }, [operations]);
 
   useEffect(() => {
@@ -93,16 +99,16 @@ export function useBeautyLabRuntime(activeOperation: WarpOperation | null, opera
       ? createWebglRenderer({
         video: videoElement,
         canvas: canvasElement,
-        getOperations: () => operationsRef.current,
+        getOperations: () => resolvedOperationsRef.current,
         getFaceGeometry: () => faceGeometryRef.current,
       })
       : createCanvasRenderer({
         video: videoElement,
         canvas: canvasElement,
         getCpuWarpPreviewEnabled: () => rendererModeRef.current === 'cpu_warp_debug',
-        getActiveOperation: () => activeOperationRef.current,
+        getActiveOperation: () => resolvedActiveOperationRef.current,
         getFaceGeometry: () => faceGeometryRef.current,
-        getOperations: () => operationsRef.current,
+        getOperations: () => resolvedOperationsRef.current,
       });
     renderer.start();
     rendererRef.current = renderer;
@@ -133,7 +139,11 @@ export function useBeautyLabRuntime(activeOperation: WarpOperation | null, opera
       const nextGeometry = result.detected ? computeFaceGeometry({ landmarks: result.landmarks }) : null;
       setFaceGeometry(nextGeometry);
       faceGeometryRef.current = nextGeometry;
-      overlayRef.current?.render(result.landmarks, nextGeometry, activeOperationRef.current);
+      const resolvedOperations = resolveOperationBindings(operationsRef.current, nextGeometry);
+      resolvedOperationsRef.current = resolvedOperations;
+      const activeIndex = operationsRef.current.findIndex((op) => op.id === activeOperationRef.current?.id);
+      resolvedActiveOperationRef.current = activeIndex >= 0 ? resolvedOperations[activeIndex] : null;
+      overlayRef.current?.render(result.landmarks, nextGeometry, resolvedActiveOperationRef.current);
 
       detectAnimationRef.current = requestAnimationFrame(tick);
     };
@@ -169,16 +179,16 @@ export function useBeautyLabRuntime(activeOperation: WarpOperation | null, opera
           ? createWebglRenderer({
             video: videoElement,
             canvas: canvasElement,
-            getOperations: () => operationsRef.current,
+            getOperations: () => resolvedOperationsRef.current,
             getFaceGeometry: () => faceGeometryRef.current,
           })
           : createCanvasRenderer({
             video: videoElement,
             canvas: canvasElement,
             getCpuWarpPreviewEnabled: () => rendererModeRef.current === 'cpu_warp_debug',
-            getActiveOperation: () => activeOperationRef.current,
+            getActiveOperation: () => resolvedActiveOperationRef.current,
             getFaceGeometry: () => faceGeometryRef.current,
-            getOperations: () => operationsRef.current,
+            getOperations: () => resolvedOperationsRef.current,
           });
         renderer.start();
         rendererRef.current = renderer;
@@ -229,5 +239,9 @@ export function useBeautyLabRuntime(activeOperation: WarpOperation | null, opera
     refs: { videoRef, overlayCanvasRef, processedCanvasRef },
     state: { cameraState, cameraErrorMessage, rendererState, landmarkerState, landmarkFrame, faceGeometry },
     actions: { startCamera, stopCamera },
+    resolved: {
+      getOperations: () => resolvedOperationsRef.current,
+      getActiveOperation: () => resolvedActiveOperationRef.current,
+    },
   };
 }
