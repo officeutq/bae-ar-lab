@@ -44,6 +44,30 @@ function getFalloffAlpha(type: WarpOperation['falloff']['type'], distance01: num
   return 1 - (3 * t * t - 2 * t * t * t);
 }
 
+
+function drawDirectionArrow(context: CanvasRenderingContext2D, x: number, y: number, dx: number, dy: number, length: number) {
+  const mag = Math.hypot(dx, dy);
+  if (mag < 0.0001) return;
+  const nx = dx / mag;
+  const ny = dy / mag;
+  const tipX = x + nx * length;
+  const tipY = y + ny * length;
+  context.beginPath();
+  context.moveTo(x, y);
+  context.lineTo(tipX, tipY);
+  context.strokeStyle = 'rgba(120, 255, 180, 0.9)';
+  context.lineWidth = 2;
+  context.stroke();
+  const head = Math.max(4, length * 0.2);
+  context.beginPath();
+  context.moveTo(tipX, tipY);
+  context.lineTo(tipX - nx * head - ny * head * 0.6, tipY - ny * head + nx * head * 0.6);
+  context.lineTo(tipX - nx * head + ny * head * 0.6, tipY - ny * head - nx * head * 0.6);
+  context.closePath();
+  context.fillStyle = 'rgba(120, 255, 180, 0.9)';
+  context.fill();
+}
+
 export function createWarpVisualization(context: CanvasRenderingContext2D) {
   const draw = (
     canvas: HTMLCanvasElement,
@@ -87,6 +111,10 @@ export function createWarpVisualization(context: CanvasRenderingContext2D) {
     context.strokeStyle = 'rgba(255, 180, 120, 0.65)';
     context.lineWidth = 1;
     context.stroke();
+
+    if (operation.type === 'directional_warp') {
+      drawDirectionArrow(context, centerX, centerY, operation.direction.x, operation.direction.y, Math.min(radiusX, radiusY) * 0.9);
+    }
 
     if (toggles.showWarpCenter) {
       context.beginPath();

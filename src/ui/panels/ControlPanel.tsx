@@ -1,4 +1,4 @@
-import type { WarpFalloffType, WarpPreset, WarpTarget } from '@app-types/preset';
+import type { WarpFalloffType, WarpOperationType, WarpPreset, WarpTarget } from '@app-types/preset';
 import type { StoredPreset } from '@engine/presets/types';
 import type { RendererMode } from '@engine/render/types';
 import { Panel } from '@ui/Panel';
@@ -29,6 +29,7 @@ type Props = {
   updateOperation: <K extends keyof WarpPreset['operations'][number]>(key: K, value: WarpPreset['operations'][number][K]) => void;
   updateAxis: (axisKey: 'x' | 'y', value: number) => void;
   updateFalloffType: (type: WarpFalloffType) => void;
+  updateDirection: (directionKey: 'x' | 'y', value: number) => void;
   presetNameInput: string;
   setPresetNameInput: (name: string) => void;
   presets: StoredPreset[];
@@ -107,6 +108,11 @@ export function ControlPanel(props: Props) {
           <input type="text" value={op?.id ?? ''} onChange={(e) => props.updateOperation('id', e.target.value)} />
         </label>
         <label><input type="checkbox" checked={op?.enabled ?? false} onChange={(e) => props.updateOperation('enabled', e.target.checked)} />Operation enabled</label>
+        <label>Operation type
+          <select value={op?.type ?? 'radial_warp'} onChange={(e) => props.updateOperation('type', e.target.value as WarpOperationType)}>
+            <option value="radial_warp">radial_warp</option><option value="directional_warp">directional_warp</option>
+          </select>
+        </label>
         <label>Target
           <select value={op?.target ?? 'left_eye'} onChange={(e) => props.updateOperation('target', e.target.value as WarpTarget)}>
             <option value="left_eye">left_eye</option><option value="right_eye">right_eye</option><option value="face_center">face_center</option><option value="mouth">mouth</option><option value="nose">nose</option>
@@ -129,6 +135,12 @@ export function ControlPanel(props: Props) {
         </label>
         <label>Axis Y: {(op?.axis.y ?? 0).toFixed(2)}
           <input type="range" min={0} max={2} step={0.05} value={op?.axis.y ?? 1} onChange={(e) => props.updateAxis('y', Number(e.target.value))} />
+        </label>
+        <label>Direction X: {(op?.direction.x ?? 0).toFixed(2)}
+          <input type="range" min={-2} max={2} step={0.05} value={op?.direction.x ?? 0} onChange={(e) => props.updateDirection('x', Number(e.target.value))} />
+        </label>
+        <label>Direction Y: {(op?.direction.y ?? 0).toFixed(2)}
+          <input type="range" min={-2} max={2} step={0.05} value={op?.direction.y ?? 0} onChange={(e) => props.updateDirection('y', Number(e.target.value))} />
         </label>
       </div>
       <ul>

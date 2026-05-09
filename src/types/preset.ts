@@ -1,10 +1,15 @@
-export type WarpOperationType = 'radial_warp';
+export type WarpOperationType = 'radial_warp' | 'directional_warp';
 
 export type WarpTarget = 'left_eye' | 'right_eye' | 'face_center' | 'mouth' | 'nose';
 
 export type WarpFalloffType = 'linear' | 'smoothstep' | 'gaussian';
 
 export type WarpAxis = {
+  x: number;
+  y: number;
+};
+
+export type WarpDirection = {
   x: number;
   y: number;
 };
@@ -22,6 +27,7 @@ export type WarpOperation = {
   radius: number;
   falloff: WarpFalloff;
   axis: WarpAxis;
+  direction: WarpDirection;
 };
 
 export type WarpPreset = {
