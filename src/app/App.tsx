@@ -15,8 +15,15 @@ import { Panel } from '@ui/Panel';
 import { FalloffGraph } from '@ui/components/FalloffGraph';
 import { computeFaceGeometry } from '@engine/geometry/computeFaceGeometry';
 import type { FaceGeometry } from '@engine/geometry/types';
+import { applyRadialWarp } from '@engine/math/warp/applyRadialWarp';
 
 type CameraViewState = 'idle' | 'starting' | 'running' | 'error';
+
+const DEBUG_GRID_SIZE = 8;
+
+function clamp01(value: number) {
+  return Math.min(1, Math.max(0, value));
+}
 
 function getCameraErrorMessage(error: CameraError) {
   switch (error.code) {
@@ -55,6 +62,7 @@ export function App() {
   const [showWarpCenter, setShowWarpCenter] = useState(true);
   const [showFalloffRings, setShowFalloffRings] = useState(true);
   const [faceGeometry, setFaceGeometry] = useState<FaceGeometry | null>(null);
+  const [debugUv, setDebugUv] = useState({ x: 0.5, y: 0.5 });
 
   useEffect(() => {
     return () => {
@@ -213,6 +221,31 @@ export function App() {
       setLandmarkerState('error');
     }
   };
+
+  const debugOperation = activePreset.operations[0];
+  const debugCenter = { x: 0.5, y: 0.5 };
+  const debugWarpResult = applyRadialWarp({
+    uv: debugUv,
+    center: debugCenter,
+    radius: debugOperation?.radius ?? 1,
+    strength: debugOperation?.strength ?? 0,
+    axis: debugOperation?.axis ?? { x: 1, y: 1 },
+    falloff: debugOperation?.falloff.type ?? 'smoothstep',
+  });
+  const debugGridPoints = Array.from({ length: DEBUG_GRID_SIZE * DEBUG_GRID_SIZE }, (_, index) => {
+    const gx = index % DEBUG_GRID_SIZE;
+    const gy = Math.floor(index / DEBUG_GRID_SIZE);
+    const uv = { x: gx / (DEBUG_GRID_SIZE - 1), y: gy / (DEBUG_GRID_SIZE - 1) };
+    const warped = applyRadialWarp({
+      uv,
+      center: debugCenter,
+      radius: debugOperation?.radius ?? 1,
+      strength: debugOperation?.strength ?? 0,
+      axis: debugOperation?.axis ?? { x: 1, y: 1 },
+      falloff: debugOperation?.falloff.type ?? 'smoothstep',
+    });
+    return { uv, warpedUv: warped.warpedUv };
+  });
 
   const handleStopCamera = () => {
     if (detectAnimationRef.current !== null) {
@@ -414,6 +447,51 @@ export function App() {
             <li>Preset version: {pipelineState.activePreset.version}</li>
             <li>Operation id: {pipelineState.activePreset.operations[0]?.id}</li>
             <li>Operation type: {pipelineState.activePreset.operations[0]?.type}</li>
+          </ul>
+        </Panel>
+
+
+        <Panel title="Warp Math Debug">
+          <div
+            className="warp-debug-view"
+            onMouseMove={(event) => {
+              const rect = event.currentTarget.getBoundingClientRect();
+              const x = clamp01((event.clientX - rect.left) / Math.max(1, rect.width));
+              const y = clamp01((event.clientY - rect.top) / Math.max(1, rect.height));
+              setDebugUv({ x, y });
+            }}
+          >
+            <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+              {debugGridPoints.map((point, index) => (
+                <g key={index}>
+                  <line
+                    x1={point.uv.x * 100}
+                    y1={point.uv.y * 100}
+                    x2={point.warpedUv.x * 100}
+                    y2={point.warpedUv.y * 100}
+                    stroke="rgba(255,180,120,0.25)"
+                    strokeWidth="0.35"
+                  />
+                  <circle cx={point.warpedUv.x * 100} cy={point.warpedUv.y * 100} r="0.6" fill="#59c1ff" />
+                </g>
+              ))}
+              <circle cx={debugCenter.x * 100} cy={debugCenter.y * 100} r="1.2" fill="#ffd166" />
+              <circle cx={debugUv.x * 100} cy={debugUv.y * 100} r="1.2" fill="#90ee90" />
+              <line
+                x1={debugUv.x * 100}
+                y1={debugUv.y * 100}
+                x2={debugWarpResult.warpedUv.x * 100}
+                y2={debugWarpResult.warpedUv.y * 100}
+                stroke="#ff7b7b"
+                strokeWidth="0.8"
+              />
+              <circle cx={debugWarpResult.warpedUv.x * 100} cy={debugWarpResult.warpedUv.y * 100} r="1.4" fill="#ff7b7b" />
+            </svg>
+          </div>
+          <ul>
+            <li>Original point: ({debugUv.x.toFixed(3)}, {debugUv.y.toFixed(3)})</li>
+            <li>Warped point: ({debugWarpResult.warpedUv.x.toFixed(3)}, {debugWarpResult.warpedUv.y.toFixed(3)})</li>
+            <li>Influence: {debugWarpResult.influence.toFixed(3)}</li>
           </ul>
         </Panel>
 
