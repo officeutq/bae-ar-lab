@@ -23,6 +23,18 @@ export type FaceGeometry = {
   jawPolygon: Point2D[];
 };
 
+export type FacePose = {
+  yaw: number;
+  pitch: number;
+  roll: number;
+};
+
+export type PoseAttenuation = {
+  factor: number;
+  yawFactor: number;
+  pitchFactor: number;
+};
+
 export type ComputeFaceGeometryInput = {
   landmarks: FaceLandmarkPoint[];
 };

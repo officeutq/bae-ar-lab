@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createCameraController, type CameraError } from '@engine/camera/createCameraController';
 import { computeFaceGeometry } from '@engine/geometry/computeFaceGeometry';
+import { computeFacePose, computePoseAttenuation } from '@engine/geometry/computeFacePose';
 import type { FaceGeometry } from '@engine/geometry/types';
+import type { FacePose, PoseAttenuation } from '@engine/geometry/types';
 import { createFaceLandmarker } from '@engine/mediapipe/createFaceLandmarker';
 import type { FaceLandmarksFrame, FaceLandmarkerRuntimeState } from '@engine/mediapipe/types';
 import { createLandmarkOverlay, type LandmarkOverlay } from '@engine/overlay/createLandmarkOverlay';
@@ -94,6 +96,8 @@ export function useBeautyLabRuntime(
   const [landmarkFrame, setLandmarkFrame] = useState<FaceLandmarksFrame | null>(null);
   const [faceGeometry, setFaceGeometry] = useState<FaceGeometry | null>(null);
   const [profilerSnapshot, setProfilerSnapshot] = useState<ProfilerSnapshot>(profilerRef.current.getSnapshot());
+  const [facePose, setFacePose] = useState<FacePose | null>(null);
+  const [poseAttenuation, setPoseAttenuation] = useState<PoseAttenuation>({ factor: 1, yawFactor: 1, pitchFactor: 1 });
   const [adaptiveQuality, setAdaptiveQuality] = useState<AdaptiveQualityState>(adaptiveQualityRef.current);
   const [faceStability, setFaceStability] = useState<FaceStabilitySnapshot>(faceStabilityRef.current.getSnapshot());
 
@@ -205,6 +209,11 @@ export function useBeautyLabRuntime(
       const stability = faceStabilityRef.current.update(runtimeFrame.detected);
       setFaceStability(stability);
       const detectedGeometry = runtimeFrame.detected ? computeFaceGeometry({ landmarks: runtimeFrame.landmarks }) : null;
+      const detectedPose = runtimeFrame.detected ? computeFacePose(runtimeFrame.landmarks) : null;
+      const runtimePose = detectedPose ?? (stability.fade > 0 ? facePose : null);
+      const runtimeAttenuation = computePoseAttenuation(runtimePose);
+      setFacePose(runtimePose);
+      setPoseAttenuation(runtimeAttenuation);
       if (detectedGeometry) {
         lastStableGeometryRef.current = detectedGeometry;
       }
@@ -213,7 +222,7 @@ export function useBeautyLabRuntime(
       faceGeometryRef.current = geometryForRuntime;
       const boundOperations = resolveOperationBindings(operationsRef.current, geometryForRuntime).map((operation) => ({
         ...operation,
-        strength: operation.strength * stability.fade,
+        strength: operation.strength * stability.fade * runtimeAttenuation.factor,
       }));
       const resolvedOperations = temporalSmoothing.enabled
         ? smoothOperations(boundOperations, operationTemporalFilterRef.current, temporalSmoothing.alpha)
@@ -248,6 +257,8 @@ export function useBeautyLabRuntime(
     operationTemporalFilterRef.current.reset();
     setLandmarkFrame(null);
     setFaceGeometry(null);
+    setFacePose(null);
+    setPoseAttenuation({ factor: 1, yawFactor: 1, pitchFactor: 1 });
     faceGeometryRef.current = null;
     lastStableGeometryRef.current = null;
     faceStabilityRef.current.reset();
@@ -340,6 +351,8 @@ export function useBeautyLabRuntime(
     operationTemporalFilterRef.current.reset();
     setLandmarkFrame(null);
     setFaceGeometry(null);
+    setFacePose(null);
+    setPoseAttenuation({ factor: 1, yawFactor: 1, pitchFactor: 1 });
     faceGeometryRef.current = null;
     lastStableGeometryRef.current = null;
     faceStabilityRef.current.reset();
@@ -352,6 +365,7 @@ export function useBeautyLabRuntime(
   return {
     refs: { videoRef, overlayCanvasRef, processedCanvasRef },
     state: { cameraState, cameraErrorMessage, rendererState, landmarkerState, landmarkFrame, faceGeometry },
+    pose: { facePose, poseAttenuation },
     profiler: profilerSnapshot,
     faceStability,
     quality: {
