@@ -16,6 +16,7 @@ export function ComparePanel({ capture }: Props) {
     return (
       <Panel title="Compare Panel">
         <p className="placeholder">Capture Compare を押すと before/after が表示されます。</p>
+        <p className="capture-note">比較画像はプレビュー表示ではなく raw capture 基準です。</p>
       </Panel>
     );
   }
@@ -24,6 +25,7 @@ export function ComparePanel({ capture }: Props) {
     <Panel title="Compare Panel">
       <p className="camera-status">Preset: {capture.presetName || 'Untitled preset'}</p>
       <p className="camera-status">Captured at: {capture.capturedAt}</p>
+      <p className="capture-note">比較画像はプレビュー表示ではなく raw capture 基準です。</p>
       <div className="compare-grid">
         <div>
           <h4 className="compare-title">Before</h4>

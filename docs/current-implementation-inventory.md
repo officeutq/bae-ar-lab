@@ -90,7 +90,9 @@
 - compare panel: 実装済み（キャプチャ差分比較）。
 - snapshot export: source(video) / processed(canvas) をPNG出力可能。
 - mirror影響: 出力は raw video/canvas基準で、CSSミラーの見た目とは一致しない可能性あり。
+- mirror仕様ドキュメント: `docs/mirror-preview-capture-spec.md` を追加し、preview=mirror / snapshot=raw / compare=raw / preset export非依存を明文化。
 - preview/capture責務分離: captureロジックは `createSnapshotExporter` に分離済み。
+- Butterflyve publish mirror方針: BAE AR Lab では未実装。cast previewはmirror、viewer/publish streamはサービスポリシーに基づき今後決定。
 
 ## 8. Performance / Profiler
 - FPS表示: 実装済み（profiler + runtime debug panel）。

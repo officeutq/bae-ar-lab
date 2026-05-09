@@ -19,6 +19,7 @@ export function ProcessedPreviewPanel({ canvas2dRef, webglCanvasRef, rendererSta
       <p className="camera-status">描画方式: {getRendererModeLabel(rendererMode)}</p>
       <p className="camera-status">描画状態: {rendererState}</p>
       <button type="button" onClick={onCaptureProcessed}>加工映像を撮影</button>
+      <p className="capture-note">保存画像はプレビュー表示ではなく実データ（raw）基準です。</p>
     </Panel>
   );
 }

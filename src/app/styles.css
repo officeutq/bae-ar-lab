@@ -109,6 +109,12 @@ ul {
   color: #ff9aa8;
 }
 
+.capture-note {
+  margin: 8px 0 0;
+  color: #b8c0d6;
+  font-size: 0.85rem;
+}
+
 .camera-controls {
   display: flex;
   gap: 8px;

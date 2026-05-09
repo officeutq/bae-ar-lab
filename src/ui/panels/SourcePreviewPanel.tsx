@@ -23,6 +23,7 @@ export function SourcePreviewPanel({ videoRef, overlayCanvasRef, cameraState, la
       <p className="camera-status">ランドマーカー状態: {landmarkerState}</p>
       {cameraErrorMessage ? <p className="camera-error">{cameraErrorMessage}</p> : null}
       <button type="button" onClick={onCaptureSource}>元映像を撮影</button>
+      <p className="capture-note">保存画像はプレビュー表示ではなく実データ（raw）基準です。</p>
     </Panel>
   );
 }

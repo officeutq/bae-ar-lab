@@ -65,6 +65,8 @@ export function createSnapshotExporter(nowProvider: () => Date = () => new Date(
       if (canvas.width <= 0 || canvas.height <= 0) {
         return { ok: false, reason: 'Canvas has no drawable frame.' };
       }
+      // Snapshot/export intentionally uses raw video/canvas pixels.
+      // CSS preview mirroring (preview-mirror) is display-only and is not applied here.
       const filename = buildFilename(kind, nowProvider());
       const dataUrl = canvas.toDataURL(MIME_TYPE);
       const byteString = atob(dataUrl.split(',')[1] ?? '');
