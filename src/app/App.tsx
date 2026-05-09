@@ -11,6 +11,8 @@ import {
   type CanvasRendererState,
 } from '@engine/render/createCanvasRenderer';
 import { Panel } from '@ui/Panel';
+import { computeFaceGeometry } from '@engine/geometry/computeFaceGeometry';
+import type { FaceGeometry } from '@engine/geometry/types';
 
 type CameraViewState = 'idle' | 'starting' | 'running' | 'error';
 
@@ -45,6 +47,7 @@ export function App() {
   const [landmarkFrame, setLandmarkFrame] = useState<FaceLandmarksFrame | null>(null);
   const [showLandmarks, setShowLandmarks] = useState(true);
   const [showCenters, setShowCenters] = useState(true);
+  const [faceGeometry, setFaceGeometry] = useState<FaceGeometry | null>(null);
 
   useEffect(() => {
     return () => {
@@ -74,6 +77,7 @@ export function App() {
       const result = faceLandmarkerController.detectForVideoFrame(videoElement, performance.now());
       setLandmarkerState(faceLandmarkerController.getState());
       setLandmarkFrame(result);
+      setFaceGeometry(result.detected ? computeFaceGeometry({ landmarks: result.landmarks }) : null);
       overlayRef.current?.render(result.landmarks);
 
       detectAnimationRef.current = requestAnimationFrame(tick);
@@ -86,6 +90,7 @@ export function App() {
     setCameraState('starting');
     setCameraErrorMessage(null);
     setLandmarkFrame(null);
+    setFaceGeometry(null);
 
     try {
       setLandmarkerState('loading');
@@ -156,6 +161,7 @@ export function App() {
     faceLandmarkerController.dispose();
     setLandmarkerState(faceLandmarkerController.getState());
     setLandmarkFrame(null);
+    setFaceGeometry(null);
     setCameraState('idle');
     setCameraErrorMessage(null);
   };
@@ -226,7 +232,7 @@ export function App() {
         </Panel>
 
         <Panel title="JSON Output">
-          <pre>{JSON.stringify(pipelineState.activePreset, null, 2)}</pre>
+          <pre>{JSON.stringify({ preset: pipelineState.activePreset, geometry: faceGeometry }, null, 2)}</pre>
         </Panel>
       </div>
     </main>
