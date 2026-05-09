@@ -23,11 +23,12 @@ export function App() {
   const [showWarpCenter, setShowWarpCenter] = useState(true);
   const [showFalloffRings, setShowFalloffRings] = useState(true);
   const [enableCpuWarpPreview, setEnableCpuWarpPreview] = useState(false);
+  const [enableWebglRenderer, setEnableWebglRenderer] = useState(false);
   const [debugUv, setDebugUv] = useState({ x: 0.5, y: 0.5 });
 
   const runtime = useBeautyLabRuntime(activePreset.operations[0] ?? null, {
     showLandmarks, showCenters, showWarpInfluence, showWarpCenter, showFalloffRings,
-  }, enableCpuWarpPreview);
+  }, enableCpuWarpPreview, enableWebglRenderer);
 
   const updateOperation = <K extends keyof (typeof activePreset.operations)[number]>(key: K, value: (typeof activePreset.operations)[number][K]) => {
     setActivePreset((currentPreset) => ({ ...currentPreset, operations: currentPreset.operations.map((operation, index) => index === 0 ? { ...operation, [key]: value } : operation) }));
@@ -55,7 +56,7 @@ export function App() {
         <SourcePreviewPanel videoRef={runtime.refs.videoRef} overlayCanvasRef={runtime.refs.overlayCanvasRef} cameraState={runtime.state.cameraState} landmarkerState={runtime.state.landmarkerState} cameraErrorMessage={runtime.state.cameraErrorMessage} />
         <ProcessedPreviewPanel processedCanvasRef={runtime.refs.processedCanvasRef} rendererState={runtime.state.rendererState} />
         <Panel title="Face Detection Status"><ul><li>Face: {runtime.state.landmarkFrame?.detected ? 'detected' : 'not detected'}</li><li>Landmark count: {runtime.state.landmarkFrame?.landmarkCount ?? 0}</li><li>Face count: {runtime.state.landmarkFrame?.faceCount ?? 0}</li><li>Frame: {runtime.state.landmarkFrame?.frameCount ?? 0}</li><li>Timestamp (ms): {Math.round(runtime.state.landmarkFrame?.timestampMs ?? 0)}</li></ul></Panel>
-        <ControlPanel activePreset={activePreset} pipelineStatus={pipelineState.status} onStartCamera={runtime.actions.startCamera} onStopCamera={runtime.actions.stopCamera} cameraState={runtime.state.cameraState} showLandmarks={showLandmarks} setShowLandmarks={setShowLandmarks} showCenters={showCenters} setShowCenters={setShowCenters} showWarpInfluence={showWarpInfluence} setShowWarpInfluence={setShowWarpInfluence} showWarpCenter={showWarpCenter} setShowWarpCenter={setShowWarpCenter} showFalloffRings={showFalloffRings} setShowFalloffRings={setShowFalloffRings} enableCpuWarpPreview={enableCpuWarpPreview} setEnableCpuWarpPreview={setEnableCpuWarpPreview} updateOperation={updateOperation} updateAxis={updateAxis} updateFalloffType={updateFalloffType} />
+        <ControlPanel activePreset={activePreset} pipelineStatus={pipelineState.status} onStartCamera={runtime.actions.startCamera} onStopCamera={runtime.actions.stopCamera} cameraState={runtime.state.cameraState} showLandmarks={showLandmarks} setShowLandmarks={setShowLandmarks} showCenters={showCenters} setShowCenters={setShowCenters} showWarpInfluence={showWarpInfluence} setShowWarpInfluence={setShowWarpInfluence} showWarpCenter={showWarpCenter} setShowWarpCenter={setShowWarpCenter} showFalloffRings={showFalloffRings} setShowFalloffRings={setShowFalloffRings} enableCpuWarpPreview={enableCpuWarpPreview} setEnableCpuWarpPreview={setEnableCpuWarpPreview} enableWebglRenderer={enableWebglRenderer} setEnableWebglRenderer={setEnableWebglRenderer} updateOperation={updateOperation} updateAxis={updateAxis} updateFalloffType={updateFalloffType} />
         <WarpMathDebugPanel debugUv={debugUv} debugCenter={debugCenter} debugWarpResult={debugWarpResult} debugGridPoints={debugGridPoints} onMouseMove={(event: MouseEvent<HTMLDivElement>) => { const rect = event.currentTarget.getBoundingClientRect(); setDebugUv({ x: clamp01((event.clientX - rect.left) / Math.max(1, rect.width)), y: clamp01((event.clientY - rect.top) / Math.max(1, rect.height)) }); }} />
         <JsonOutputPanel preset={pipelineState.activePreset} geometry={runtime.state.faceGeometry} />
       </div>

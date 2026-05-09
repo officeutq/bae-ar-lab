@@ -10,6 +10,7 @@ import {
   type CanvasRenderer,
   type CanvasRendererState,
 } from '@engine/render/createCanvasRenderer';
+import { createWebglRenderer, type WebglRenderer } from '@engine/webgl/createWebglRenderer';
 import type { WarpOperation } from '@app-types/preset';
 
 type CameraViewState = 'idle' | 'starting' | 'running' | 'error';
@@ -35,18 +36,21 @@ function getCameraErrorMessage(error: CameraError) {
   }
 }
 
-export function useBeautyLabRuntime(activeOperation: WarpOperation | null, overlayToggles: OverlayToggles, enableCpuWarpPreview: boolean) {
+type PreviewRenderer = CanvasRenderer | WebglRenderer;
+
+export function useBeautyLabRuntime(activeOperation: WarpOperation | null, overlayToggles: OverlayToggles, enableCpuWarpPreview: boolean, enableWebglRenderer: boolean) {
   const cameraController = useMemo(() => createCameraController(), []);
   const faceLandmarkerController = useMemo(() => createFaceLandmarker(), []);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const overlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const processedCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const rendererRef = useRef<CanvasRenderer | null>(null);
+  const rendererRef = useRef<PreviewRenderer | null>(null);
   const overlayRef = useRef<LandmarkOverlay | null>(null);
   const detectAnimationRef = useRef<number | null>(null);
   const activeOperationRef = useRef<WarpOperation | null>(activeOperation);
   const faceGeometryRef = useRef<FaceGeometry | null>(null);
   const cpuWarpPreviewEnabledRef = useRef(enableCpuWarpPreview);
+  const webglRendererEnabledRef = useRef(enableWebglRenderer);
 
   const [cameraState, setCameraState] = useState<CameraViewState>('idle');
   const [cameraErrorMessage, setCameraErrorMessage] = useState<string | null>(null);
@@ -64,8 +68,39 @@ export function useBeautyLabRuntime(activeOperation: WarpOperation | null, overl
   }, [enableCpuWarpPreview]);
 
   useEffect(() => {
+    webglRendererEnabledRef.current = enableWebglRenderer;
+  }, [enableWebglRenderer]);
+
+  useEffect(() => {
     overlayRef.current?.updateToggles(overlayToggles);
   }, [overlayToggles]);
+
+  useEffect(() => {
+    if (cameraState !== 'running') {
+      return;
+    }
+
+    const videoElement = videoRef.current;
+    const canvasElement = processedCanvasRef.current;
+
+    if (!videoElement || !canvasElement) {
+      return;
+    }
+
+    rendererRef.current?.stop();
+    const renderer = enableWebglRenderer
+      ? createWebglRenderer({ video: videoElement, canvas: canvasElement })
+      : createCanvasRenderer({
+        video: videoElement,
+        canvas: canvasElement,
+        getCpuWarpPreviewEnabled: () => cpuWarpPreviewEnabledRef.current,
+        getActiveOperation: () => activeOperationRef.current,
+        getFaceGeometry: () => faceGeometryRef.current,
+      });
+    renderer.start();
+    rendererRef.current = renderer;
+    setRendererState(renderer.getState());
+  }, [cameraState, enableWebglRenderer]);
 
   useEffect(() => () => {
     if (detectAnimationRef.current !== null) {
@@ -123,13 +158,15 @@ export function useBeautyLabRuntime(activeOperation: WarpOperation | null, overl
 
       if (videoElement && canvasElement) {
         rendererRef.current?.stop();
-        const renderer = createCanvasRenderer({
-          video: videoElement,
-          canvas: canvasElement,
-          getCpuWarpPreviewEnabled: () => cpuWarpPreviewEnabledRef.current,
-          getActiveOperation: () => activeOperationRef.current,
-          getFaceGeometry: () => faceGeometryRef.current,
-        });
+        const renderer = webglRendererEnabledRef.current
+          ? createWebglRenderer({ video: videoElement, canvas: canvasElement })
+          : createCanvasRenderer({
+            video: videoElement,
+            canvas: canvasElement,
+            getCpuWarpPreviewEnabled: () => cpuWarpPreviewEnabledRef.current,
+            getActiveOperation: () => activeOperationRef.current,
+            getFaceGeometry: () => faceGeometryRef.current,
+          });
         renderer.start();
         rendererRef.current = renderer;
         setRendererState(renderer.getState());
