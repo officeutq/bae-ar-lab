@@ -475,6 +475,10 @@ export function App() {
             <div>MediaPipe (ms): {runtime.profiler.mediapipeMs.toFixed(2)}</div>
             <div>Render (ms): {runtime.profiler.renderMs.toFixed(2)}</div>
             <div>Operation count: {runtime.profiler.operationCount}</div>
+            <div>Yaw (deg): {runtime.pose.facePose?.yaw.toFixed(1) ?? 'n/a'}</div>
+            <div>Pitch (deg): {runtime.pose.facePose?.pitch.toFixed(1) ?? 'n/a'}</div>
+            <div>Roll (deg): {runtime.pose.facePose?.roll.toFixed(1) ?? 'n/a'}</div>
+            <div>Pose attenuation: {runtime.pose.poseAttenuation.factor.toFixed(2)}</div>
             <div>Face stability: {runtime.faceStability.status}</div>
             <div>Stability fade: {runtime.faceStability.fade.toFixed(2)}</div>
             <div>Quality: {runtime.quality.runtimeQuality}</div>
