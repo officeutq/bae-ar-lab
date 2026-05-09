@@ -142,4 +142,22 @@ export const defaultWarpPreset: WarpPreset = {
       weightMap: { type: 'radial_gradient', center: { x: 0.67, y: 0.52 }, radius: 0.16 },
     },
   ],
+  animations: [
+    {
+      id: 'soft_pulse',
+      name: 'Soft Pulse',
+      duration: 2,
+      loop: true,
+      tracks: [
+        {
+          track: 'beauty.intensity',
+          keyframes: [
+            { time: 0, value: 0.8 },
+            { time: 1, value: 1 },
+            { time: 2, value: 0.8 },
+          ],
+        },
+      ],
+    },
+  ],
 };

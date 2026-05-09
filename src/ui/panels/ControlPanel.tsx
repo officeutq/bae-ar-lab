@@ -4,6 +4,7 @@ import type { RendererMode } from '@engine/render/types';
 import type { SamplePresetId } from '@algorithms/presets';
 import type { QualityLevel } from '@engine/performance/adaptiveQuality';
 import type { DeviceCapabilities } from '@engine/performance/detectDeviceCapabilities';
+import type { AnimationClip } from '@engine/animation/types';
 import { Panel } from '@ui/Panel';
 import { FalloffGraph } from '@ui/components/FalloffGraph';
 
@@ -15,6 +16,12 @@ type Props = {
   animationTime: number;
   animationLoop: boolean;
   animationTrackCount: number;
+  animationDuration: number;
+  animationClips: AnimationClip[];
+  selectedAnimationClipId: string;
+  loadedAnimationClipName: string;
+  onSelectAnimationClip: (id: string) => void;
+  onLoadAnimationClip: () => void;
   onPlayAnimation: () => void;
   onPauseAnimation: () => void;
   onStopAnimation: () => void;
@@ -132,7 +139,16 @@ export function ControlPanel(props: Props) {
 
       <div className="operation-controls">
         <p className="camera-status">Animation time: {props.animationTime.toFixed(2)}s</p>
+        <p className="camera-status">Loaded clip: {props.loadedAnimationClipName}</p>
         <p className="camera-status">Active track count: {props.animationTrackCount}</p>
+        <label>Animation clip
+          <select value={props.selectedAnimationClipId} onChange={(e) => props.onSelectAnimationClip(e.target.value)}>
+            {props.animationClips.map((clip) => <option key={clip.id} value={clip.id}>{clip.name}</option>)}
+          </select>
+        </label>
+        <div className="camera-controls">
+          <button type="button" onClick={props.onLoadAnimationClip}>Load clip</button>
+        </div>
         <div className="camera-controls">
           <button type="button" onClick={props.onPlayAnimation}>Play animation</button>
           <button type="button" onClick={props.onPauseAnimation} disabled={!props.animationPlaying}>Pause animation</button>
@@ -140,7 +156,7 @@ export function ControlPanel(props: Props) {
         </div>
         <label><input type="checkbox" checked={props.animationLoop} onChange={(e) => props.setAnimationLoop(e.target.checked)} />Loop animation</label>
         <label>Timeline time: {props.animationTime.toFixed(2)}s
-          <input type="range" min={0} max={3} step={0.01} value={props.animationTime} onChange={(e) => props.onTimelineTimeChange(Number(e.target.value))} />
+          <input type="range" min={0} max={props.animationDuration} step={0.01} value={props.animationTime} onChange={(e) => props.onTimelineTimeChange(Number(e.target.value))} />
         </label>
       </div>
 
