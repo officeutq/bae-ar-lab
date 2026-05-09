@@ -16,6 +16,12 @@ export function getWarpTargetGeometry(target: WarpTarget, geometry: FaceGeometry
       return { center: geometry.mouthCenter, baseSize: geometry.mouthWidth };
     case 'nose':
       return { center: geometry.noseCenter, baseSize: geometry.faceWidth * 0.15 };
+    case 'left_jaw':
+      return { center: geometry.leftJawLine.start, baseSize: geometry.faceWidth * 0.3 };
+    case 'right_jaw':
+      return { center: geometry.rightJawLine.start, baseSize: geometry.faceWidth * 0.3 };
+    case 'chin_line':
+      return { center: geometry.chinLine.start, baseSize: geometry.faceWidth * 0.2 };
     case 'face_center':
     default:
       return { center: geometry.faceCenter, baseSize: geometry.faceWidth };

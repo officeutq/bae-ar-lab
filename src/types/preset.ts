@@ -1,6 +1,16 @@
 export type WarpOperationType = 'radial_warp' | 'directional_warp' | 'line_warp';
 
-export type WarpTarget = 'left_eye' | 'right_eye' | 'face_center' | 'mouth' | 'nose';
+export type WarpTarget = 'left_eye' | 'right_eye' | 'face_center' | 'mouth' | 'nose' | 'left_jaw' | 'right_jaw' | 'chin_line';
+
+export type LandmarkLinePoint = 'left_cheek' | 'right_cheek' | 'chin' | 'chin_left' | 'chin_right';
+
+export type LandmarkLineBindingTarget = 'left_jaw' | 'right_jaw' | 'chin_line';
+
+export type LandmarkLineBinding = {
+  type: 'landmark_line';
+  start: LandmarkLinePoint;
+  end: LandmarkLinePoint;
+};
 
 export type WarpFalloffType = 'linear' | 'smoothstep' | 'gaussian';
 
@@ -31,6 +41,7 @@ export type WarpOperation = {
   lineStart: WarpAxis;
   lineEnd: WarpAxis;
   width: number;
+  binding?: LandmarkLineBinding;
 };
 
 export type WarpPreset = {

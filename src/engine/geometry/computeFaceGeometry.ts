@@ -1,5 +1,6 @@
 import type { FaceLandmarkPoint } from '@engine/mediapipe/types';
 import type { ComputeFaceGeometryInput, FaceGeometry, Point2D } from './types';
+import { computeFaceContourGeometry } from './computeFaceContourGeometry';
 
 const INDEX = {
   leftEyeOuter: 33,
@@ -89,6 +90,11 @@ export function computeFaceGeometry({ landmarks }: ComputeFaceGeometryInput): Fa
   const rightEyeCenter = getCenter([rightEyeOuter, rightEyeInner]);
   const mouthCenter = getCenter([mouthLeft, mouthRight]);
   const faceCenter = getBoundingCenter(landmarks);
+  const contour = computeFaceContourGeometry(landmarks);
+
+  if (!contour) {
+    return null;
+  }
 
   return {
     faceCenter,
@@ -100,5 +106,8 @@ export function computeFaceGeometry({ landmarks }: ComputeFaceGeometryInput): Fa
     rightEyeWidth: getDistance(rightEyeOuter, rightEyeInner),
     mouthWidth: getDistance(mouthLeft, mouthRight),
     faceWidth: getDistance(leftCheek, rightCheek),
+    leftJawLine: contour.lines.leftJawLine,
+    rightJawLine: contour.lines.rightJawLine,
+    chinLine: contour.lines.chinLine,
   };
 }
