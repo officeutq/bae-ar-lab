@@ -2,6 +2,16 @@ import type { WarpPreset } from '@app-types/preset';
 
 export const defaultWarpPreset: WarpPreset = {
   version: 1,
+  appearance: {
+    skinSmoothing: {
+      type: 'skin_smoothing',
+      enabled: true,
+      strength: 0.35,
+      radius: 1.0,
+      maskOpacity: 1,
+      showMaskPreview: false,
+    },
+  },
   operations: [
     {
       id: 'left_eye_enlarge',

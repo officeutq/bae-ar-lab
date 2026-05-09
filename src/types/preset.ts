@@ -75,4 +75,14 @@ export type WarpOperation = {
 export type WarpPreset = {
   version: number;
   operations: WarpOperation[];
+  appearance?: {
+    skinSmoothing: {
+      type: 'skin_smoothing';
+      enabled: boolean;
+      strength: number;
+      radius: number;
+      maskOpacity: number;
+      showMaskPreview: boolean;
+    };
+  };
 };

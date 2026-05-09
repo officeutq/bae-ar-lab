@@ -20,9 +20,30 @@ uniform int uPolygonCounts[MAX_OPERATIONS];
 uniform int uWeightMapTypes[MAX_OPERATIONS];
 uniform vec2 uWeightMapCenters[MAX_OPERATIONS];
 uniform float uWeightMapRadii[MAX_OPERATIONS];
+uniform int uSmoothingEnabled;
+uniform float uSmoothingStrength;
+uniform float uSmoothingRadius;
+uniform float uSmoothingMaskOpacity;
+uniform int uSmoothingMaskPreview;
+uniform vec2 uFaceMaskPolygon[MAX_POLYGON_POINTS];
+uniform int uFaceMaskCount;
 
 in vec2 v_uv;
 out vec4 outColor;
+
+float polygonMask(vec2 uv) {
+  if (uFaceMaskCount < 3) return 0.0;
+  bool inside = true;
+  for (int p = 0; p < MAX_POLYGON_POINTS; p++) {
+    if (p >= uFaceMaskCount) break;
+    vec2 a = uFaceMaskPolygon[p];
+    vec2 b = uFaceMaskPolygon[(p + 1) % uFaceMaskCount];
+    vec2 ab = b - a;
+    float cross = ab.x * (uv.y - a.y) - ab.y * (uv.x - a.x);
+    if (cross < -0.00001) inside = false;
+  }
+  return inside ? 1.0 : 0.0;
+}
 
 float getFalloff(float normalizedDistance, int falloffType) {
   float t = clamp(1.0 - normalizedDistance, 0.0, 1.0);
@@ -91,5 +112,19 @@ void main() {
     }
   }
 
-  outColor = texture(uVideoTexture, warpedUv);
+  vec4 baseColor = texture(uVideoTexture, warpedUv);
+  float mask = polygonMask(warpedUv) * clamp(uSmoothingMaskOpacity, 0.0, 1.0);
+  if (uSmoothingEnabled == 1 && mask > 0.0) {
+    vec2 texel = vec2(1.0 / 1920.0, 1.0 / 1080.0) * max(0.001, uSmoothingRadius);
+    vec4 blur = texture(uVideoTexture, warpedUv) * 0.4;
+    blur += texture(uVideoTexture, warpedUv + vec2(texel.x, 0.0)) * 0.15;
+    blur += texture(uVideoTexture, warpedUv - vec2(texel.x, 0.0)) * 0.15;
+    blur += texture(uVideoTexture, warpedUv + vec2(0.0, texel.y)) * 0.15;
+    blur += texture(uVideoTexture, warpedUv - vec2(0.0, texel.y)) * 0.15;
+    baseColor = mix(baseColor, blur, clamp(uSmoothingStrength * mask, 0.0, 1.0));
+  }
+  if (uSmoothingMaskPreview == 1) {
+    baseColor.rgb = mix(baseColor.rgb, vec3(0.2, 0.8, 0.4), mask * 0.35);
+  }
+  outColor = baseColor;
 }
