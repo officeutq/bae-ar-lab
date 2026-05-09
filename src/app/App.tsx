@@ -61,6 +61,10 @@ export function App() {
   const [selectedAnimationClipId, setSelectedAnimationClipId] = useState<string>('runtime_default');
   const [loadedAnimationClip, setLoadedAnimationClip] = useState<AnimationClip>(DEFAULT_ANIMATION_CLIP);
   const animationClips = useMemo(() => [DEFAULT_ANIMATION_CLIP, ...(activePreset.animations ?? [])], [activePreset]);
+  const selectedAnimationClip = useMemo(
+    () => animationClips.find((clip) => clip.id === selectedAnimationClipId) ?? null,
+    [animationClips, selectedAnimationClipId],
+  );
   const timelineRef = useMemo(() => createTimeline(loadedAnimationClip), [loadedAnimationClip]);
   const applyAnimatedValues = (preset: WarpPreset, intensity: number, values: Record<string, number>): AnimationApplyResult => {
     const nextPreset: WarpPreset = {
@@ -212,6 +216,19 @@ export function App() {
       return { ...currentPreset, operations: currentPreset.operations.filter((_, index) => index !== activeOperationIndex) };
     });
     setActiveOperationIndex((currentIndex) => Math.max(0, currentIndex - 1));
+  };
+  const updateSelectedAnimationClip = (updater: (clip: AnimationClip) => AnimationClip) => {
+    if (selectedAnimationClipId === DEFAULT_ANIMATION_CLIP.id) {
+      setLoadedAnimationClip((currentClip) => currentClip.id === DEFAULT_ANIMATION_CLIP.id ? updater(currentClip) : currentClip);
+      return;
+    }
+    setActivePreset((currentPreset) => {
+      const animations = currentPreset.animations ?? [];
+      return {
+        ...currentPreset,
+        animations: animations.map((clip) => clip.id === selectedAnimationClipId ? updater(clip) : clip),
+      };
+    });
   };
 
 
@@ -382,13 +399,22 @@ export function App() {
             <div>Recommended quality: {capabilities.recommendedQuality}</div>
           </div>
         </Panel>
-        <ControlPanel activePreset={activePreset} beautyIntensity={beautyIntensity} setBeautyIntensity={setBeautyIntensity} animationPlaying={animationPlaying} animationTime={animationTime} animationLoop={animationLoop} animationTrackCount={animationTrackCount} animationDuration={loadedAnimationClip.duration} animationClips={animationClips} selectedAnimationClipId={selectedAnimationClipId} loadedAnimationClipName={loadedAnimationClip.name} onSelectAnimationClip={setSelectedAnimationClipId} onLoadAnimationClip={() => {
+        <ControlPanel activePreset={activePreset} beautyIntensity={beautyIntensity} setBeautyIntensity={setBeautyIntensity} animationPlaying={animationPlaying} animationTime={animationTime} animationLoop={animationLoop} animationTrackCount={animationTrackCount} animationDuration={loadedAnimationClip.duration} animationClips={animationClips} selectedAnimationClipId={selectedAnimationClipId} loadedAnimationClipName={loadedAnimationClip.name} selectedAnimationClip={selectedAnimationClip} onSelectAnimationClip={setSelectedAnimationClipId} onLoadAnimationClip={() => {
           const clip = animationClips.find((item) => item.id === selectedAnimationClipId);
           if (!clip) return;
           setLoadedAnimationClip(clip);
           setAnimationLoop(Boolean(clip.loop));
           setPresetMessage(`Loaded animation clip: ${clip.name}`);
-        }} onPlayAnimation={() => timelineRef.play()} onPauseAnimation={() => timelineRef.pause()} onStopAnimation={() => timelineRef.stop()} onTimelineTimeChange={(value) => timelineRef.setTime(value)} setAnimationLoop={setAnimationLoop} onCaptureCompare={onCaptureCompare} presetNameInput={presetNameInput} setPresetNameInput={setPresetNameInput} presets={presets} activeStoredPresetId={activeStoredPresetId} onSavePreset={onSavePreset} onCreatePreset={onCreatePreset} onDeletePreset={onDeletePreset} onRenamePreset={onRenamePreset} onLoadPreset={onLoadPreset} selectedSamplePresetId={selectedSamplePresetId} onSelectSamplePreset={onSelectSamplePreset} onExportPreset={onExportPreset} onImportPresetText={onImportPresetText} presetMessage={presetMessage} pipelineStatus={pipelineState.status} onStartCamera={runtime.actions.startCamera} onStopCamera={runtime.actions.stopCamera} cameraState={runtime.state.cameraState} showLandmarks={showLandmarks} setShowLandmarks={setShowLandmarks} showCenters={showCenters} setShowCenters={setShowCenters} showWarpInfluence={showWarpInfluence} setShowWarpInfluence={setShowWarpInfluence} showWarpCenter={showWarpCenter} setShowWarpCenter={setShowWarpCenter} showFalloffRings={showFalloffRings} setShowFalloffRings={setShowFalloffRings} rendererMode={rendererMode} setRendererMode={setRendererMode} activeOperationIndex={activeOperationIndex} setActiveOperationIndex={setActiveOperationIndex} addOperation={addOperation} removeOperation={removeOperation} updateOperation={updateOperation} updateAxis={updateAxis} updateFalloffType={updateFalloffType} updateDirection={updateDirection} resolvedActiveOperation={resolvedActiveOperation} skinSmoothing={skinSmoothing} updateSkinSmoothing={updateSkinSmoothing} skinTone={skinTone} updateSkinTone={updateSkinTone} adaptiveQualityEnabled={runtime.quality.adaptiveQuality.enabled} onAdaptiveQualityEnabledChange={runtime.quality.setAdaptiveEnabled} selectedQuality={runtime.quality.adaptiveQuality.selectedQuality} currentQuality={runtime.quality.runtimeQuality} onSelectedQualityChange={runtime.quality.setSelectedQuality} capabilities={capabilities} />
+        }} onUpdateSelectedClipName={(value) => updateSelectedAnimationClip((clip) => ({ ...clip, name: value }))} onUpdateSelectedClipDuration={(value) => {
+          const safeValue = Number.isFinite(value) ? Math.max(0.01, value) : 0.01;
+          updateSelectedAnimationClip((clip) => ({ ...clip, duration: safeValue }));
+        }} onUpdateSelectedClipLoop={(value) => updateSelectedAnimationClip((clip) => ({ ...clip, loop: value }))} onUpdateSelectedClipKeyframeValue={(trackIndex, keyframeIndex, value) => updateSelectedAnimationClip((clip) => ({
+          ...clip,
+          tracks: clip.tracks.map((track, tIndex) => tIndex === trackIndex ? {
+            ...track,
+            keyframes: track.keyframes.map((keyframe, kIndex) => kIndex === keyframeIndex ? { ...keyframe, value } : keyframe),
+          } : track),
+        }))} onPlayAnimation={() => timelineRef.play()} onPauseAnimation={() => timelineRef.pause()} onStopAnimation={() => timelineRef.stop()} onTimelineTimeChange={(value) => timelineRef.setTime(value)} setAnimationLoop={setAnimationLoop} onCaptureCompare={onCaptureCompare} presetNameInput={presetNameInput} setPresetNameInput={setPresetNameInput} presets={presets} activeStoredPresetId={activeStoredPresetId} onSavePreset={onSavePreset} onCreatePreset={onCreatePreset} onDeletePreset={onDeletePreset} onRenamePreset={onRenamePreset} onLoadPreset={onLoadPreset} selectedSamplePresetId={selectedSamplePresetId} onSelectSamplePreset={onSelectSamplePreset} onExportPreset={onExportPreset} onImportPresetText={onImportPresetText} presetMessage={presetMessage} pipelineStatus={pipelineState.status} onStartCamera={runtime.actions.startCamera} onStopCamera={runtime.actions.stopCamera} cameraState={runtime.state.cameraState} showLandmarks={showLandmarks} setShowLandmarks={setShowLandmarks} showCenters={showCenters} setShowCenters={setShowCenters} showWarpInfluence={showWarpInfluence} setShowWarpInfluence={setShowWarpInfluence} showWarpCenter={showWarpCenter} setShowWarpCenter={setShowWarpCenter} showFalloffRings={showFalloffRings} setShowFalloffRings={setShowFalloffRings} rendererMode={rendererMode} setRendererMode={setRendererMode} activeOperationIndex={activeOperationIndex} setActiveOperationIndex={setActiveOperationIndex} addOperation={addOperation} removeOperation={removeOperation} updateOperation={updateOperation} updateAxis={updateAxis} updateFalloffType={updateFalloffType} updateDirection={updateDirection} resolvedActiveOperation={resolvedActiveOperation} skinSmoothing={skinSmoothing} updateSkinSmoothing={updateSkinSmoothing} skinTone={skinTone} updateSkinTone={updateSkinTone} adaptiveQualityEnabled={runtime.quality.adaptiveQuality.enabled} onAdaptiveQualityEnabledChange={runtime.quality.setAdaptiveEnabled} selectedQuality={runtime.quality.adaptiveQuality.selectedQuality} currentQuality={runtime.quality.runtimeQuality} onSelectedQualityChange={runtime.quality.setSelectedQuality} capabilities={capabilities} />
         <ComparePanel capture={compareCapture} />
         <WarpMathDebugPanel debugUv={debugUv} debugCenter={debugCenter} debugWarpResult={{ warpedUv: debugWarpResult, influence: 0 }} debugGridPoints={debugGridPoints} onMouseMove={(event: MouseEvent<HTMLDivElement>) => { const rect = event.currentTarget.getBoundingClientRect(); setDebugUv({ x: clamp01((event.clientX - rect.left) / Math.max(1, rect.width)), y: clamp01((event.clientY - rect.top) / Math.max(1, rect.height)) }); }} />
         <JsonOutputPanel preset={pipelineState.activePreset} geometry={runtime.state.faceGeometry} />
