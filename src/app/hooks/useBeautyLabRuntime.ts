@@ -88,6 +88,8 @@ export function useBeautyLabRuntime(
   const adaptiveQualityRef = useRef<AdaptiveQualityState>({ enabled: adaptiveQualityEnabledByDefault, selectedQuality: initialQuality, currentQuality: initialQuality });
   const faceStabilityRef = useRef(createFaceStabilityController());
   const lastStableGeometryRef = useRef<FaceGeometry | null>(null);
+  const skinSmoothingRef = useRef(skinSmoothing);
+  const skinToneRef = useRef(skinTone);
 
   const [cameraState, setCameraState] = useState<CameraViewState>('idle');
   const [cameraErrorMessage, setCameraErrorMessage] = useState<string | null>(null);
@@ -124,6 +126,14 @@ export function useBeautyLabRuntime(
   }, [overlayToggles]);
 
   useEffect(() => {
+    skinSmoothingRef.current = skinSmoothing;
+  }, [skinSmoothing]);
+
+  useEffect(() => {
+    skinToneRef.current = skinTone;
+  }, [skinTone]);
+
+  useEffect(() => {
     if (cameraState !== 'running') {
       return;
     }
@@ -142,8 +152,8 @@ export function useBeautyLabRuntime(
         canvas: canvasElement,
         getOperations: () => resolvedOperationsRef.current,
         getFaceGeometry: () => faceGeometryRef.current,
-        getSkinSmoothing: () => ({ ...skinSmoothing, strength: skinSmoothing.strength * faceStabilityRef.current.getSnapshot().fade }),
-        getSkinTone: () => ({ ...skinTone, blend: skinTone.blend * faceStabilityRef.current.getSnapshot().fade }),
+        getSkinSmoothing: () => ({ ...skinSmoothingRef.current, strength: skinSmoothingRef.current.strength * faceStabilityRef.current.getSnapshot().fade }),
+        getSkinTone: () => ({ ...skinToneRef.current, blend: skinToneRef.current.blend * faceStabilityRef.current.getSnapshot().fade }),
         onRenderFrame: (renderTimeMs) => {
           setProfilerSnapshot((current) => ({ ...current, renderMs: renderTimeMs }));
         },
@@ -167,7 +177,7 @@ export function useBeautyLabRuntime(
     renderer.start();
     rendererRef.current = renderer;
     setRendererState(renderer.getState());
-  }, [cameraState, rendererMode, skinSmoothing, skinTone]);
+  }, [cameraState, rendererMode]);
 
   useEffect(() => () => {
     if (detectAnimationRef.current !== null) {
@@ -251,6 +261,11 @@ export function useBeautyLabRuntime(
   };
 
   const startCamera = async () => {
+    if (detectAnimationRef.current !== null) {
+      cancelAnimationFrame(detectAnimationRef.current);
+      detectAnimationRef.current = null;
+    }
+    rendererRef.current?.stop();
     setCameraState('starting');
     setCameraErrorMessage(null);
     landmarkTemporalFilterRef.current.reset();
@@ -287,8 +302,8 @@ export function useBeautyLabRuntime(
             canvas: canvasElement,
             getOperations: () => resolvedOperationsRef.current,
             getFaceGeometry: () => faceGeometryRef.current,
-            getSkinSmoothing: () => ({ ...skinSmoothing, strength: skinSmoothing.strength * faceStabilityRef.current.getSnapshot().fade }),
-            getSkinTone: () => ({ ...skinTone, blend: skinTone.blend * faceStabilityRef.current.getSnapshot().fade }),
+            getSkinSmoothing: () => ({ ...skinSmoothingRef.current, strength: skinSmoothingRef.current.strength * faceStabilityRef.current.getSnapshot().fade }),
+            getSkinTone: () => ({ ...skinToneRef.current, blend: skinToneRef.current.blend * faceStabilityRef.current.getSnapshot().fade }),
             onRenderFrame: (renderTimeMs) => {
               setProfilerSnapshot((current) => ({ ...current, renderMs: renderTimeMs }));
             },
