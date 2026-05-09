@@ -12,6 +12,7 @@ type Props = {
   onScrubStart: () => void;
   onSelectKeyframe: (trackIndex: number, keyframeIndex: number) => void;
   onInsertKeyframe: (trackIndex: number, time: number) => void;
+  onDragKeyframeTime: (trackIndex: number, keyframeIndex: number, time: number) => void;
 };
 
 const TIMELINE_WIDTH = 100;
@@ -27,8 +28,9 @@ function toTimelinePercent(time: number, duration: number) {
   return clamp01(time / duration) * TIMELINE_WIDTH;
 }
 
-export function TimelinePanel({ clip, currentTime, currentValues, selectedTrackIndex, selectedKeyframeIndex, onSeek, onScrubStart, onSelectKeyframe, onInsertKeyframe }: Props) {
+export function TimelinePanel({ clip, currentTime, currentValues, selectedTrackIndex, selectedKeyframeIndex, onSeek, onScrubStart, onSelectKeyframe, onInsertKeyframe, onDragKeyframeTime }: Props) {
   const scrubRef = useRef(false);
+  const draggingKeyframeRef = useRef<{ trackIndex: number; keyframeIndex: number } | null>(null);
   const playheadPercent = toTimelinePercent(currentTime, clip.duration);
   const timeFromClientX = (clientX: number, rect: DOMRect) => clamp01((clientX - rect.left) / Math.max(1, rect.width)) * clip.duration;
   const handleSeek = (event: PointerEvent<HTMLDivElement>) => {
@@ -47,6 +49,7 @@ export function TimelinePanel({ clip, currentTime, currentValues, selectedTrackI
   };
   const handlePointerEnd = (event: PointerEvent<HTMLDivElement>) => {
     scrubRef.current = false;
+    draggingKeyframeRef.current = null;
     event.currentTarget.releasePointerCapture(event.pointerId);
   };
 
@@ -96,6 +99,25 @@ export function TimelinePanel({ clip, currentTime, currentValues, selectedTrackI
                       onClick={(event) => {
                         event.stopPropagation();
                         onSelectKeyframe(trackIndex, keyframeIndex);
+                      }}
+                      onPointerDown={(event) => {
+                        event.stopPropagation();
+                        draggingKeyframeRef.current = { trackIndex, keyframeIndex };
+                        onScrubStart();
+                        onSelectKeyframe(trackIndex, keyframeIndex);
+                        event.currentTarget.setPointerCapture(event.pointerId);
+                      }}
+                      onPointerMove={(event) => {
+                        const dragging = draggingKeyframeRef.current;
+                        if (!dragging || dragging.trackIndex !== trackIndex || dragging.keyframeIndex !== keyframeIndex) return;
+                        const bar = event.currentTarget.closest('.timeline-track__bar');
+                        if (!(bar instanceof HTMLDivElement)) return;
+                        const rect = bar.getBoundingClientRect();
+                        onDragKeyframeTime(trackIndex, keyframeIndex, timeFromClientX(event.clientX, rect));
+                      }}
+                      onPointerUp={(event) => {
+                        draggingKeyframeRef.current = null;
+                        event.currentTarget.releasePointerCapture(event.pointerId);
                       }}
                     />
                   );
