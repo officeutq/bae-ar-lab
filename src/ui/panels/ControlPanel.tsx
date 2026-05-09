@@ -404,7 +404,7 @@ export function ControlPanel(props: Props) {
       </div>
       <ul>
         <li>Status: {props.pipelineStatus}</li>
-        <li>Preset version: {props.activePreset.version}</li>
+        <li>Preset version: {props.activePreset.schemaVersion}</li>
         <li>オペレーションID: {op?.id}</li>
         <li>Operation type: {op?.type}</li>
       </ul>

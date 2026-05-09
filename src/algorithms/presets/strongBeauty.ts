@@ -3,6 +3,8 @@ import { defaultWarpPreset } from '@algorithms/defaultPreset';
 
 export const strongBeautyPreset: WarpPreset = {
   ...defaultWarpPreset,
+  id: 'strong_beauty',
+  name: 'Strong Beauty',
   appearance: {
     skinSmoothing: {
       type: 'skin_smoothing',

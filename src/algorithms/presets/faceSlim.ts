@@ -1,7 +1,9 @@
 import type { WarpPreset } from '@app-types/preset';
 
 export const faceSlimPreset: WarpPreset = {
-  version: 1,
+  schemaVersion: 1,
+  id: 'face_slim',
+  name: 'Face Slim',
   appearance: {
     skinSmoothing: {
       type: 'skin_smoothing',

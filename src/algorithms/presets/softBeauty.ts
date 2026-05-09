@@ -1,7 +1,9 @@
 import type { WarpPreset } from '@app-types/preset';
 
 export const softBeautyPreset: WarpPreset = {
-  version: 1,
+  schemaVersion: 1,
+  id: 'soft_beauty',
+  name: 'Soft Beauty',
   appearance: {
     skinSmoothing: {
       type: 'skin_smoothing',

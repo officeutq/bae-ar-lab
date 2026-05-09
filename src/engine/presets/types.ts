@@ -1,6 +1,7 @@
 import type { WarpPreset } from '@app-types/preset';
+import { CURRENT_PRESET_SCHEMA_VERSION } from './presetSchema';
 
-export const PRESET_SCHEMA_VERSION = 1;
+export { CURRENT_PRESET_SCHEMA_VERSION };
 
 export type PresetMetadata = {
   id: string;

@@ -1,5 +1,6 @@
 import type { WarpPreset } from '@app-types/preset';
-import { PRESET_SCHEMA_VERSION, type PresetCollection, type StoredPreset } from './types';
+import { CURRENT_PRESET_SCHEMA_VERSION, type PresetCollection, type StoredPreset } from './types';
+import { migratePreset } from './presetSchema';
 
 const STORAGE_KEY = 'beauty-lab-presets';
 
@@ -11,23 +12,23 @@ const defaultCollection: PresetCollection = {
 function nowIso() { return new Date().toISOString(); }
 function createId() { return `preset_${crypto.randomUUID()}`; }
 
-function isWarpPreset(value: unknown): value is WarpPreset {
-  if (!value || typeof value !== 'object') return false;
-  const preset = value as WarpPreset;
-  return typeof preset.version === 'number' && Array.isArray(preset.operations);
-}
-
 function sanitizeCollection(value: unknown): PresetCollection {
   if (!value || typeof value !== 'object') return defaultCollection;
   const raw = value as Partial<PresetCollection>;
   const presets = Array.isArray(raw.presets)
-    ? raw.presets.filter((item): item is StoredPreset => !!item
-      && typeof item.id === 'string'
-      && typeof item.name === 'string'
-      && typeof item.createdAt === 'string'
-      && typeof item.updatedAt === 'string'
-      && typeof item.version === 'number'
-      && isWarpPreset(item.preset))
+    ? raw.presets.flatMap((item) => {
+      if (!item || typeof item !== 'object') return [];
+      const candidate = item as Partial<StoredPreset> & { preset?: unknown };
+      if (typeof candidate.id !== 'string' || typeof candidate.name !== 'string' || typeof candidate.createdAt !== 'string' || typeof candidate.updatedAt !== 'string' || typeof candidate.version !== 'number') {
+        return [];
+      }
+      try {
+        return [{ ...candidate, preset: migratePreset(candidate.preset) } as StoredPreset];
+      } catch (error) {
+        console.error('Failed to migrate stored preset:', error);
+        return [];
+      }
+    })
     : [];
   const idSet = new Set(presets.map((item) => item.id));
   return {
@@ -41,7 +42,8 @@ function readCollection(): PresetCollection {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return defaultCollection;
     return sanitizeCollection(JSON.parse(raw));
-  } catch {
+  } catch (error) {
+    console.error('Failed to read preset collection:', error);
     return defaultCollection;
   }
 }
@@ -64,13 +66,14 @@ export function savePreset(input: { id?: string; name: string; preset: WarpPrese
   const collection = readCollection();
   const now = nowIso();
   const existing = input.id ? collection.presets.find((item) => item.id === input.id) : undefined;
+  const migratedPreset = migratePreset({ ...input.preset, name: input.name });
   const next: StoredPreset = {
     id: existing?.id ?? createId(),
     name: input.name,
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,
-    version: PRESET_SCHEMA_VERSION,
-    preset: input.preset,
+    version: CURRENT_PRESET_SCHEMA_VERSION,
+    preset: migratedPreset,
   };
   const presets = existing ? collection.presets.map((item) => (item.id === existing.id ? next : item)) : [next, ...collection.presets];
   writeCollection({ presets, lastUsedPresetId: next.id });
@@ -95,12 +98,11 @@ export function renamePreset(id: string, name: string) {
 export function parseImportedPreset(rawText: string): { ok: true; preset: WarpPreset } | { ok: false; error: string } {
   try {
     const parsed = JSON.parse(rawText) as unknown;
-    if (!isWarpPreset(parsed)) return { ok: false, error: 'Invalid preset schema.' };
-    if (parsed.version !== PRESET_SCHEMA_VERSION) return { ok: false, error: `Unsupported preset version: ${parsed.version}` };
-    return { ok: true, preset: parsed };
-  } catch {
-    return { ok: false, error: 'Malformed JSON.' };
+    return { ok: true, preset: migratePreset(parsed) };
+  } catch (error) {
+    console.error('Failed to import preset:', error);
+    return { ok: false, error: 'Malformed or unsupported preset JSON.' };
   }
 }
 
-export const exportPresetJson = (preset: WarpPreset) => JSON.stringify(preset, null, 2);
+export const exportPresetJson = (preset: WarpPreset) => JSON.stringify({ ...migratePreset(preset), schemaVersion: CURRENT_PRESET_SCHEMA_VERSION }, null, 2);
