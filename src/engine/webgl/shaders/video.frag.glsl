@@ -2,11 +2,13 @@
 precision mediump float;
 
 uniform sampler2D uVideoTexture;
-uniform vec2 uWarpCenter;
-uniform float uWarpRadius;
-uniform float uWarpStrength;
-uniform vec2 uWarpAxis;
-uniform int uFalloffType;
+const int MAX_OPERATIONS = 8;
+uniform vec2 uWarpCenters[MAX_OPERATIONS];
+uniform float uWarpRadii[MAX_OPERATIONS];
+uniform float uWarpStrengths[MAX_OPERATIONS];
+uniform vec2 uWarpAxes[MAX_OPERATIONS];
+uniform int uFalloffTypes[MAX_OPERATIONS];
+uniform int uEnabledOps[MAX_OPERATIONS];
 
 in vec2 v_uv;
 out vec4 outColor;
@@ -27,18 +29,24 @@ float getFalloff(float normalizedDistance, int falloffType) {
 }
 
 void main() {
-  vec2 uv = vec2(v_uv.x, 1.0 - v_uv.y);
-  vec2 axis = max(uWarpAxis, vec2(0.0001));
-  vec2 delta = uv - uWarpCenter;
-  vec2 scaled = vec2(delta.x / axis.x, delta.y / axis.y);
-  float distance = length(scaled);
+  vec2 warpedUv = vec2(v_uv.x, 1.0 - v_uv.y);
 
-  vec2 warpedUv = uv;
-  if (uWarpRadius > 0.0 && distance <= uWarpRadius) {
-    float normalizedDistance = distance / uWarpRadius;
-    float influence = getFalloff(normalizedDistance, uFalloffType);
-    vec2 displacement = delta * (uWarpStrength * influence);
-    warpedUv = clamp(uv - displacement, 0.0, 1.0);
+  for (int i = 0; i < MAX_OPERATIONS; i++) {
+    if (uEnabledOps[i] == 0) {
+      continue;
+    }
+
+    vec2 axis = max(uWarpAxes[i], vec2(0.0001));
+    vec2 delta = warpedUv - uWarpCenters[i];
+    vec2 scaled = vec2(delta.x / axis.x, delta.y / axis.y);
+    float distance = length(scaled);
+
+    if (uWarpRadii[i] > 0.0 && distance <= uWarpRadii[i]) {
+      float normalizedDistance = distance / uWarpRadii[i];
+      float influence = getFalloff(normalizedDistance, uFalloffTypes[i]);
+      vec2 displacement = delta * (uWarpStrengths[i] * influence);
+      warpedUv = clamp(warpedUv - displacement, 0.0, 1.0);
+    }
   }
 
   outColor = texture(uVideoTexture, warpedUv);
