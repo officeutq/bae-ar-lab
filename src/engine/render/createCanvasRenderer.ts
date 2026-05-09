@@ -1,3 +1,7 @@
+import type { WarpOperation } from '@app-types/preset';
+import type { FaceGeometry } from '@engine/geometry/types';
+import { createCpuWarpRenderer } from './createCpuWarpRenderer';
+
 export type CanvasRendererState = 'idle' | 'running' | 'stopped';
 
 export type CanvasRenderer = {
@@ -9,9 +13,18 @@ export type CanvasRenderer = {
 type CreateCanvasRendererOptions = {
   video: HTMLVideoElement;
   canvas: HTMLCanvasElement;
+  getCpuWarpPreviewEnabled?: () => boolean;
+  getActiveOperation?: () => WarpOperation | null;
+  getFaceGeometry?: () => FaceGeometry | null;
 };
 
-export function createCanvasRenderer({ video, canvas }: CreateCanvasRendererOptions): CanvasRenderer {
+export function createCanvasRenderer({
+  video,
+  canvas,
+  getCpuWarpPreviewEnabled,
+  getActiveOperation,
+  getFaceGeometry,
+}: CreateCanvasRendererOptions): CanvasRenderer {
   const context = canvas.getContext('2d');
 
   if (!context) {
@@ -20,6 +33,7 @@ export function createCanvasRenderer({ video, canvas }: CreateCanvasRendererOpti
 
   let animationFrameId: number | null = null;
   let state: CanvasRendererState = 'idle';
+  const cpuWarpRenderer = createCpuWarpRenderer();
 
   const syncCanvasSize = () => {
     const { videoWidth, videoHeight } = video;
@@ -44,8 +58,18 @@ export function createCanvasRenderer({ video, canvas }: CreateCanvasRendererOpti
     const hasSize = syncCanvasSize();
 
     if (hasSize) {
-      context.clearRect(0, 0, canvas.width, canvas.height);
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      if (getCpuWarpPreviewEnabled?.()) {
+        cpuWarpRenderer.render({
+          video,
+          canvas,
+          context,
+          operation: getActiveOperation?.() ?? null,
+          geometry: getFaceGeometry?.() ?? null,
+        });
+      } else {
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      }
     }
 
     animationFrameId = window.requestAnimationFrame(renderFrame);

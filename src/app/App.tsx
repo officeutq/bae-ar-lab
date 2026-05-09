@@ -50,6 +50,8 @@ export function App() {
   const overlayRef = useRef<LandmarkOverlay | null>(null);
   const detectAnimationRef = useRef<number | null>(null);
   const activeOperationRef = useRef(activePreset.operations[0] ?? null);
+  const faceGeometryRef = useRef<FaceGeometry | null>(null);
+  const cpuWarpPreviewEnabledRef = useRef(false);
 
   const [cameraState, setCameraState] = useState<CameraViewState>('idle');
   const [cameraErrorMessage, setCameraErrorMessage] = useState<string | null>(null);
@@ -62,6 +64,7 @@ export function App() {
   const [showWarpCenter, setShowWarpCenter] = useState(true);
   const [showFalloffRings, setShowFalloffRings] = useState(true);
   const [faceGeometry, setFaceGeometry] = useState<FaceGeometry | null>(null);
+  const [enableCpuWarpPreview, setEnableCpuWarpPreview] = useState(false);
   const [debugUv, setDebugUv] = useState({ x: 0.5, y: 0.5 });
 
   useEffect(() => {
@@ -81,6 +84,10 @@ export function App() {
     activeOperationRef.current = activePreset.operations[0] ?? null;
   }, [activePreset]);
 
+
+  useEffect(() => {
+    cpuWarpPreviewEnabledRef.current = enableCpuWarpPreview;
+  }, [enableCpuWarpPreview]);
   useEffect(() => {
     overlayRef.current?.updateToggles({
       showLandmarks,
@@ -104,6 +111,7 @@ export function App() {
       setLandmarkFrame(result);
       const nextGeometry = result.detected ? computeFaceGeometry({ landmarks: result.landmarks }) : null;
       setFaceGeometry(nextGeometry);
+      faceGeometryRef.current = nextGeometry;
       overlayRef.current?.render(result.landmarks, nextGeometry, activeOperationRef.current);
 
       detectAnimationRef.current = requestAnimationFrame(tick);
@@ -169,6 +177,7 @@ export function App() {
     setCameraErrorMessage(null);
     setLandmarkFrame(null);
     setFaceGeometry(null);
+    faceGeometryRef.current = null;
 
     try {
       setLandmarkerState('loading');
@@ -192,6 +201,9 @@ export function App() {
         const renderer = createCanvasRenderer({
           video: videoElement,
           canvas: canvasElement,
+          getCpuWarpPreviewEnabled: () => cpuWarpPreviewEnabledRef.current,
+          getActiveOperation: () => activeOperationRef.current,
+          getFaceGeometry: () => faceGeometryRef.current,
         });
 
         renderer.start();
@@ -271,6 +283,7 @@ export function App() {
     setLandmarkerState(faceLandmarkerController.getState());
     setLandmarkFrame(null);
     setFaceGeometry(null);
+    faceGeometryRef.current = null;
     setCameraState('idle');
     setCameraErrorMessage(null);
   };
@@ -353,6 +366,14 @@ export function App() {
                 onChange={(event) => setShowFalloffRings(event.target.checked)}
               />
               Show falloff rings
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={enableCpuWarpPreview}
+                onChange={(event) => setEnableCpuWarpPreview(event.target.checked)}
+              />
+              Enable CPU warp preview
             </label>
 
           </div>
