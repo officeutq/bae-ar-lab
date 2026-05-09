@@ -1,6 +1,7 @@
 import type { WarpFalloffType, WarpOperationType, WarpPreset, WarpTarget, WarpWeightMapType } from '@app-types/preset';
 import type { StoredPreset } from '@engine/presets/types';
 import type { RendererMode } from '@engine/render/types';
+import type { SamplePresetId } from '@algorithms/presets';
 import { Panel } from '@ui/Panel';
 import { FalloffGraph } from '@ui/components/FalloffGraph';
 
@@ -39,6 +40,8 @@ type Props = {
   onDeletePreset: () => void;
   onRenamePreset: () => void;
   onLoadPreset: (id: string) => void;
+  selectedSamplePresetId: SamplePresetId | '';
+  onSelectSamplePreset: (id: SamplePresetId) => void;
   onExportPreset: () => void;
   onImportPresetText: (text: string) => void;
   presetMessage: string | null;
@@ -57,6 +60,24 @@ export function ControlPanel(props: Props) {
       <div className="operation-controls">
         <label>Preset name
           <input type="text" value={props.presetNameInput} onChange={(e) => props.setPresetNameInput(e.target.value)} />
+        </label>
+        <label>Sample presets
+          <select
+            value={props.selectedSamplePresetId}
+            onChange={(e) => {
+              const next = e.target.value as SamplePresetId;
+              if (next) {
+                props.onSelectSamplePreset(next);
+              }
+            }}
+          >
+            <option value="">-- Select sample preset --</option>
+            <option value="natural">Natural</option>
+            <option value="soft_beauty">Soft Beauty</option>
+            <option value="strong_beauty">Strong Beauty</option>
+            <option value="face_slim">Face Slim</option>
+            <option value="skin_tone">Skin Tone</option>
+          </select>
         </label>
         <label>Saved presets
           <select value={props.activeStoredPresetId ?? ''} onChange={(e) => props.onLoadPreset(e.target.value)}>

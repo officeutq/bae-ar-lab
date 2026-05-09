@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type MouseEvent } from 'react';
 import type { WarpFalloffType } from '@app-types/preset';
 import { defaultWarpPreset } from '@algorithms/defaultPreset';
+import { samplePresets, type SamplePresetId } from '@algorithms/presets';
 import { createInitialPipelineState } from '@engine/pipeline';
 import { applyWarpOperations } from '@engine/math/warp/applyWarpOperations';
 import { Panel } from '@ui/Panel';
@@ -33,6 +34,7 @@ export function App() {
   const [presets, setPresets] = useState(listPresets());
   const [presetNameInput, setPresetNameInput] = useState('My Preset');
   const [presetMessage, setPresetMessage] = useState<string | null>(null);
+  const [selectedSamplePresetId, setSelectedSamplePresetId] = useState<SamplePresetId | ''>('');
   const [activeOperationIndex, setActiveOperationIndex] = useState(0);
   const pipelineState = useMemo(() => createInitialPipelineState(activePreset), [activePreset]);
   const [showLandmarks, setShowLandmarks] = useState(true);
@@ -149,6 +151,7 @@ export function App() {
   };
   const onCreatePreset = () => {
     setActiveStoredPresetId(null);
+    setSelectedSamplePresetId('');
     setActivePreset(defaultWarpPreset);
     setActiveOperationIndex(0);
     setPresetNameInput('New Preset');
@@ -167,12 +170,26 @@ export function App() {
     setPresetMessage('Preset renamed.');
     refreshPresets();
   };
+  const onSelectSamplePreset = (id: SamplePresetId) => {
+    const sample = samplePresets[id];
+    if (!sample) {
+      return;
+    }
+    setActivePreset(sample.preset);
+    setSelectedSamplePresetId(id);
+    setActiveStoredPresetId(null);
+    setActiveOperationIndex(0);
+    setPresetNameInput(sample.label);
+    setPresetMessage(`Loaded sample preset: ${sample.label}`);
+  };
+
   const onLoadPreset = (id: string) => {
     if (!id) return;
     const stored = loadPreset(id);
     if (!stored) return;
     setActivePreset(stored.preset);
     setActiveStoredPresetId(stored.id);
+    setSelectedSamplePresetId('');
     setPresetNameInput(stored.name);
     setActiveOperationIndex(0);
     setPresetMessage(`Loaded preset: ${stored.name}`);
@@ -191,6 +208,7 @@ export function App() {
     }
     setActivePreset(parsed.preset);
     setActiveStoredPresetId(null);
+    setSelectedSamplePresetId('');
     setActiveOperationIndex(0);
     setPresetMessage('Imported preset JSON. Save it to persist.');
   };
@@ -218,7 +236,7 @@ export function App() {
         <SourcePreviewPanel videoRef={runtime.refs.videoRef} overlayCanvasRef={runtime.refs.overlayCanvasRef} cameraState={runtime.state.cameraState} landmarkerState={runtime.state.landmarkerState} cameraErrorMessage={runtime.state.cameraErrorMessage} />
         <ProcessedPreviewPanel processedCanvasRef={runtime.refs.processedCanvasRef} rendererState={runtime.state.rendererState} rendererMode={rendererMode} />
         <Panel title="Face Detection Status"><ul><li>Face: {runtime.state.landmarkFrame?.detected ? 'detected' : 'not detected'}</li><li>Landmark count: {runtime.state.landmarkFrame?.landmarkCount ?? 0}</li><li>Face count: {runtime.state.landmarkFrame?.faceCount ?? 0}</li><li>Frame: {runtime.state.landmarkFrame?.frameCount ?? 0}</li><li>Timestamp (ms): {Math.round(runtime.state.landmarkFrame?.timestampMs ?? 0)}</li></ul></Panel>
-        <ControlPanel activePreset={activePreset} presetNameInput={presetNameInput} setPresetNameInput={setPresetNameInput} presets={presets} activeStoredPresetId={activeStoredPresetId} onSavePreset={onSavePreset} onCreatePreset={onCreatePreset} onDeletePreset={onDeletePreset} onRenamePreset={onRenamePreset} onLoadPreset={onLoadPreset} onExportPreset={onExportPreset} onImportPresetText={onImportPresetText} presetMessage={presetMessage} pipelineStatus={pipelineState.status} onStartCamera={runtime.actions.startCamera} onStopCamera={runtime.actions.stopCamera} cameraState={runtime.state.cameraState} showLandmarks={showLandmarks} setShowLandmarks={setShowLandmarks} showCenters={showCenters} setShowCenters={setShowCenters} showWarpInfluence={showWarpInfluence} setShowWarpInfluence={setShowWarpInfluence} showWarpCenter={showWarpCenter} setShowWarpCenter={setShowWarpCenter} showFalloffRings={showFalloffRings} setShowFalloffRings={setShowFalloffRings} rendererMode={rendererMode} setRendererMode={setRendererMode} activeOperationIndex={activeOperationIndex} setActiveOperationIndex={setActiveOperationIndex} addOperation={addOperation} removeOperation={removeOperation} updateOperation={updateOperation} updateAxis={updateAxis} updateFalloffType={updateFalloffType} updateDirection={updateDirection} resolvedActiveOperation={resolvedActiveOperation} skinSmoothing={skinSmoothing} updateSkinSmoothing={updateSkinSmoothing} skinTone={skinTone} updateSkinTone={updateSkinTone} />
+        <ControlPanel activePreset={activePreset} presetNameInput={presetNameInput} setPresetNameInput={setPresetNameInput} presets={presets} activeStoredPresetId={activeStoredPresetId} onSavePreset={onSavePreset} onCreatePreset={onCreatePreset} onDeletePreset={onDeletePreset} onRenamePreset={onRenamePreset} onLoadPreset={onLoadPreset} selectedSamplePresetId={selectedSamplePresetId} onSelectSamplePreset={onSelectSamplePreset} onExportPreset={onExportPreset} onImportPresetText={onImportPresetText} presetMessage={presetMessage} pipelineStatus={pipelineState.status} onStartCamera={runtime.actions.startCamera} onStopCamera={runtime.actions.stopCamera} cameraState={runtime.state.cameraState} showLandmarks={showLandmarks} setShowLandmarks={setShowLandmarks} showCenters={showCenters} setShowCenters={setShowCenters} showWarpInfluence={showWarpInfluence} setShowWarpInfluence={setShowWarpInfluence} showWarpCenter={showWarpCenter} setShowWarpCenter={setShowWarpCenter} showFalloffRings={showFalloffRings} setShowFalloffRings={setShowFalloffRings} rendererMode={rendererMode} setRendererMode={setRendererMode} activeOperationIndex={activeOperationIndex} setActiveOperationIndex={setActiveOperationIndex} addOperation={addOperation} removeOperation={removeOperation} updateOperation={updateOperation} updateAxis={updateAxis} updateFalloffType={updateFalloffType} updateDirection={updateDirection} resolvedActiveOperation={resolvedActiveOperation} skinSmoothing={skinSmoothing} updateSkinSmoothing={updateSkinSmoothing} skinTone={skinTone} updateSkinTone={updateSkinTone} />
         <WarpMathDebugPanel debugUv={debugUv} debugCenter={debugCenter} debugWarpResult={{ warpedUv: debugWarpResult, influence: 0 }} debugGridPoints={debugGridPoints} onMouseMove={(event: MouseEvent<HTMLDivElement>) => { const rect = event.currentTarget.getBoundingClientRect(); setDebugUv({ x: clamp01((event.clientX - rect.left) / Math.max(1, rect.width)), y: clamp01((event.clientY - rect.top) / Math.max(1, rect.height)) }); }} />
         <JsonOutputPanel preset={pipelineState.activePreset} geometry={runtime.state.faceGeometry} />
       </div>
