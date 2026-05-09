@@ -1,524 +1,63 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import type { WarpFalloffType, WarpTarget } from '@app-types/preset';
+import { useMemo, useState, type MouseEvent } from 'react';
+import type { WarpFalloffType } from '@app-types/preset';
 import { defaultWarpPreset } from '@algorithms/defaultPreset';
-import { createCameraController, type CameraError } from '@engine/camera/createCameraController';
-import { createFaceLandmarker } from '@engine/mediapipe/createFaceLandmarker';
-import type { FaceLandmarksFrame, FaceLandmarkerRuntimeState } from '@engine/mediapipe/types';
-import { createLandmarkOverlay, type LandmarkOverlay } from '@engine/overlay/createLandmarkOverlay';
 import { createInitialPipelineState } from '@engine/pipeline';
-import {
-  createCanvasRenderer,
-  type CanvasRenderer,
-  type CanvasRendererState,
-} from '@engine/render/createCanvasRenderer';
-import { Panel } from '@ui/Panel';
-import { FalloffGraph } from '@ui/components/FalloffGraph';
-import { computeFaceGeometry } from '@engine/geometry/computeFaceGeometry';
-import type { FaceGeometry } from '@engine/geometry/types';
 import { applyRadialWarp } from '@engine/math/warp/applyRadialWarp';
-
-type CameraViewState = 'idle' | 'starting' | 'running' | 'error';
+import { Panel } from '@ui/Panel';
+import { ControlPanel } from '@ui/panels/ControlPanel';
+import { JsonOutputPanel } from '@ui/panels/JsonOutputPanel';
+import { ProcessedPreviewPanel } from '@ui/panels/ProcessedPreviewPanel';
+import { SourcePreviewPanel } from '@ui/panels/SourcePreviewPanel';
+import { WarpMathDebugPanel } from '@ui/panels/WarpMathDebugPanel';
+import { useBeautyLabRuntime } from './hooks/useBeautyLabRuntime';
 
 const DEBUG_GRID_SIZE = 8;
-
-function clamp01(value: number) {
-  return Math.min(1, Math.max(0, value));
-}
-
-function getCameraErrorMessage(error: CameraError) {
-  switch (error.code) {
-    case 'permission-denied':
-      return 'Permission denied: allow camera access in your browser settings.';
-    case 'no-camera-found':
-      return 'No camera found: connect a camera and try again.';
-    case 'unsupported-browser':
-      return 'Unsupported browser: MediaDevices.getUserMedia is not available.';
-    default:
-      return error.message;
-  }
-}
+const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
 
 export function App() {
   const [activePreset, setActivePreset] = useState(defaultWarpPreset);
   const pipelineState = useMemo(() => createInitialPipelineState(activePreset), [activePreset]);
-  const cameraController = useMemo(() => createCameraController(), []);
-  const faceLandmarkerController = useMemo(() => createFaceLandmarker(), []);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const overlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const processedCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const rendererRef = useRef<CanvasRenderer | null>(null);
-  const overlayRef = useRef<LandmarkOverlay | null>(null);
-  const detectAnimationRef = useRef<number | null>(null);
-  const activeOperationRef = useRef(activePreset.operations[0] ?? null);
-  const faceGeometryRef = useRef<FaceGeometry | null>(null);
-  const cpuWarpPreviewEnabledRef = useRef(false);
-
-  const [cameraState, setCameraState] = useState<CameraViewState>('idle');
-  const [cameraErrorMessage, setCameraErrorMessage] = useState<string | null>(null);
-  const [rendererState, setRendererState] = useState<CanvasRendererState>('idle');
-  const [landmarkerState, setLandmarkerState] = useState<FaceLandmarkerRuntimeState>('idle');
-  const [landmarkFrame, setLandmarkFrame] = useState<FaceLandmarksFrame | null>(null);
   const [showLandmarks, setShowLandmarks] = useState(true);
   const [showCenters, setShowCenters] = useState(true);
   const [showWarpInfluence, setShowWarpInfluence] = useState(true);
   const [showWarpCenter, setShowWarpCenter] = useState(true);
   const [showFalloffRings, setShowFalloffRings] = useState(true);
-  const [faceGeometry, setFaceGeometry] = useState<FaceGeometry | null>(null);
   const [enableCpuWarpPreview, setEnableCpuWarpPreview] = useState(false);
   const [debugUv, setDebugUv] = useState({ x: 0.5, y: 0.5 });
 
-  useEffect(() => {
-    return () => {
-      if (detectAnimationRef.current !== null) {
-        cancelAnimationFrame(detectAnimationRef.current);
-      }
-      rendererRef.current?.stop();
-      rendererRef.current = null;
-      overlayRef.current?.clear();
-      overlayRef.current = null;
-      faceLandmarkerController.dispose();
-    };
-  }, [faceLandmarkerController]);
+  const runtime = useBeautyLabRuntime(activePreset.operations[0] ?? null, {
+    showLandmarks, showCenters, showWarpInfluence, showWarpCenter, showFalloffRings,
+  }, enableCpuWarpPreview);
 
-  useEffect(() => {
-    activeOperationRef.current = activePreset.operations[0] ?? null;
-  }, [activePreset]);
-
-
-  useEffect(() => {
-    cpuWarpPreviewEnabledRef.current = enableCpuWarpPreview;
-  }, [enableCpuWarpPreview]);
-  useEffect(() => {
-    overlayRef.current?.updateToggles({
-      showLandmarks,
-      showCenters,
-      showWarpInfluence,
-      showWarpCenter,
-      showFalloffRings,
-    });
-  }, [showCenters, showFalloffRings, showLandmarks, showWarpCenter, showWarpInfluence]);
-
-  const startFaceLandmarkLoop = () => {
-    const tick = () => {
-      const videoElement = videoRef.current;
-      if (!videoElement || videoElement.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
-        detectAnimationRef.current = requestAnimationFrame(tick);
-        return;
-      }
-
-      const result = faceLandmarkerController.detectForVideoFrame(videoElement, performance.now());
-      setLandmarkerState(faceLandmarkerController.getState());
-      setLandmarkFrame(result);
-      const nextGeometry = result.detected ? computeFaceGeometry({ landmarks: result.landmarks }) : null;
-      setFaceGeometry(nextGeometry);
-      faceGeometryRef.current = nextGeometry;
-      overlayRef.current?.render(result.landmarks, nextGeometry, activeOperationRef.current);
-
-      detectAnimationRef.current = requestAnimationFrame(tick);
-    };
-
-    detectAnimationRef.current = requestAnimationFrame(tick);
+  const updateOperation = <K extends keyof (typeof activePreset.operations)[number]>(key: K, value: (typeof activePreset.operations)[number][K]) => {
+    setActivePreset((currentPreset) => ({ ...currentPreset, operations: currentPreset.operations.map((operation, index) => index === 0 ? { ...operation, [key]: value } : operation) }));
   };
-
-
-
-  const updateOperation = <K extends keyof (typeof activePreset.operations)[number]>(
-    key: K,
-    value: (typeof activePreset.operations)[number][K],
-  ) => {
-    setActivePreset((currentPreset) => ({
-      ...currentPreset,
-      operations: currentPreset.operations.map((operation, index) =>
-        index === 0
-          ? {
-              ...operation,
-              [key]: value,
-            }
-          : operation,
-      ),
-    }));
-  };
-
   const updateAxis = (axisKey: 'x' | 'y', value: number) => {
-    setActivePreset((currentPreset) => ({
-      ...currentPreset,
-      operations: currentPreset.operations.map((operation, index) =>
-        index === 0
-          ? {
-              ...operation,
-              axis: {
-                ...operation.axis,
-                [axisKey]: value,
-              },
-            }
-          : operation,
-      ),
-    }));
+    setActivePreset((currentPreset) => ({ ...currentPreset, operations: currentPreset.operations.map((operation, index) => index === 0 ? { ...operation, axis: { ...operation.axis, [axisKey]: value } } : operation) }));
   };
-
   const updateFalloffType = (falloffType: WarpFalloffType) => {
-    setActivePreset((currentPreset) => ({
-      ...currentPreset,
-      operations: currentPreset.operations.map((operation, index) =>
-        index === 0
-          ? {
-              ...operation,
-              falloff: {
-                type: falloffType,
-              },
-            }
-          : operation,
-      ),
-    }));
-  };
-
-  const handleStartCamera = async () => {
-    setCameraState('starting');
-    setCameraErrorMessage(null);
-    setLandmarkFrame(null);
-    setFaceGeometry(null);
-    faceGeometryRef.current = null;
-
-    try {
-      setLandmarkerState('loading');
-      await faceLandmarkerController.initialize();
-      setLandmarkerState(faceLandmarkerController.getState());
-
-      const stream = await cameraController.start();
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
-
-      const videoElement = videoRef.current;
-      const canvasElement = processedCanvasRef.current;
-      const overlayCanvasElement = overlayCanvasRef.current;
-
-      if (videoElement && canvasElement) {
-        rendererRef.current?.stop();
-
-        const renderer = createCanvasRenderer({
-          video: videoElement,
-          canvas: canvasElement,
-          getCpuWarpPreviewEnabled: () => cpuWarpPreviewEnabledRef.current,
-          getActiveOperation: () => activeOperationRef.current,
-          getFaceGeometry: () => faceGeometryRef.current,
-        });
-
-        renderer.start();
-        rendererRef.current = renderer;
-        setRendererState(renderer.getState());
-      }
-
-      if (overlayCanvasElement) {
-        overlayRef.current = createLandmarkOverlay(overlayCanvasElement);
-        overlayRef.current.updateToggles({
-          showLandmarks,
-          showCenters,
-          showWarpInfluence,
-          showWarpCenter,
-          showFalloffRings,
-        });
-        overlayRef.current.syncSize();
-      }
-
-      startFaceLandmarkLoop();
-      setCameraState('running');
-    } catch (error) {
-      const fallbackMessage = error instanceof Error ? error.message : 'Failed to start camera.';
-      const cameraError = error as CameraError;
-      setCameraState('error');
-      setCameraErrorMessage(cameraError?.code ? getCameraErrorMessage(cameraError) : fallbackMessage);
-      setLandmarkerState('error');
-    }
+    setActivePreset((currentPreset) => ({ ...currentPreset, operations: currentPreset.operations.map((operation, index) => index === 0 ? { ...operation, falloff: { type: falloffType } } : operation) }));
   };
 
   const debugOperation = activePreset.operations[0];
   const debugCenter = { x: 0.5, y: 0.5 };
-  const debugWarpResult = applyRadialWarp({
-    uv: debugUv,
-    center: debugCenter,
-    radius: debugOperation?.radius ?? 1,
-    strength: debugOperation?.strength ?? 0,
-    axis: debugOperation?.axis ?? { x: 1, y: 1 },
-    falloff: debugOperation?.falloff.type ?? 'smoothstep',
-  });
+  const debugWarpResult = applyRadialWarp({ uv: debugUv, center: debugCenter, radius: debugOperation?.radius ?? 1, strength: debugOperation?.strength ?? 0, axis: debugOperation?.axis ?? { x: 1, y: 1 }, falloff: debugOperation?.falloff.type ?? 'smoothstep' });
   const debugGridPoints = Array.from({ length: DEBUG_GRID_SIZE * DEBUG_GRID_SIZE }, (_, index) => {
-    const gx = index % DEBUG_GRID_SIZE;
-    const gy = Math.floor(index / DEBUG_GRID_SIZE);
-    const uv = { x: gx / (DEBUG_GRID_SIZE - 1), y: gy / (DEBUG_GRID_SIZE - 1) };
-    const warped = applyRadialWarp({
-      uv,
-      center: debugCenter,
-      radius: debugOperation?.radius ?? 1,
-      strength: debugOperation?.strength ?? 0,
-      axis: debugOperation?.axis ?? { x: 1, y: 1 },
-      falloff: debugOperation?.falloff.type ?? 'smoothstep',
-    });
+    const gx = index % DEBUG_GRID_SIZE; const gy = Math.floor(index / DEBUG_GRID_SIZE); const uv = { x: gx / (DEBUG_GRID_SIZE - 1), y: gy / (DEBUG_GRID_SIZE - 1) };
+    const warped = applyRadialWarp({ uv, center: debugCenter, radius: debugOperation?.radius ?? 1, strength: debugOperation?.strength ?? 0, axis: debugOperation?.axis ?? { x: 1, y: 1 }, falloff: debugOperation?.falloff.type ?? 'smoothstep' });
     return { uv, warpedUv: warped.warpedUv };
   });
-
-  const handleStopCamera = () => {
-    if (detectAnimationRef.current !== null) {
-      cancelAnimationFrame(detectAnimationRef.current);
-      detectAnimationRef.current = null;
-    }
-
-    rendererRef.current?.stop();
-
-    if (rendererRef.current) {
-      setRendererState(rendererRef.current.getState());
-    }
-
-    cameraController.stop();
-
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-
-    overlayRef.current?.clear();
-
-    faceLandmarkerController.dispose();
-    setLandmarkerState(faceLandmarkerController.getState());
-    setLandmarkFrame(null);
-    setFaceGeometry(null);
-    faceGeometryRef.current = null;
-    setCameraState('idle');
-    setCameraErrorMessage(null);
-  };
 
   return (
     <main className="app-shell">
       <h1 className="app-shell__title">Beauty AR & Face Warp Lab</h1>
       <div className="panel-grid">
-        <Panel title="Source Preview">
-          <div className="source-preview">
-            <video className="source-video" ref={videoRef} autoPlay playsInline muted />
-            <canvas className="overlay-canvas" ref={overlayCanvasRef} />
-          </div>
-          <p className="camera-status">Camera state: {cameraState}</p>
-          <p className="camera-status">Landmarker state: {landmarkerState}</p>
-          {cameraErrorMessage ? <p className="camera-error">{cameraErrorMessage}</p> : null}
-        </Panel>
-
-        <Panel title="Processed Preview">
-          <canvas className="processed-canvas" ref={processedCanvasRef} />
-          <p className="camera-status">Renderer state: {rendererState}</p>
-        </Panel>
-
-        <Panel title="Face Detection Status">
-          <ul>
-            <li>Face: {landmarkFrame?.detected ? 'detected' : 'not detected'}</li>
-            <li>Landmark count: {landmarkFrame?.landmarkCount ?? 0}</li>
-            <li>Face count: {landmarkFrame?.faceCount ?? 0}</li>
-            <li>Frame: {landmarkFrame?.frameCount ?? 0}</li>
-            <li>Timestamp (ms): {Math.round(landmarkFrame?.timestampMs ?? 0)}</li>
-          </ul>
-        </Panel>
-
-        <Panel title="Control Panel">
-          <div className="camera-controls">
-            <button type="button" onClick={handleStartCamera} disabled={cameraState === 'starting'}>
-              Start Camera
-            </button>
-            <button type="button" onClick={handleStopCamera} disabled={cameraState !== 'running'}>
-              Stop Camera
-            </button>
-          </div>
-          <div className="overlay-controls">
-            <label>
-              <input
-                type="checkbox"
-                checked={showLandmarks}
-                onChange={(event) => setShowLandmarks(event.target.checked)}
-              />
-              Show landmarks
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                checked={showCenters}
-                onChange={(event) => setShowCenters(event.target.checked)}
-              />
-              Show centers
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                checked={showWarpInfluence}
-                onChange={(event) => setShowWarpInfluence(event.target.checked)}
-              />
-              Show warp influence
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                checked={showWarpCenter}
-                onChange={(event) => setShowWarpCenter(event.target.checked)}
-              />
-              Show warp center
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                checked={showFalloffRings}
-                onChange={(event) => setShowFalloffRings(event.target.checked)}
-              />
-              Show falloff rings
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                checked={enableCpuWarpPreview}
-                onChange={(event) => setEnableCpuWarpPreview(event.target.checked)}
-              />
-              Enable CPU warp preview
-            </label>
-
-          </div>
-          <div className="operation-controls">
-            <label>
-              <input
-                type="checkbox"
-                checked={activePreset.operations[0]?.enabled ?? false}
-                onChange={(event) => updateOperation('enabled', event.target.checked)}
-              />
-              Operation enabled
-            </label>
-
-            <label>
-              Target
-              <select
-                value={activePreset.operations[0]?.target ?? 'left_eye'}
-                onChange={(event) => updateOperation('target', event.target.value as WarpTarget)}
-              >
-                <option value="left_eye">left_eye</option>
-                <option value="right_eye">right_eye</option>
-                <option value="face_center">face_center</option>
-                <option value="mouth">mouth</option>
-                <option value="nose">nose</option>
-              </select>
-            </label>
-
-            <label>
-              Strength: {(activePreset.operations[0]?.strength ?? 0).toFixed(2)}
-              <input
-                type="range"
-                min={-0.2}
-                max={0.2}
-                step={0.01}
-                value={activePreset.operations[0]?.strength ?? 0}
-                onChange={(event) => updateOperation('strength', Number(event.target.value))}
-              />
-            </label>
-
-            <label>
-              Radius: {(activePreset.operations[0]?.radius ?? 0).toFixed(2)}
-              <input
-                type="range"
-                min={0.1}
-                max={5}
-                step={0.1}
-                value={activePreset.operations[0]?.radius ?? 1}
-                onChange={(event) => updateOperation('radius', Number(event.target.value))}
-              />
-            </label>
-
-            <label>
-              Falloff
-              <select
-                value={activePreset.operations[0]?.falloff.type ?? 'smoothstep'}
-                onChange={(event) => updateFalloffType(event.target.value as WarpFalloffType)}
-              >
-                <option value="linear">linear</option>
-                <option value="smoothstep">smoothstep</option>
-                <option value="gaussian">gaussian</option>
-              </select>
-            </label>
-
-            <FalloffGraph type={activePreset.operations[0]?.falloff.type ?? 'smoothstep'} sampleCount={64} />
-
-            <label>
-              Axis X: {(activePreset.operations[0]?.axis.x ?? 0).toFixed(2)}
-              <input
-                type="range"
-                min={0}
-                max={2}
-                step={0.05}
-                value={activePreset.operations[0]?.axis.x ?? 1}
-                onChange={(event) => updateAxis('x', Number(event.target.value))}
-              />
-            </label>
-
-            <label>
-              Axis Y: {(activePreset.operations[0]?.axis.y ?? 0).toFixed(2)}
-              <input
-                type="range"
-                min={0}
-                max={2}
-                step={0.05}
-                value={activePreset.operations[0]?.axis.y ?? 1}
-                onChange={(event) => updateAxis('y', Number(event.target.value))}
-              />
-            </label>
-          </div>
-          <ul>
-            <li>Status: {pipelineState.status}</li>
-            <li>Preset version: {pipelineState.activePreset.version}</li>
-            <li>Operation id: {pipelineState.activePreset.operations[0]?.id}</li>
-            <li>Operation type: {pipelineState.activePreset.operations[0]?.type}</li>
-          </ul>
-        </Panel>
-
-
-        <Panel title="Warp Math Debug">
-          <div
-            className="warp-debug-view"
-            onMouseMove={(event) => {
-              const rect = event.currentTarget.getBoundingClientRect();
-              const x = clamp01((event.clientX - rect.left) / Math.max(1, rect.width));
-              const y = clamp01((event.clientY - rect.top) / Math.max(1, rect.height));
-              setDebugUv({ x, y });
-            }}
-          >
-            <svg viewBox="0 0 100 100" preserveAspectRatio="none">
-              {debugGridPoints.map((point, index) => (
-                <g key={index}>
-                  <line
-                    x1={point.uv.x * 100}
-                    y1={point.uv.y * 100}
-                    x2={point.warpedUv.x * 100}
-                    y2={point.warpedUv.y * 100}
-                    stroke="rgba(255,180,120,0.25)"
-                    strokeWidth="0.35"
-                  />
-                  <circle cx={point.warpedUv.x * 100} cy={point.warpedUv.y * 100} r="0.6" fill="#59c1ff" />
-                </g>
-              ))}
-              <circle cx={debugCenter.x * 100} cy={debugCenter.y * 100} r="1.2" fill="#ffd166" />
-              <circle cx={debugUv.x * 100} cy={debugUv.y * 100} r="1.2" fill="#90ee90" />
-              <line
-                x1={debugUv.x * 100}
-                y1={debugUv.y * 100}
-                x2={debugWarpResult.warpedUv.x * 100}
-                y2={debugWarpResult.warpedUv.y * 100}
-                stroke="#ff7b7b"
-                strokeWidth="0.8"
-              />
-              <circle cx={debugWarpResult.warpedUv.x * 100} cy={debugWarpResult.warpedUv.y * 100} r="1.4" fill="#ff7b7b" />
-            </svg>
-          </div>
-          <ul>
-            <li>Original point: ({debugUv.x.toFixed(3)}, {debugUv.y.toFixed(3)})</li>
-            <li>Warped point: ({debugWarpResult.warpedUv.x.toFixed(3)}, {debugWarpResult.warpedUv.y.toFixed(3)})</li>
-            <li>Influence: {debugWarpResult.influence.toFixed(3)}</li>
-          </ul>
-        </Panel>
-
-        <Panel title="JSON Output">
-          <pre>{JSON.stringify({ preset: pipelineState.activePreset, geometry: faceGeometry }, null, 2)}</pre>
-        </Panel>
+        <SourcePreviewPanel videoRef={runtime.refs.videoRef} overlayCanvasRef={runtime.refs.overlayCanvasRef} cameraState={runtime.state.cameraState} landmarkerState={runtime.state.landmarkerState} cameraErrorMessage={runtime.state.cameraErrorMessage} />
+        <ProcessedPreviewPanel processedCanvasRef={runtime.refs.processedCanvasRef} rendererState={runtime.state.rendererState} />
+        <Panel title="Face Detection Status"><ul><li>Face: {runtime.state.landmarkFrame?.detected ? 'detected' : 'not detected'}</li><li>Landmark count: {runtime.state.landmarkFrame?.landmarkCount ?? 0}</li><li>Face count: {runtime.state.landmarkFrame?.faceCount ?? 0}</li><li>Frame: {runtime.state.landmarkFrame?.frameCount ?? 0}</li><li>Timestamp (ms): {Math.round(runtime.state.landmarkFrame?.timestampMs ?? 0)}</li></ul></Panel>
+        <ControlPanel activePreset={activePreset} pipelineStatus={pipelineState.status} onStartCamera={runtime.actions.startCamera} onStopCamera={runtime.actions.stopCamera} cameraState={runtime.state.cameraState} showLandmarks={showLandmarks} setShowLandmarks={setShowLandmarks} showCenters={showCenters} setShowCenters={setShowCenters} showWarpInfluence={showWarpInfluence} setShowWarpInfluence={setShowWarpInfluence} showWarpCenter={showWarpCenter} setShowWarpCenter={setShowWarpCenter} showFalloffRings={showFalloffRings} setShowFalloffRings={setShowFalloffRings} enableCpuWarpPreview={enableCpuWarpPreview} setEnableCpuWarpPreview={setEnableCpuWarpPreview} updateOperation={updateOperation} updateAxis={updateAxis} updateFalloffType={updateFalloffType} />
+        <WarpMathDebugPanel debugUv={debugUv} debugCenter={debugCenter} debugWarpResult={debugWarpResult} debugGridPoints={debugGridPoints} onMouseMove={(event: MouseEvent<HTMLDivElement>) => { const rect = event.currentTarget.getBoundingClientRect(); setDebugUv({ x: clamp01((event.clientX - rect.left) / Math.max(1, rect.width)), y: clamp01((event.clientY - rect.top) / Math.max(1, rect.height)) }); }} />
+        <JsonOutputPanel preset={pipelineState.activePreset} geometry={runtime.state.faceGeometry} />
       </div>
     </main>
   );
