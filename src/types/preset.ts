@@ -84,5 +84,13 @@ export type WarpPreset = {
       maskOpacity: number;
       showMaskPreview: boolean;
     };
+    skinTone?: {
+      type: 'skin_tone';
+      enabled: boolean;
+      brightness: number;
+      saturation: number;
+      warmth: number;
+      blend: number;
+    };
   };
 };

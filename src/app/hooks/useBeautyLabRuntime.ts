@@ -46,6 +46,7 @@ export function useBeautyLabRuntime(
   overlayToggles: OverlayToggles,
   rendererMode: RendererMode,
   skinSmoothing: { enabled: boolean; strength: number; radius: number; maskOpacity: number; showMaskPreview: boolean },
+  skinTone: { enabled: boolean; brightness: number; saturation: number; warmth: number; blend: number },
 ) {
   const cameraController = useMemo(() => createCameraController(), []);
   const faceLandmarkerController = useMemo(() => createFaceLandmarker(), []);
@@ -108,6 +109,7 @@ export function useBeautyLabRuntime(
         getOperations: () => resolvedOperationsRef.current,
         getFaceGeometry: () => faceGeometryRef.current,
         getSkinSmoothing: () => skinSmoothing,
+        getSkinTone: () => skinTone,
       })
       : createCanvasRenderer({
         video: videoElement,
@@ -120,7 +122,7 @@ export function useBeautyLabRuntime(
     renderer.start();
     rendererRef.current = renderer;
     setRendererState(renderer.getState());
-  }, [cameraState, rendererMode, skinSmoothing]);
+  }, [cameraState, rendererMode, skinSmoothing, skinTone]);
 
   useEffect(() => () => {
     if (detectAnimationRef.current !== null) {
@@ -189,6 +191,7 @@ export function useBeautyLabRuntime(
             getOperations: () => resolvedOperationsRef.current,
             getFaceGeometry: () => faceGeometryRef.current,
             getSkinSmoothing: () => skinSmoothing,
+            getSkinTone: () => skinTone,
           })
           : createCanvasRenderer({
             video: videoElement,

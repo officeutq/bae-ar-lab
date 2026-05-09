@@ -20,6 +20,7 @@ type CreateWebglRendererOptions = {
   getOperations: () => WarpOperation[];
   getFaceGeometry: () => FaceGeometry | null;
   getSkinSmoothing: () => { enabled: boolean; strength: number; radius: number; maskOpacity: number; showMaskPreview: boolean };
+  getSkinTone: () => { enabled: boolean; brightness: number; saturation: number; warmth: number; blend: number };
 };
 
 const FALLBACK_SIZE = 0.05;
@@ -36,7 +37,7 @@ function getFalloffUniformValue(type: WarpOperation['falloff']['type']) {
   return 2;
 }
 
-export function createWebglRenderer({ video, canvas, getOperations, getFaceGeometry, getSkinSmoothing }: CreateWebglRendererOptions): WebglRenderer {
+export function createWebglRenderer({ video, canvas, getOperations, getFaceGeometry, getSkinSmoothing, getSkinTone }: CreateWebglRendererOptions): WebglRenderer {
   const gl = canvas.getContext('webgl2');
 
   if (!gl) {
@@ -69,8 +70,13 @@ export function createWebglRenderer({ video, canvas, getOperations, getFaceGeome
   const smoothingMaskPreviewLocation = gl.getUniformLocation(program, 'uSmoothingMaskPreview');
   const faceMaskPolygonLocation = gl.getUniformLocation(program, 'uFaceMaskPolygon');
   const faceMaskCountLocation = gl.getUniformLocation(program, 'uFaceMaskCount');
+  const skinToneEnabledLocation = gl.getUniformLocation(program, 'uSkinToneEnabled');
+  const skinToneBrightnessLocation = gl.getUniformLocation(program, 'uSkinToneBrightness');
+  const skinToneSaturationLocation = gl.getUniformLocation(program, 'uSkinToneSaturation');
+  const skinToneWarmthLocation = gl.getUniformLocation(program, 'uSkinToneWarmth');
+  const skinToneBlendLocation = gl.getUniformLocation(program, 'uSkinToneBlend');
 
-  if (positionLocation < 0 || !videoTextureLocation || !warpCentersLocation || !warpRadiiLocation || !warpStrengthsLocation || !warpAxesLocation || !warpDirectionsLocation || !lineStartsLocation || !lineEndsLocation || !lineWidthsLocation || !operationTypesLocation || !falloffTypesLocation || !enabledOpsLocation || !polygonPointsLocation || !polygonCountsLocation || !weightMapTypesLocation || !weightMapCentersLocation || !weightMapRadiiLocation || !smoothingEnabledLocation || !smoothingStrengthLocation || !smoothingRadiusLocation || !smoothingMaskOpacityLocation || !smoothingMaskPreviewLocation || !faceMaskPolygonLocation || !faceMaskCountLocation) {
+  if (positionLocation < 0 || !videoTextureLocation || !warpCentersLocation || !warpRadiiLocation || !warpStrengthsLocation || !warpAxesLocation || !warpDirectionsLocation || !lineStartsLocation || !lineEndsLocation || !lineWidthsLocation || !operationTypesLocation || !falloffTypesLocation || !enabledOpsLocation || !polygonPointsLocation || !polygonCountsLocation || !weightMapTypesLocation || !weightMapCentersLocation || !weightMapRadiiLocation || !smoothingEnabledLocation || !smoothingStrengthLocation || !smoothingRadiusLocation || !smoothingMaskOpacityLocation || !smoothingMaskPreviewLocation || !faceMaskPolygonLocation || !faceMaskCountLocation || !skinToneEnabledLocation || !skinToneBrightnessLocation || !skinToneSaturationLocation || !skinToneWarmthLocation || !skinToneBlendLocation) {
     gl.deleteProgram(program);
     throw new Error('Failed to resolve shader attributes or uniforms.');
   }
@@ -148,6 +154,7 @@ export function createWebglRenderer({ video, canvas, getOperations, getFaceGeome
       const weightMapCenters = new Float32Array(MAX_OPERATIONS * 2);
       const weightMapRadii = new Float32Array(MAX_OPERATIONS);
       const smoothing = getSkinSmoothing();
+      const skinTone = getSkinTone();
       const faceMask = new Float32Array(MAX_POLYGON_POINTS * 2);
       let faceMaskCount = 0;
 
@@ -247,6 +254,11 @@ export function createWebglRenderer({ video, canvas, getOperations, getFaceGeome
       gl.uniform1i(smoothingMaskPreviewLocation, smoothing.showMaskPreview ? 1 : 0);
       gl.uniform2fv(faceMaskPolygonLocation, faceMask);
       gl.uniform1i(faceMaskCountLocation, faceMaskCount);
+      gl.uniform1i(skinToneEnabledLocation, skinTone.enabled ? 1 : 0);
+      gl.uniform1f(skinToneBrightnessLocation, skinTone.brightness);
+      gl.uniform1f(skinToneSaturationLocation, skinTone.saturation);
+      gl.uniform1f(skinToneWarmthLocation, skinTone.warmth);
+      gl.uniform1f(skinToneBlendLocation, skinTone.blend);
       gl.bindVertexArray(vao);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
       gl.bindVertexArray(null);

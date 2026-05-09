@@ -27,6 +27,11 @@ uniform float uSmoothingMaskOpacity;
 uniform int uSmoothingMaskPreview;
 uniform vec2 uFaceMaskPolygon[MAX_POLYGON_POINTS];
 uniform int uFaceMaskCount;
+uniform int uSkinToneEnabled;
+uniform float uSkinToneBrightness;
+uniform float uSkinToneSaturation;
+uniform float uSkinToneWarmth;
+uniform float uSkinToneBlend;
 
 in vec2 v_uv;
 out vec4 outColor;
@@ -125,6 +130,17 @@ void main() {
   }
   if (uSmoothingMaskPreview == 1) {
     baseColor.rgb = mix(baseColor.rgb, vec3(0.2, 0.8, 0.4), mask * 0.35);
+  }
+  if (uSkinToneEnabled == 1 && mask > 0.0) {
+    vec3 graded = baseColor.rgb;
+    graded += vec3(uSkinToneBrightness);
+    float luma = dot(graded, vec3(0.299, 0.587, 0.114));
+    graded = mix(vec3(luma), graded, max(0.0, uSkinToneSaturation));
+    graded.r += uSkinToneWarmth * 0.06;
+    graded.b -= uSkinToneWarmth * 0.06;
+    graded = clamp(graded, 0.0, 1.0);
+    float toneBlend = clamp(uSkinToneBlend * mask, 0.0, 1.0);
+    baseColor.rgb = mix(baseColor.rgb, graded, toneBlend);
   }
   outColor = baseColor;
 }
