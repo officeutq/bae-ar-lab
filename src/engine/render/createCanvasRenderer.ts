@@ -18,6 +18,8 @@ type CreateCanvasRendererOptions = {
   getOperations?: () => WarpOperation[];
   getFaceGeometry?: () => FaceGeometry | null;
   onRenderFrame?: (renderTimeMs: number) => void;
+  getRenderScale?: () => number;
+  getFrameSkip?: () => number;
 };
 
 export function createCanvasRenderer({
@@ -28,6 +30,8 @@ export function createCanvasRenderer({
   getFaceGeometry,
   getOperations,
   onRenderFrame,
+  getRenderScale,
+  getFrameSkip,
 }: CreateCanvasRendererOptions): CanvasRenderer {
   const context = canvas.getContext('2d');
 
@@ -37,6 +41,7 @@ export function createCanvasRenderer({
 
   let animationFrameId: number | null = null;
   let state: CanvasRendererState = 'idle';
+  let frameCounter = 0;
   const cpuWarpRenderer = createCpuWarpRenderer();
 
   const syncCanvasSize = () => {
@@ -46,9 +51,13 @@ export function createCanvasRenderer({
       return false;
     }
 
-    if (canvas.width !== videoWidth || canvas.height !== videoHeight) {
-      canvas.width = videoWidth;
-      canvas.height = videoHeight;
+    const scale = Math.max(0.3, Math.min(1, getRenderScale?.() ?? 1));
+    const scaledWidth = Math.max(1, Math.floor(videoWidth * scale));
+    const scaledHeight = Math.max(1, Math.floor(videoHeight * scale));
+
+    if (canvas.width !== scaledWidth || canvas.height !== scaledHeight) {
+      canvas.width = scaledWidth;
+      canvas.height = scaledHeight;
     }
 
     return true;
@@ -60,8 +69,11 @@ export function createCanvasRenderer({
     }
 
     const hasSize = syncCanvasSize();
+    const frameSkip = Math.max(0, getFrameSkip?.() ?? 0);
+    const shouldSkip = frameSkip > 0 && frameCounter % (frameSkip + 1) !== 0;
+    frameCounter += 1;
 
-    if (hasSize) {
+    if (hasSize && !shouldSkip) {
       const renderStart = performance.now();
       if (getCpuWarpPreviewEnabled?.()) {
         const activeOperation = getActiveOperation?.() ?? null;

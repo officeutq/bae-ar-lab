@@ -25,6 +25,7 @@ uniform float uSmoothingStrength;
 uniform float uSmoothingRadius;
 uniform float uSmoothingMaskOpacity;
 uniform int uSmoothingMaskPreview;
+uniform int uSmoothingSampleCount;
 uniform vec2 uFaceMaskPolygon[MAX_POLYGON_POINTS];
 uniform int uFaceMaskCount;
 uniform int uSkinToneEnabled;
@@ -121,11 +122,27 @@ void main() {
   float mask = polygonMask(warpedUv) * clamp(uSmoothingMaskOpacity, 0.0, 1.0);
   if (uSmoothingEnabled == 1 && mask > 0.0) {
     vec2 texel = vec2(1.0 / 1920.0, 1.0 / 1080.0) * max(0.001, uSmoothingRadius);
-    vec4 blur = texture(uVideoTexture, warpedUv) * 0.4;
-    blur += texture(uVideoTexture, warpedUv + vec2(texel.x, 0.0)) * 0.15;
-    blur += texture(uVideoTexture, warpedUv - vec2(texel.x, 0.0)) * 0.15;
-    blur += texture(uVideoTexture, warpedUv + vec2(0.0, texel.y)) * 0.15;
-    blur += texture(uVideoTexture, warpedUv - vec2(0.0, texel.y)) * 0.15;
+    vec4 blur = texture(uVideoTexture, warpedUv) * 0.2;
+    if (uSmoothingSampleCount >= 3) {
+      blur += texture(uVideoTexture, warpedUv + vec2(texel.x, 0.0)) * 0.2;
+      blur += texture(uVideoTexture, warpedUv - vec2(texel.x, 0.0)) * 0.2;
+    }
+    if (uSmoothingSampleCount >= 5) {
+      blur += texture(uVideoTexture, warpedUv + vec2(0.0, texel.y)) * 0.2;
+      blur += texture(uVideoTexture, warpedUv - vec2(0.0, texel.y)) * 0.2;
+    }
+    if (uSmoothingSampleCount >= 9) {
+      blur += texture(uVideoTexture, warpedUv + vec2(texel.x, texel.y)) * 0.05;
+      blur += texture(uVideoTexture, warpedUv + vec2(-texel.x, texel.y)) * 0.05;
+      blur += texture(uVideoTexture, warpedUv + vec2(texel.x, -texel.y)) * 0.05;
+      blur += texture(uVideoTexture, warpedUv + vec2(-texel.x, -texel.y)) * 0.05;
+    }
+    if (uSmoothingSampleCount >= 13) {
+      blur += texture(uVideoTexture, warpedUv + vec2(texel.x * 2.0, 0.0)) * 0.025;
+      blur += texture(uVideoTexture, warpedUv + vec2(-texel.x * 2.0, 0.0)) * 0.025;
+      blur += texture(uVideoTexture, warpedUv + vec2(0.0, texel.y * 2.0)) * 0.025;
+      blur += texture(uVideoTexture, warpedUv + vec2(0.0, -texel.y * 2.0)) * 0.025;
+    }
     baseColor = mix(baseColor, blur, clamp(uSmoothingStrength * mask, 0.0, 1.0));
   }
   if (uSmoothingMaskPreview == 1) {

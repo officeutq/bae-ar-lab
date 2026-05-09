@@ -2,6 +2,7 @@ import type { WarpFalloffType, WarpOperationType, WarpPreset, WarpTarget, WarpWe
 import type { StoredPreset } from '@engine/presets/types';
 import type { RendererMode } from '@engine/render/types';
 import type { SamplePresetId } from '@algorithms/presets';
+import type { QualityLevel } from '@engine/performance/adaptiveQuality';
 import { Panel } from '@ui/Panel';
 import { FalloffGraph } from '@ui/components/FalloffGraph';
 
@@ -50,6 +51,11 @@ type Props = {
   updateSkinSmoothing: (patch: Partial<{ enabled: boolean; strength: number; radius: number; maskOpacity: number; showMaskPreview: boolean }>) => void;
   skinTone: { enabled: boolean; brightness: number; saturation: number; warmth: number; blend: number };
   updateSkinTone: (patch: Partial<{ enabled: boolean; brightness: number; saturation: number; warmth: number; blend: number }>) => void;
+  adaptiveQualityEnabled: boolean;
+  onAdaptiveQualityEnabledChange: (value: boolean) => void;
+  selectedQuality: QualityLevel;
+  currentQuality: QualityLevel;
+  onSelectedQualityChange: (value: QualityLevel) => void;
 };
 
 export function ControlPanel(props: Props) {
@@ -103,6 +109,13 @@ export function ControlPanel(props: Props) {
         <button type="button" onClick={props.onStopCamera} disabled={props.cameraState !== 'running'}>Stop Camera</button>
       </div>
       <div className="overlay-controls">
+        <label><input type="checkbox" checked={props.adaptiveQualityEnabled} onChange={(e) => props.onAdaptiveQualityEnabledChange(e.target.checked)} />Adaptive quality</label>
+        <label>Manual quality
+          <select value={props.selectedQuality} onChange={(e) => props.onSelectedQualityChange(e.target.value as QualityLevel)}>
+            <option value="ultra">ultra</option><option value="high">high</option><option value="medium">medium</option><option value="low">low</option>
+          </select>
+        </label>
+        <p className="camera-status">Current quality: {props.currentQuality}</p>
         <label><input type="checkbox" checked={props.showLandmarks} onChange={(e) => props.setShowLandmarks(e.target.checked)} />Show landmarks</label>
         <label><input type="checkbox" checked={props.showCenters} onChange={(e) => props.setShowCenters(e.target.checked)} />Show centers</label>
         <label><input type="checkbox" checked={props.showWarpInfluence} onChange={(e) => props.setShowWarpInfluence(e.target.checked)} />Show warp influence</label>
