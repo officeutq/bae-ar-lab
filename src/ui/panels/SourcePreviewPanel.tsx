@@ -8,9 +8,10 @@ type Props = {
   cameraState: string;
   landmarkerState: FaceLandmarkerRuntimeState;
   cameraErrorMessage: string | null;
+  onCaptureSource: () => void;
 };
 
-export function SourcePreviewPanel({ videoRef, overlayCanvasRef, cameraState, landmarkerState, cameraErrorMessage }: Props) {
+export function SourcePreviewPanel({ videoRef, overlayCanvasRef, cameraState, landmarkerState, cameraErrorMessage, onCaptureSource }: Props) {
   return (
     <Panel title="Source Preview">
       <div className="source-preview">
@@ -20,6 +21,7 @@ export function SourcePreviewPanel({ videoRef, overlayCanvasRef, cameraState, la
       <p className="camera-status">Camera state: {cameraState}</p>
       <p className="camera-status">Landmarker state: {landmarkerState}</p>
       {cameraErrorMessage ? <p className="camera-error">{cameraErrorMessage}</p> : null}
+      <button type="button" onClick={onCaptureSource}>Capture Source</button>
     </Panel>
   );
 }
