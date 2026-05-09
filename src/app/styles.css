@@ -64,3 +64,42 @@ ul {
   margin: 0;
   padding-left: 18px;
 }
+
+.source-video {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 8px;
+  background: #0b0e14;
+  border: 1px solid #2d3340;
+  object-fit: cover;
+}
+
+.camera-status {
+  margin: 10px 0 0;
+  color: #d2d9ea;
+}
+
+.camera-error {
+  margin: 8px 0 0;
+  color: #ff9aa8;
+}
+
+.camera-controls {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+button {
+  border: 1px solid #394156;
+  background: #20293b;
+  color: #e7e9ee;
+  border-radius: 6px;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
