@@ -287,6 +287,8 @@ input[type='range'] {
   border: 1px solid #2d3340;
   border-radius: 6px;
   background: #0f1420;
+  cursor: ew-resize;
+  touch-action: none;
 }
 
 .timeline-track__keyframe {

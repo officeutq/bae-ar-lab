@@ -1,10 +1,13 @@
 import type { AnimationClip } from '@engine/animation/types';
+import { useRef, type PointerEvent } from 'react';
 import { Panel } from '@ui/Panel';
 
 type Props = {
   clip: AnimationClip;
   currentTime: number;
   currentValues: Record<string, number>;
+  onSeek: (time: number) => void;
+  onScrubStart: () => void;
 };
 
 const TIMELINE_WIDTH = 100;
@@ -20,8 +23,28 @@ function toTimelinePercent(time: number, duration: number) {
   return clamp01(time / duration) * TIMELINE_WIDTH;
 }
 
-export function TimelinePanel({ clip, currentTime, currentValues }: Props) {
+export function TimelinePanel({ clip, currentTime, currentValues, onSeek, onScrubStart }: Props) {
+  const scrubRef = useRef(false);
   const playheadPercent = toTimelinePercent(currentTime, clip.duration);
+  const timeFromClientX = (clientX: number, rect: DOMRect) => clamp01((clientX - rect.left) / Math.max(1, rect.width)) * clip.duration;
+  const handleSeek = (event: PointerEvent<HTMLDivElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    onSeek(timeFromClientX(event.clientX, rect));
+  };
+  const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    scrubRef.current = true;
+    onScrubStart();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    handleSeek(event);
+  };
+  const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    if (!scrubRef.current) return;
+    handleSeek(event);
+  };
+  const handlePointerEnd = (event: PointerEvent<HTMLDivElement>) => {
+    scrubRef.current = false;
+    event.currentTarget.releasePointerCapture(event.pointerId);
+  };
 
   return (
     <Panel title="Timeline Panel">
@@ -39,7 +62,19 @@ export function TimelinePanel({ clip, currentTime, currentValues }: Props) {
                 <div className="timeline-track__stats">{track.keyframes.length} keyframes / value {Number(currentValues[track.track] ?? 0).toFixed(3)}</div>
               </div>
 
-              <div className="timeline-track__bar" role="img" aria-label={`timeline ${track.track}`}>
+              <div
+                className="timeline-track__bar"
+                role="slider"
+                aria-label={`timeline ${track.track}`}
+                aria-valuemin={0}
+                aria-valuemax={clip.duration}
+                aria-valuenow={currentTime}
+                tabIndex={0}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerEnd}
+                onPointerCancel={handlePointerEnd}
+              >
                 {track.keyframes.map((keyframe, keyframeIndex) => {
                   const left = toTimelinePercent(keyframe.time, clip.duration);
                   return (

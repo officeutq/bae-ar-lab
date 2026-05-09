@@ -25,8 +25,10 @@ export function createTimeline(clip: AnimationClip) {
   return {
     play() { state = 'playing'; },
     pause() { if (state === 'playing') state = 'paused'; },
+    setPlaying(value: boolean) { state = value ? 'playing' : (state === 'stopped' ? 'stopped' : 'paused'); },
     stop() { state = 'stopped'; currentTime = 0; },
     setLoop(value: boolean) { loop = value; },
+    seek(time: number) { currentTime = Math.max(0, Math.min(clip.duration, time)); },
     setTime(time: number) { currentTime = Math.max(0, Math.min(clip.duration, time)); },
     update(deltaSeconds: number) {
       if (state !== 'playing') return evaluate();
