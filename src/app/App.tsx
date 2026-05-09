@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { WarpFalloffType, WarpTarget } from '@app-types/preset';
 import { defaultWarpPreset } from '@algorithms/defaultPreset';
 import { createCameraController, type CameraError } from '@engine/camera/createCameraController';
 import { createFaceLandmarker } from '@engine/mediapipe/createFaceLandmarker';
@@ -30,7 +31,8 @@ function getCameraErrorMessage(error: CameraError) {
 }
 
 export function App() {
-  const pipelineState = useMemo(() => createInitialPipelineState(defaultWarpPreset), []);
+  const [activePreset, setActivePreset] = useState(defaultWarpPreset);
+  const pipelineState = useMemo(() => createInitialPipelineState(activePreset), [activePreset]);
   const cameraController = useMemo(() => createCameraController(), []);
   const faceLandmarkerController = useMemo(() => createFaceLandmarker(), []);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -84,6 +86,58 @@ export function App() {
     };
 
     detectAnimationRef.current = requestAnimationFrame(tick);
+  };
+
+
+
+  const updateOperation = <K extends keyof (typeof activePreset.operations)[number]>(
+    key: K,
+    value: (typeof activePreset.operations)[number][K],
+  ) => {
+    setActivePreset((currentPreset) => ({
+      ...currentPreset,
+      operations: currentPreset.operations.map((operation, index) =>
+        index === 0
+          ? {
+              ...operation,
+              [key]: value,
+            }
+          : operation,
+      ),
+    }));
+  };
+
+  const updateAxis = (axisKey: 'x' | 'y', value: number) => {
+    setActivePreset((currentPreset) => ({
+      ...currentPreset,
+      operations: currentPreset.operations.map((operation, index) =>
+        index === 0
+          ? {
+              ...operation,
+              axis: {
+                ...operation.axis,
+                [axisKey]: value,
+              },
+            }
+          : operation,
+      ),
+    }));
+  };
+
+  const updateFalloffType = (falloffType: WarpFalloffType) => {
+    setActivePreset((currentPreset) => ({
+      ...currentPreset,
+      operations: currentPreset.operations.map((operation, index) =>
+        index === 0
+          ? {
+              ...operation,
+              falloff: {
+                type: falloffType,
+              },
+            }
+          : operation,
+      ),
+    }));
   };
 
   const handleStartCamera = async () => {
@@ -222,12 +276,95 @@ export function App() {
               Show centers
             </label>
           </div>
+          <div className="operation-controls">
+            <label>
+              <input
+                type="checkbox"
+                checked={activePreset.operations[0]?.enabled ?? false}
+                onChange={(event) => updateOperation('enabled', event.target.checked)}
+              />
+              Operation enabled
+            </label>
+
+            <label>
+              Target
+              <select
+                value={activePreset.operations[0]?.target ?? 'left_eye'}
+                onChange={(event) => updateOperation('target', event.target.value as WarpTarget)}
+              >
+                <option value="left_eye">left_eye</option>
+                <option value="right_eye">right_eye</option>
+                <option value="face_center">face_center</option>
+                <option value="mouth">mouth</option>
+                <option value="nose">nose</option>
+              </select>
+            </label>
+
+            <label>
+              Strength: {(activePreset.operations[0]?.strength ?? 0).toFixed(2)}
+              <input
+                type="range"
+                min={-0.2}
+                max={0.2}
+                step={0.01}
+                value={activePreset.operations[0]?.strength ?? 0}
+                onChange={(event) => updateOperation('strength', Number(event.target.value))}
+              />
+            </label>
+
+            <label>
+              Radius: {(activePreset.operations[0]?.radius ?? 0).toFixed(2)}
+              <input
+                type="range"
+                min={0.1}
+                max={5}
+                step={0.1}
+                value={activePreset.operations[0]?.radius ?? 1}
+                onChange={(event) => updateOperation('radius', Number(event.target.value))}
+              />
+            </label>
+
+            <label>
+              Falloff
+              <select
+                value={activePreset.operations[0]?.falloff.type ?? 'smoothstep'}
+                onChange={(event) => updateFalloffType(event.target.value as WarpFalloffType)}
+              >
+                <option value="linear">linear</option>
+                <option value="smoothstep">smoothstep</option>
+                <option value="gaussian">gaussian</option>
+              </select>
+            </label>
+
+            <label>
+              Axis X: {(activePreset.operations[0]?.axis.x ?? 0).toFixed(2)}
+              <input
+                type="range"
+                min={0}
+                max={2}
+                step={0.05}
+                value={activePreset.operations[0]?.axis.x ?? 1}
+                onChange={(event) => updateAxis('x', Number(event.target.value))}
+              />
+            </label>
+
+            <label>
+              Axis Y: {(activePreset.operations[0]?.axis.y ?? 0).toFixed(2)}
+              <input
+                type="range"
+                min={0}
+                max={2}
+                step={0.05}
+                value={activePreset.operations[0]?.axis.y ?? 1}
+                onChange={(event) => updateAxis('y', Number(event.target.value))}
+              />
+            </label>
+          </div>
           <ul>
             <li>Status: {pipelineState.status}</li>
-            <li>Preset: {pipelineState.activePreset.name}</li>
-            <li>Intensity: {pipelineState.activePreset.params.intensity}</li>
-            <li>Smoothness: {pipelineState.activePreset.params.smoothness}</li>
-            <li>Falloff: {pipelineState.activePreset.params.falloff}</li>
+            <li>Preset version: {pipelineState.activePreset.version}</li>
+            <li>Operation id: {pipelineState.activePreset.operations[0]?.id}</li>
+            <li>Operation type: {pipelineState.activePreset.operations[0]?.type}</li>
           </ul>
         </Panel>
 

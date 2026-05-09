@@ -1,12 +1,22 @@
 import type { WarpPreset } from '@app-types/preset';
 
 export const defaultWarpPreset: WarpPreset = {
-  id: 'default-warp-v1',
-  name: 'Default Warp',
-  version: '1.0.0',
-  params: {
-    intensity: 0.3,
-    smoothness: 0.5,
-    falloff: 'smoothstep',
-  },
+  version: 1,
+  operations: [
+    {
+      id: 'left_eye_enlarge',
+      enabled: true,
+      type: 'radial_warp',
+      target: 'left_eye',
+      strength: 0.08,
+      radius: 1.8,
+      falloff: {
+        type: 'smoothstep',
+      },
+      axis: {
+        x: 1,
+        y: 0.7,
+      },
+    },
+  ],
 };
