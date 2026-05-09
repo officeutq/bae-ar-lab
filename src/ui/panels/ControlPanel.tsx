@@ -1,4 +1,5 @@
 import type { WarpFalloffType, WarpPreset, WarpTarget } from '@app-types/preset';
+import type { RendererMode } from '@engine/render/types';
 import { Panel } from '@ui/Panel';
 import { FalloffGraph } from '@ui/components/FalloffGraph';
 
@@ -18,10 +19,8 @@ type Props = {
   setShowWarpCenter: (value: boolean) => void;
   showFalloffRings: boolean;
   setShowFalloffRings: (value: boolean) => void;
-  enableCpuWarpPreview: boolean;
-  setEnableCpuWarpPreview: (value: boolean) => void;
-  enableWebglRenderer: boolean;
-  setEnableWebglRenderer: (value: boolean) => void;
+  rendererMode: RendererMode;
+  setRendererMode: (value: RendererMode) => void;
   updateOperation: <K extends keyof WarpPreset['operations'][number]>(key: K, value: WarpPreset['operations'][number][K]) => void;
   updateAxis: (axisKey: 'x' | 'y', value: number) => void;
   updateFalloffType: (type: WarpFalloffType) => void;
@@ -42,8 +41,13 @@ export function ControlPanel(props: Props) {
         <label><input type="checkbox" checked={props.showWarpInfluence} onChange={(e) => props.setShowWarpInfluence(e.target.checked)} />Show warp influence</label>
         <label><input type="checkbox" checked={props.showWarpCenter} onChange={(e) => props.setShowWarpCenter(e.target.checked)} />Show warp center</label>
         <label><input type="checkbox" checked={props.showFalloffRings} onChange={(e) => props.setShowFalloffRings(e.target.checked)} />Show falloff rings</label>
-        <label><input type="checkbox" checked={props.enableCpuWarpPreview} onChange={(e) => props.setEnableCpuWarpPreview(e.target.checked)} />Enable CPU warp preview</label>
-        <label><input type="checkbox" checked={props.enableWebglRenderer} onChange={(e) => props.setEnableWebglRenderer(e.target.checked)} />Enable WebGL renderer</label>
+        <label>Renderer Backend
+          <select value={props.rendererMode} onChange={(e) => props.setRendererMode(e.target.value as RendererMode)}>
+            <option value="canvas2d">Canvas 2D</option>
+            <option value="cpu_warp_debug">CPU Warp Debug</option>
+            <option value="webgl">WebGL</option>
+          </select>
+        </label>
       </div>
       <div className="operation-controls">
         <label><input type="checkbox" checked={op?.enabled ?? false} onChange={(e) => props.updateOperation('enabled', e.target.checked)} />Operation enabled</label>
