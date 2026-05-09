@@ -52,4 +52,22 @@ export const softBeautyPreset: WarpPreset = {
       polygon: [],
     },
   ],
+  animations: [
+    {
+      id: 'soft_pulse',
+      name: 'Soft Pulse',
+      duration: 2,
+      loop: true,
+      tracks: [
+        {
+          track: 'beauty.intensity',
+          keyframes: [
+            { time: 0, value: 0.8 },
+            { time: 1, value: 1 },
+            { time: 2, value: 0.8 },
+          ],
+        },
+      ],
+    },
+  ],
 };

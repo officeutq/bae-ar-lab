@@ -21,7 +21,10 @@ export type AnimationTrack = {
 };
 
 export type AnimationClip = {
+  id: string;
+  name: string;
   duration: number;
+  loop?: boolean;
   tracks: AnimationTrack[];
 };
 

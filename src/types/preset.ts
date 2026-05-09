@@ -1,3 +1,5 @@
+import type { AnimationClip } from '@engine/animation/types';
+
 export type WarpOperationType = 'radial_warp' | 'directional_warp' | 'line_warp' | 'region_warp';
 
 export type WarpTarget =
@@ -75,6 +77,7 @@ export type WarpOperation = {
 export type WarpPreset = {
   version: number;
   operations: WarpOperation[];
+  animations?: AnimationClip[];
   appearance?: {
     skinSmoothing: {
       type: 'skin_smoothing';
