@@ -158,3 +158,37 @@ select,
 input[type='range'] {
   width: 100%;
 }
+
+.falloff-graph {
+  border: 1px solid #2d3340;
+  border-radius: 8px;
+  padding: 8px;
+  background: #0f1420;
+}
+
+.falloff-graph__plot {
+  fill: #121827;
+  stroke: #2d3340;
+}
+
+.falloff-graph__curve {
+  fill: none;
+  stroke: #59c1ff;
+  stroke-width: 2;
+}
+
+.falloff-graph__marker {
+  stroke: #4a5268;
+  stroke-dasharray: 3 3;
+}
+
+.falloff-graph__label {
+  fill: #b8c0d6;
+  font-size: 10px;
+}
+
+.falloff-graph__meta {
+  margin: 6px 0 0;
+  font-size: 0.8rem;
+  color: #b8c0d6;
+}
