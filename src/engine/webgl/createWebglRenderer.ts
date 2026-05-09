@@ -21,6 +21,7 @@ type CreateWebglRendererOptions = {
   getFaceGeometry: () => FaceGeometry | null;
   getSkinSmoothing: () => { enabled: boolean; strength: number; radius: number; maskOpacity: number; showMaskPreview: boolean };
   getSkinTone: () => { enabled: boolean; brightness: number; saturation: number; warmth: number; blend: number };
+  onRenderFrame?: (renderTimeMs: number) => void;
 };
 
 const FALLBACK_SIZE = 0.05;
@@ -37,7 +38,7 @@ function getFalloffUniformValue(type: WarpOperation['falloff']['type']) {
   return 2;
 }
 
-export function createWebglRenderer({ video, canvas, getOperations, getFaceGeometry, getSkinSmoothing, getSkinTone }: CreateWebglRendererOptions): WebglRenderer {
+export function createWebglRenderer({ video, canvas, getOperations, getFaceGeometry, getSkinSmoothing, getSkinTone, onRenderFrame }: CreateWebglRendererOptions): WebglRenderer {
   const gl = canvas.getContext('webgl2');
 
   if (!gl) {
@@ -131,6 +132,7 @@ export function createWebglRenderer({ video, canvas, getOperations, getFaceGeome
     }
 
     if (syncCanvasSize()) {
+      const renderStart = performance.now();
       gl.useProgram(program);
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, videoTexture);
@@ -262,6 +264,7 @@ export function createWebglRenderer({ video, canvas, getOperations, getFaceGeome
       gl.bindVertexArray(vao);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
       gl.bindVertexArray(null);
+      onRenderFrame?.(performance.now() - renderStart);
     }
 
     animationFrameId = window.requestAnimationFrame(renderFrame);
