@@ -17,6 +17,7 @@ type CreateCanvasRendererOptions = {
   getActiveOperation?: () => WarpOperation | null;
   getOperations?: () => WarpOperation[];
   getFaceGeometry?: () => FaceGeometry | null;
+  onRenderFrame?: (renderTimeMs: number) => void;
 };
 
 export function createCanvasRenderer({
@@ -26,6 +27,7 @@ export function createCanvasRenderer({
   getActiveOperation,
   getFaceGeometry,
   getOperations,
+  onRenderFrame,
 }: CreateCanvasRendererOptions): CanvasRenderer {
   const context = canvas.getContext('2d');
 
@@ -60,6 +62,7 @@ export function createCanvasRenderer({
     const hasSize = syncCanvasSize();
 
     if (hasSize) {
+      const renderStart = performance.now();
       if (getCpuWarpPreviewEnabled?.()) {
         const activeOperation = getActiveOperation?.() ?? null;
         const operations = getOperations?.() ?? (activeOperation ? [activeOperation] : []);
@@ -75,6 +78,7 @@ export function createCanvasRenderer({
         context.clearRect(0, 0, canvas.width, canvas.height);
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
       }
+      onRenderFrame?.(performance.now() - renderStart);
     }
 
     animationFrameId = window.requestAnimationFrame(renderFrame);

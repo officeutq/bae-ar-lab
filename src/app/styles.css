@@ -208,3 +208,12 @@ input[type='range'] {
   height: 100%;
   display: block;
 }
+
+.profiler-overlay {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.88rem;
+  color: #9bfac8;
+}

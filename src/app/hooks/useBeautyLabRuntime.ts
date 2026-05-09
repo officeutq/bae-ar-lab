@@ -14,6 +14,7 @@ import { createWebglRenderer, type WebglRenderer } from '@engine/webgl/createWeb
 import type { WarpOperation } from '@app-types/preset';
 import type { RendererMode } from '@engine/render/types';
 import { resolveOperationBindings } from '@engine/algorithms/resolveOperationBindings';
+import { createProfiler, type ProfilerSnapshot } from '@engine/profiler/createProfiler';
 
 type CameraViewState = 'idle' | 'starting' | 'running' | 'error';
 
@@ -62,6 +63,7 @@ export function useBeautyLabRuntime(
   const operationsRef = useRef<WarpOperation[]>(operations);
   const resolvedOperationsRef = useRef<WarpOperation[]>(operations);
   const resolvedActiveOperationRef = useRef<WarpOperation | null>(activeOperation);
+  const profilerRef = useRef(createProfiler({ sampleWindow: 30 }));
 
   const [cameraState, setCameraState] = useState<CameraViewState>('idle');
   const [cameraErrorMessage, setCameraErrorMessage] = useState<string | null>(null);
@@ -69,6 +71,7 @@ export function useBeautyLabRuntime(
   const [landmarkerState, setLandmarkerState] = useState<FaceLandmarkerRuntimeState>('idle');
   const [landmarkFrame, setLandmarkFrame] = useState<FaceLandmarksFrame | null>(null);
   const [faceGeometry, setFaceGeometry] = useState<FaceGeometry | null>(null);
+  const [profilerSnapshot, setProfilerSnapshot] = useState<ProfilerSnapshot>(profilerRef.current.getSnapshot());
 
   useEffect(() => {
     activeOperationRef.current = activeOperation;
@@ -110,6 +113,9 @@ export function useBeautyLabRuntime(
         getFaceGeometry: () => faceGeometryRef.current,
         getSkinSmoothing: () => skinSmoothing,
         getSkinTone: () => skinTone,
+        onRenderFrame: (renderTimeMs) => {
+          setProfilerSnapshot((current) => ({ ...current, renderMs: renderTimeMs }));
+        },
       })
       : createCanvasRenderer({
         video: videoElement,
@@ -118,6 +124,9 @@ export function useBeautyLabRuntime(
         getActiveOperation: () => resolvedActiveOperationRef.current,
         getFaceGeometry: () => faceGeometryRef.current,
         getOperations: () => resolvedOperationsRef.current,
+        onRenderFrame: (renderTimeMs) => {
+          setProfilerSnapshot((current) => ({ ...current, renderMs: renderTimeMs }));
+        },
       });
     renderer.start();
     rendererRef.current = renderer;
@@ -142,7 +151,9 @@ export function useBeautyLabRuntime(
         return;
       }
 
+      const detectStart = performance.now();
       const result = faceLandmarkerController.detectForVideoFrame(videoElement, performance.now());
+      const mediapipeMs = performance.now() - detectStart;
       setLandmarkerState(faceLandmarkerController.getState());
       setLandmarkFrame(result);
       const nextGeometry = result.detected ? computeFaceGeometry({ landmarks: result.landmarks }) : null;
@@ -153,6 +164,10 @@ export function useBeautyLabRuntime(
       const activeIndex = operationsRef.current.findIndex((op) => op.id === activeOperationRef.current?.id);
       resolvedActiveOperationRef.current = activeIndex >= 0 ? resolvedOperations[activeIndex] : null;
       overlayRef.current?.render(result.landmarks, nextGeometry, resolvedActiveOperationRef.current);
+      profilerRef.current.setBackend(rendererModeRef.current);
+      profilerRef.current.setOperationCount(resolvedOperations.filter((operation) => operation.enabled).length);
+      const nextSnapshot = profilerRef.current.commitFrame();
+      setProfilerSnapshot({ ...nextSnapshot, mediapipeMs });
 
       detectAnimationRef.current = requestAnimationFrame(tick);
     };
@@ -192,6 +207,9 @@ export function useBeautyLabRuntime(
             getFaceGeometry: () => faceGeometryRef.current,
             getSkinSmoothing: () => skinSmoothing,
             getSkinTone: () => skinTone,
+            onRenderFrame: (renderTimeMs) => {
+              setProfilerSnapshot((current) => ({ ...current, renderMs: renderTimeMs }));
+            },
           })
           : createCanvasRenderer({
             video: videoElement,
@@ -200,6 +218,9 @@ export function useBeautyLabRuntime(
             getActiveOperation: () => resolvedActiveOperationRef.current,
             getFaceGeometry: () => faceGeometryRef.current,
             getOperations: () => resolvedOperationsRef.current,
+            onRenderFrame: (renderTimeMs) => {
+              setProfilerSnapshot((current) => ({ ...current, renderMs: renderTimeMs }));
+            },
           });
         renderer.start();
         rendererRef.current = renderer;
@@ -244,11 +265,13 @@ export function useBeautyLabRuntime(
     faceGeometryRef.current = null;
     setCameraState('idle');
     setCameraErrorMessage(null);
+    profilerRef.current.reset();
   };
 
   return {
     refs: { videoRef, overlayCanvasRef, processedCanvasRef },
     state: { cameraState, cameraErrorMessage, rendererState, landmarkerState, landmarkFrame, faceGeometry },
+    profiler: profilerSnapshot,
     actions: { startCamera, stopCamera },
     resolved: {
       getOperations: () => resolvedOperationsRef.current,
