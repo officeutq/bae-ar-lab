@@ -67,3 +67,39 @@ Do NOT tightly couple:
 - MediaPipe adapters
 
 All algorithm definitions should be exportable as JSON presets.
+
+---
+
+## Important Rules (for Codex contributors)
+
+- Keep React components thin
+- Do not put math logic inside React components
+- Keep shader logic in `src/engine/webgl`
+- Keep geometry logic in `src/engine/geometry`
+- Keep binding logic in `src/engine/algorithms`
+- Keep preset schema JSON-serializable
+- Run `npm run build` after changes
+
+---
+
+## Current Rendering Backends
+
+- `canvas2d`
+- `cpu_warp_debug`
+- `webgl`
+
+---
+
+## Current Operation Types
+
+- `radial_warp`
+- `directional_warp`
+- `line_warp`
+- `region_warp`
+
+---
+
+## Current Appearance Filters
+
+- `skin_smoothing`
+- `skin_tone`
