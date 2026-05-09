@@ -17,10 +17,10 @@ type Props = {
 export function ProcessedPreviewPanel({ canvas2dRef, webglCanvasRef, beautyDebugOverlayCanvasRef, rendererState, rendererMode, beautyDebugOverlayMode, onCaptureProcessed, previewAspectRatio }: Props) {
   return (
     <Panel title="加工プレビュー">
-      <div className="source-preview preview-mirror" style={{ aspectRatio: previewAspectRatio }}>
+      <div className="source-preview preview-mirror preview-stack" style={{ aspectRatio: previewAspectRatio }}>
         <canvas className="processed-canvas" ref={canvas2dRef} style={{ aspectRatio: previewAspectRatio, display: rendererMode === 'webgl' ? 'none' : 'block' }} />
         <canvas className="processed-canvas" ref={webglCanvasRef} style={{ aspectRatio: previewAspectRatio, display: rendererMode === 'webgl' ? 'block' : 'none' }} />
-        <canvas className="overlay-canvas" ref={beautyDebugOverlayCanvasRef} style={{ display: beautyDebugOverlayMode === 'off' ? 'none' : 'block' }} />
+        <canvas className="overlay-canvas beauty-debug-overlay" ref={beautyDebugOverlayCanvasRef} style={{ display: beautyDebugOverlayMode === 'off' ? 'none' : 'block' }} />
       </div>
       <p className="camera-status">描画方式: {getRendererModeLabel(rendererMode)}</p>
       <p className="camera-status">描画状態: {rendererState}</p>
