@@ -7,14 +7,9 @@ import type { FacePose, PoseAttenuation } from '@engine/geometry/types';
 import { createFaceLandmarker } from '@engine/mediapipe/createFaceLandmarker';
 import type { FaceLandmarksFrame, FaceLandmarkerRuntimeState } from '@engine/mediapipe/types';
 import { createLandmarkOverlay, type LandmarkOverlay } from '@engine/overlay/createLandmarkOverlay';
-import {
-  createCanvasRenderer,
-  type CanvasRenderer,
-  type CanvasRendererState,
-} from '@engine/render/createCanvasRenderer';
-import { createWebglRenderer, type WebglRenderer } from '@engine/webgl/createWebglRenderer';
+import { createRendererBackend } from '@engine/render/createRendererBackend';
 import type { WarpOperation } from '@app-types/preset';
-import type { RendererMode } from '@engine/render/types';
+import type { RendererBackend, RendererBackendMode, RendererBackendState } from '@engine/render/types';
 import { resolveOperationBindings } from '@engine/algorithms/resolveOperationBindings';
 import { createProfiler, type ProfilerSnapshot } from '@engine/profiler/createProfiler';
 import { createTemporalFilter } from '@engine/temporal/createTemporalFilter';
@@ -52,13 +47,12 @@ function getCameraErrorMessage(error: CameraError) {
   }
 }
 
-type PreviewRenderer = CanvasRenderer | WebglRenderer;
 
 export function useBeautyLabRuntime(
   activeOperation: WarpOperation | null,
   operations: WarpOperation[],
   overlayToggles: OverlayToggles,
-  rendererMode: RendererMode,
+  rendererMode: RendererBackendMode,
   skinSmoothing: { enabled: boolean; strength: number; radius: number; maskOpacity: number; showMaskPreview: boolean },
   skinTone: { enabled: boolean; brightness: number; saturation: number; warmth: number; blend: number },
   temporalSmoothing: { enabled: boolean; alpha: number },
@@ -71,12 +65,12 @@ export function useBeautyLabRuntime(
   const overlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const canvas2dRef = useRef<HTMLCanvasElement | null>(null);
   const webglCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const rendererRef = useRef<PreviewRenderer | null>(null);
+  const rendererRef = useRef<RendererBackend | null>(null);
   const overlayRef = useRef<LandmarkOverlay | null>(null);
   const detectAnimationRef = useRef<number | null>(null);
   const activeOperationRef = useRef<WarpOperation | null>(activeOperation);
   const faceGeometryRef = useRef<FaceGeometry | null>(null);
-  const rendererModeRef = useRef<RendererMode>(rendererMode);
+  const rendererModeRef = useRef<RendererBackendMode>(rendererMode);
   const operationsRef = useRef<WarpOperation[]>(operations);
   const resolvedOperationsRef = useRef<WarpOperation[]>(operations);
   const resolvedActiveOperationRef = useRef<WarpOperation | null>(activeOperation);
@@ -94,7 +88,7 @@ export function useBeautyLabRuntime(
 
   const [cameraState, setCameraState] = useState<CameraViewState>('idle');
   const [cameraErrorMessage, setCameraErrorMessage] = useState<string | null>(null);
-  const [rendererState, setRendererState] = useState<CanvasRendererState>('idle');
+  const [rendererState, setRendererState] = useState<RendererBackendState>('idle');
   const [landmarkerState, setLandmarkerState] = useState<FaceLandmarkerRuntimeState>('idle');
   const [landmarkFrame, setLandmarkFrame] = useState<FaceLandmarksFrame | null>(null);
   const [faceGeometry, setFaceGeometry] = useState<FaceGeometry | null>(null);
@@ -148,34 +142,23 @@ export function useBeautyLabRuntime(
     }
 
     rendererRef.current?.stop();
-    const renderer = rendererMode === 'webgl'
-      ? createWebglRenderer({
-        video: videoElement,
-        canvas: canvasElement,
-        getOperations: () => resolvedOperationsRef.current,
-        getFaceGeometry: () => faceGeometryRef.current,
-        getSkinSmoothing: () => ({ ...skinSmoothingRef.current, strength: skinSmoothingRef.current.strength * faceStabilityRef.current.getSnapshot().fade }),
-        getSkinTone: () => ({ ...skinToneRef.current, blend: skinToneRef.current.blend * faceStabilityRef.current.getSnapshot().fade }),
-        onRenderFrame: (renderTimeMs) => {
-          setProfilerSnapshot((current) => ({ ...current, renderMs: renderTimeMs }));
-        },
-        getRenderScale: () => QUALITY_PRESETS[resolveRuntimeQuality(adaptiveQualityRef.current)].renderScale,
-        getFrameSkip: () => QUALITY_PRESETS[resolveRuntimeQuality(adaptiveQualityRef.current)].frameSkip,
-        getSmoothingSampleCount: () => QUALITY_PRESETS[resolveRuntimeQuality(adaptiveQualityRef.current)].smoothingSampleCount,
-      })
-      : createCanvasRenderer({
-        video: videoElement,
-        canvas: canvasElement,
-        getCpuWarpPreviewEnabled: () => rendererModeRef.current === 'cpu_warp_debug',
-        getActiveOperation: () => resolvedActiveOperationRef.current,
-        getFaceGeometry: () => faceGeometryRef.current,
-        getOperations: () => resolvedOperationsRef.current,
-        onRenderFrame: (renderTimeMs) => {
-          setProfilerSnapshot((current) => ({ ...current, renderMs: renderTimeMs }));
-        },
-        getRenderScale: () => QUALITY_PRESETS[resolveRuntimeQuality(adaptiveQualityRef.current)].renderScale,
-        getFrameSkip: () => QUALITY_PRESETS[resolveRuntimeQuality(adaptiveQualityRef.current)].frameSkip,
-      });
+    const renderer = createRendererBackend({
+      mode: rendererMode,
+      video: videoElement,
+      canvas2d: canvas2dRef.current!,
+      webgl: webglCanvasRef.current!,
+      getOperations: () => resolvedOperationsRef.current,
+      getActiveOperation: () => resolvedActiveOperationRef.current,
+      getFaceGeometry: () => faceGeometryRef.current,
+      getSkinSmoothing: () => ({ ...skinSmoothingRef.current, strength: skinSmoothingRef.current.strength * faceStabilityRef.current.getSnapshot().fade }),
+      getSkinTone: () => ({ ...skinToneRef.current, blend: skinToneRef.current.blend * faceStabilityRef.current.getSnapshot().fade }),
+      onRenderFrame: (renderTimeMs) => {
+        setProfilerSnapshot((current) => ({ ...current, renderMs: renderTimeMs }));
+      },
+      getRenderScale: () => QUALITY_PRESETS[resolveRuntimeQuality(adaptiveQualityRef.current)].renderScale,
+      getFrameSkip: () => QUALITY_PRESETS[resolveRuntimeQuality(adaptiveQualityRef.current)].frameSkip,
+      getSmoothingSampleCount: () => QUALITY_PRESETS[resolveRuntimeQuality(adaptiveQualityRef.current)].smoothingSampleCount,
+    });
     renderer.start();
     rendererRef.current = renderer;
     setRendererState(renderer.getState());
@@ -303,34 +286,23 @@ export function useBeautyLabRuntime(
 
       if (videoElement && canvasElement) {
         rendererRef.current?.stop();
-        const renderer = rendererModeRef.current === 'webgl'
-          ? createWebglRenderer({
-            video: videoElement,
-            canvas: canvasElement,
-            getOperations: () => resolvedOperationsRef.current,
-            getFaceGeometry: () => faceGeometryRef.current,
-            getSkinSmoothing: () => ({ ...skinSmoothingRef.current, strength: skinSmoothingRef.current.strength * faceStabilityRef.current.getSnapshot().fade }),
-            getSkinTone: () => ({ ...skinToneRef.current, blend: skinToneRef.current.blend * faceStabilityRef.current.getSnapshot().fade }),
-            onRenderFrame: (renderTimeMs) => {
-              setProfilerSnapshot((current) => ({ ...current, renderMs: renderTimeMs }));
-            },
-            getRenderScale: () => QUALITY_PRESETS[resolveRuntimeQuality(adaptiveQualityRef.current)].renderScale,
-            getFrameSkip: () => QUALITY_PRESETS[resolveRuntimeQuality(adaptiveQualityRef.current)].frameSkip,
-            getSmoothingSampleCount: () => QUALITY_PRESETS[resolveRuntimeQuality(adaptiveQualityRef.current)].smoothingSampleCount,
-          })
-          : createCanvasRenderer({
-            video: videoElement,
-            canvas: canvasElement,
-            getCpuWarpPreviewEnabled: () => rendererModeRef.current === 'cpu_warp_debug',
-            getActiveOperation: () => resolvedActiveOperationRef.current,
-            getFaceGeometry: () => faceGeometryRef.current,
-            getOperations: () => resolvedOperationsRef.current,
-            onRenderFrame: (renderTimeMs) => {
-              setProfilerSnapshot((current) => ({ ...current, renderMs: renderTimeMs }));
-            },
-            getRenderScale: () => QUALITY_PRESETS[resolveRuntimeQuality(adaptiveQualityRef.current)].renderScale,
-            getFrameSkip: () => QUALITY_PRESETS[resolveRuntimeQuality(adaptiveQualityRef.current)].frameSkip,
-          });
+        const renderer = createRendererBackend({
+          mode: rendererModeRef.current,
+          video: videoElement,
+          canvas2d: canvas2dRef.current!,
+          webgl: webglCanvasRef.current!,
+          getOperations: () => resolvedOperationsRef.current,
+          getActiveOperation: () => resolvedActiveOperationRef.current,
+          getFaceGeometry: () => faceGeometryRef.current,
+          getSkinSmoothing: () => ({ ...skinSmoothingRef.current, strength: skinSmoothingRef.current.strength * faceStabilityRef.current.getSnapshot().fade }),
+          getSkinTone: () => ({ ...skinToneRef.current, blend: skinToneRef.current.blend * faceStabilityRef.current.getSnapshot().fade }),
+          onRenderFrame: (renderTimeMs) => {
+            setProfilerSnapshot((current) => ({ ...current, renderMs: renderTimeMs }));
+          },
+          getRenderScale: () => QUALITY_PRESETS[resolveRuntimeQuality(adaptiveQualityRef.current)].renderScale,
+          getFrameSkip: () => QUALITY_PRESETS[resolveRuntimeQuality(adaptiveQualityRef.current)].frameSkip,
+          getSmoothingSampleCount: () => QUALITY_PRESETS[resolveRuntimeQuality(adaptiveQualityRef.current)].smoothingSampleCount,
+        });
         renderer.start();
         rendererRef.current = renderer;
         setRendererState(renderer.getState());

@@ -37,8 +37,9 @@
   - `canvas2d`
   - `cpu_warp_debug`
   - `webgl`
-- factory構造: runtime hook で `rendererMode` に応じ `createWebglRenderer` or `createCanvasRenderer` を作成。
-- `renderer.stop()`: canvas/webglとも `cancelAnimationFrame` でループ停止。
+- factory構造: `src/engine/render/createRendererBackend.ts` に backend 生成を集約し、runtime hook は factory 経由で生成。
+- `RendererBackend` contract: `src/engine/render/types.ts` で `RendererBackendMode` / `RendererBackendState` / `RendererBackend` を定義。
+- `renderer.stop()` 保証: backend所有RAF停止、stop後に新規frameを描画しない、切替/stop時に安全、複数回呼び出し安全(idempotent)、可能な範囲でbackend内参照/GLリソース解放を実施。
 - requestAnimationFrame cleanup: renderer内 stop + runtime unmount cleanup 両方あり。
 - canvas分離: `ProcessedPreviewPanel` に canvas2d/webgl の2canvasを持ち、表示切替。
 - backend切替安全性: 切替時に `rendererRef.current?.stop()` 後に新renderer作成。基本安全。
@@ -130,6 +131,8 @@
 - preset schema versioning と互換ポリシー
 - animation編集UX（トラック可視化/操作性）
 - compare/デバッグ情報の見せ方
+
+- 既知の不足: WebGLの完全なGPUリソース明示解放（context lossまで含む）は今後強化余地あり。
 
 ### C. 実装済みだが不安定
 - MediaPipe wasm は `@latest` を廃止し `0.10.22` に固定（破壊リスクを低減）
