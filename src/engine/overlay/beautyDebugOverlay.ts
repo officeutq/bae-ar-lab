@@ -42,23 +42,26 @@ const faceMaskFromGeometry = (geometry: FaceGeometry): Point2D[] => {
 export function renderBeautyDebugOverlay(canvas: HTMLCanvasElement, snapshot: BeautyDebugOverlaySnapshot) {
   const context = canvas.getContext('2d');
   if (!context) return;
-  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.save();
+  try {
+    context.globalAlpha = 1;
+    context.clearRect(0, 0, canvas.width, canvas.height);
 
-  if (snapshot.mode === 'off') return;
+    if (snapshot.mode === 'off') return;
 
-  const geometry = snapshot.faceGeometry;
-  if (snapshot.mode === 'skin_mask') {
-    if (!geometry) return;
-    const polygon = faceMaskFromGeometry(geometry).map((point) => toCanvasPoint(canvas, point));
-    drawPolygon(context, polygon);
-    context.fillStyle = 'rgba(32, 80, 180, 0.34)';
-    context.fill();
-    return;
-  }
+    const geometry = snapshot.faceGeometry;
+    if (snapshot.mode === 'skin_mask') {
+      if (!geometry) return;
+      const polygon = faceMaskFromGeometry(geometry).map((point) => toCanvasPoint(canvas, point));
+      drawPolygon(context, polygon);
+      context.fillStyle = 'rgba(32, 80, 180, 0.34)';
+      context.fill();
+      return;
+    }
 
-  if (snapshot.mode === 'warp_influence') {
-    if (!geometry) return;
-    snapshot.operations.filter((operation) => operation.enabled).forEach((operation) => {
+    if (snapshot.mode === 'warp_influence') {
+      if (!geometry) return;
+      snapshot.operations.filter((operation) => operation.enabled).forEach((operation) => {
       const alpha = 0.18 + Math.min(0.6, Math.abs(operation.strength) * 6);
       context.strokeStyle = `rgba(255, 165, 64, ${alpha.toFixed(3)})`;
       context.fillStyle = `rgba(255, 165, 64, ${(alpha * 0.4).toFixed(3)})`;
@@ -101,22 +104,25 @@ export function renderBeautyDebugOverlay(canvas: HTMLCanvasElement, snapshot: Be
       context.ellipse(center.x, center.y, radiusX, radiusY, 0, 0, Math.PI * 2);
       context.fill();
       context.stroke();
-    });
-    return;
-  }
+      });
+      return;
+    }
 
-  if (snapshot.mode === 'attenuation') {
-    const weakened = 1 - clamp01(snapshot.poseAttenuationFactor);
-    if (weakened <= 0.001) return;
-    context.fillStyle = `rgba(255, 220, 64, ${(0.18 + weakened * 0.55).toFixed(3)})`;
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    return;
-  }
+    if (snapshot.mode === 'attenuation') {
+      const weakened = 1 - clamp01(snapshot.poseAttenuationFactor);
+      if (weakened <= 0.001) return;
+      context.fillStyle = `rgba(255, 220, 64, ${(0.18 + weakened * 0.55).toFixed(3)})`;
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      return;
+    }
 
-  if (snapshot.mode === 'stability') {
-    const unstable = 1 - clamp01(snapshot.faceStabilityFade);
-    if (unstable <= 0.001) return;
-    context.fillStyle = `rgba(255, 64, 64, ${(0.2 + unstable * 0.6).toFixed(3)})`;
-    context.fillRect(0, 0, canvas.width, canvas.height);
+    if (snapshot.mode === 'stability') {
+      const unstable = 1 - clamp01(snapshot.faceStabilityFade);
+      if (unstable <= 0.001) return;
+      context.fillStyle = `rgba(255, 64, 64, ${(0.2 + unstable * 0.6).toFixed(3)})`;
+      context.fillRect(0, 0, canvas.width, canvas.height);
+    }
+  } finally {
+    context.restore();
   }
 }
