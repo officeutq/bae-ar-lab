@@ -116,7 +116,7 @@ export function ControlPanel(props: Props) {
         </label>
         <label>Target
           <select value={op?.target ?? 'left_eye'} onChange={(e) => props.updateOperation('target', e.target.value as WarpTarget)}>
-            <option value="left_eye">left_eye</option><option value="right_eye">right_eye</option><option value="face_center">face_center</option><option value="mouth">mouth</option><option value="nose">nose</option><option value="left_jaw">left_jaw</option><option value="right_jaw">right_jaw</option><option value="chin_line">chin_line</option>
+            <option value="left_eye">left_eye</option><option value="right_eye">right_eye</option><option value="face_center">face_center</option><option value="mouth">mouth</option><option value="nose">nose</option><option value="left_jaw">left_jaw</option><option value="right_jaw">right_jaw</option><option value="chin_line">chin_line</option><option value="left_cheek">left_cheek</option><option value="right_cheek">right_cheek</option><option value="jaw_region">jaw_region</option>
           </select>
         </label>
         <label>Strength: {(op?.strength ?? 0).toFixed(2)}
@@ -128,7 +128,7 @@ export function ControlPanel(props: Props) {
         {op?.type === 'line_warp' && (
           <>
             <label>Binding target (read-only)
-              <input type="text" value={op?.binding ? `${op.binding.type}: ${op.binding.start} -> ${op.binding.end}` : 'none'} readOnly />
+              <input type="text" value={op?.binding?.type === 'landmark_line' ? `${op.binding.type}: ${op.binding.start} -> ${op.binding.end}` : 'none'} readOnly />
             </label>
             <label>Resolved Start (read-only)
               <input type="text" value={props.resolvedActiveOperation ? `${props.resolvedActiveOperation.lineStart.x.toFixed(3)}, ${props.resolvedActiveOperation.lineStart.y.toFixed(3)}` : 'n/a'} readOnly />
@@ -155,6 +155,15 @@ export function ControlPanel(props: Props) {
         )}
         {op?.type === 'region_warp' && (
           <>
+            <label>Binding type (read-only)
+              <input type="text" value={op?.binding?.type ?? 'none'} readOnly />
+            </label>
+            <label>Region target (read-only)
+              <input type="text" value={op?.binding?.type === 'landmark_region' ? op.binding.region : 'none'} readOnly />
+            </label>
+            <label>Resolved polygon point count (read-only)
+              <input type="text" value={String(props.resolvedActiveOperation?.polygon.length ?? 0)} readOnly />
+            </label>
             <label>Polygon points (x,y per line)
               <textarea
                 rows={6}

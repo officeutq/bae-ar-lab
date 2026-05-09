@@ -18,6 +18,9 @@ export type FaceGeometry = {
   leftJawLine: { start: Point2D; end: Point2D };
   rightJawLine: { start: Point2D; end: Point2D };
   chinLine: { start: Point2D; end: Point2D };
+  leftCheekPolygon: Point2D[];
+  rightCheekPolygon: Point2D[];
+  jawPolygon: Point2D[];
 };
 
 export type ComputeFaceGeometryInput = {
