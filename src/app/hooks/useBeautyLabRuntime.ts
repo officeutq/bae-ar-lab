@@ -66,6 +66,7 @@ export function useBeautyLabRuntime(
   const overlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const canvas2dRef = useRef<HTMLCanvasElement | null>(null);
   const webglCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const beautyDebugOverlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const rendererRef = useRef<RendererBackend | null>(null);
   const overlayRef = useRef<LandmarkOverlay | null>(null);
   const detectAnimationRef = useRef<number | null>(null);
@@ -357,7 +358,7 @@ export function useBeautyLabRuntime(
   };
 
   return {
-    refs: { videoRef, overlayCanvasRef, canvas2dRef, webglCanvasRef },
+    refs: { videoRef, overlayCanvasRef, canvas2dRef, webglCanvasRef, beautyDebugOverlayCanvasRef },
     state: { cameraState, cameraErrorMessage, rendererState, landmarkerState, landmarkFrame, faceGeometry, previewSize },
     pose: { facePose, poseAttenuation },
     profiler: profilerSnapshot,

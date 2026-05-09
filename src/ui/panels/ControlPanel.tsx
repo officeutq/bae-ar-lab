@@ -3,6 +3,7 @@ import type { StoredPreset } from '@engine/presets/types';
 import type { RendererMode } from '@engine/render/types';
 import type { SamplePresetId } from '@algorithms/presets';
 import type { QualityLevel } from '@engine/performance/adaptiveQuality';
+import type { BeautyDebugOverlayMode } from '@engine/overlay/beautyDebugOverlay';
 import type { DeviceCapabilities } from '@engine/performance/detectDeviceCapabilities';
 import type { AnimationClip } from '@engine/animation/types';
 import { Panel } from '@ui/Panel';
@@ -54,6 +55,8 @@ type Props = {
   setShowWarpCenter: (value: boolean) => void;
   showFalloffRings: boolean;
   setShowFalloffRings: (value: boolean) => void;
+  beautyDebugOverlayMode: BeautyDebugOverlayMode;
+  setBeautyDebugOverlayMode: (value: BeautyDebugOverlayMode) => void;
   rendererMode: RendererMode;
   setRendererMode: (value: RendererMode) => void;
   activeOperationIndex: number;
@@ -235,6 +238,9 @@ export function ControlPanel(props: Props) {
         <label><input type="checkbox" checked={props.showWarpInfluence} onChange={(e) => props.setShowWarpInfluence(e.target.checked)} />ワープ影響範囲表示</label>
         <label><input type="checkbox" checked={props.showWarpCenter} onChange={(e) => props.setShowWarpCenter(e.target.checked)} />ワープ中心表示</label>
         <label><input type="checkbox" checked={props.showFalloffRings} onChange={(e) => props.setShowFalloffRings(e.target.checked)} />フォールオフリング表示</label>
+        <label>Beauty Debug Overlay
+          <select value={props.beautyDebugOverlayMode} onChange={(e) => props.setBeautyDebugOverlayMode(e.target.value as BeautyDebugOverlayMode)}><option value="off">なし</option><option value="skin_mask">美肌範囲</option><option value="warp_influence">変形範囲</option><option value="attenuation">角度弱化</option><option value="stability">安定性</option></select>
+        </label>
         <label>描画方式
           <select value={props.rendererMode} onChange={(e) => props.setRendererMode(e.target.value as RendererMode)}>
             <option value="canvas2d">Canvas 2D</option>

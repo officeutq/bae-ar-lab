@@ -14,6 +14,7 @@ import { SourcePreviewPanel } from '@ui/panels/SourcePreviewPanel';
 import { TimelinePanel } from '@ui/panels/TimelinePanel';
 import { WarpMathDebugPanel } from '@ui/panels/WarpMathDebugPanel';
 import { RuntimeDebugPanel } from '@ui/panels/RuntimeDebugPanel';
+import { renderBeautyDebugOverlay, type BeautyDebugOverlayMode } from '@engine/overlay/beautyDebugOverlay';
 import { useBeautyLabRuntime } from './hooks/useBeautyLabRuntime';
 import type { RendererMode } from '@engine/render/types';
 import { detectDeviceCapabilities } from '@engine/performance/detectDeviceCapabilities';
@@ -154,6 +155,7 @@ export function App() {
   const [showWarpInfluence, setShowWarpInfluence] = useState(true);
   const [showWarpCenter, setShowWarpCenter] = useState(true);
   const [showFalloffRings, setShowFalloffRings] = useState(true);
+  const [beautyDebugOverlayMode, setBeautyDebugOverlayMode] = useState<BeautyDebugOverlayMode>('off');
   const capabilities = useMemo(() => detectDeviceCapabilities(), []);
   const [rendererMode, setRendererMode] = useState<RendererMode>(capabilities.recommendedRendererMode);
   const [debugUv, setDebugUv] = useState({ x: 0.5, y: 0.5 });
@@ -205,6 +207,22 @@ export function App() {
   const runtime = useBeautyLabRuntime(activeOperation, runtimePreset.operations, {
     showLandmarks, showCenters, showWarpInfluence, showWarpCenter, showFalloffRings,
   }, rendererMode, skinSmoothing, skinTone, { enabled: temporalSmoothingEnabled, alpha: temporalSmoothingAlpha }, capabilities.recommendedQuality, capabilities.adaptiveQualityDefaultEnabled);
+
+
+  useEffect(() => {
+    const overlayCanvas = runtime.refs.beautyDebugOverlayCanvasRef.current;
+    const activeCanvas = rendererMode === 'webgl' ? runtime.refs.webglCanvasRef.current : runtime.refs.canvas2dRef.current;
+    if (!overlayCanvas || !activeCanvas) return;
+    overlayCanvas.width = activeCanvas.width;
+    overlayCanvas.height = activeCanvas.height;
+    renderBeautyDebugOverlay(overlayCanvas, {
+      mode: beautyDebugOverlayMode,
+      faceGeometry: runtime.state.faceGeometry,
+      operations: runtime.resolved.getOperations(),
+      poseAttenuationFactor: runtime.pose.poseAttenuation.factor,
+      faceStabilityFade: runtime.faceStability.fade,
+    });
+  }, [runtime, rendererMode, beautyDebugOverlayMode, runtime.state.faceGeometry, runtime.pose.poseAttenuation.factor, runtime.faceStability.fade, runtime.profiler.frameTimeMs]);
 
   const updateOperation = <K extends keyof (typeof activePreset.operations)[number]>(key: K, value: (typeof activePreset.operations)[number][K]) => {
     setActivePreset((currentPreset) => ({ ...currentPreset, operations: currentPreset.operations.map((operation, index) => index === activeOperationIndex ? { ...operation, [key]: value } : operation) }));
@@ -467,7 +485,7 @@ export function App() {
       <h1 className="app-shell__title">ビューティーAR・フェイスワープ実験ラボ</h1>
       <div className="panel-grid">
         <SourcePreviewPanel videoRef={runtime.refs.videoRef} overlayCanvasRef={runtime.refs.overlayCanvasRef} cameraState={runtime.state.cameraState} landmarkerState={runtime.state.landmarkerState} cameraErrorMessage={runtime.state.cameraErrorMessage} onCaptureSource={onCaptureSource} previewAspectRatio={previewAspectRatio} />
-        <ProcessedPreviewPanel canvas2dRef={runtime.refs.canvas2dRef} webglCanvasRef={runtime.refs.webglCanvasRef} rendererState={runtime.state.rendererState} rendererMode={rendererMode} onCaptureProcessed={onCaptureProcessed} previewAspectRatio={previewAspectRatio} />
+        <ProcessedPreviewPanel canvas2dRef={runtime.refs.canvas2dRef} webglCanvasRef={runtime.refs.webglCanvasRef} beautyDebugOverlayCanvasRef={runtime.refs.beautyDebugOverlayCanvasRef} rendererState={runtime.state.rendererState} rendererMode={rendererMode} beautyDebugOverlayMode={beautyDebugOverlayMode} onCaptureProcessed={onCaptureProcessed} previewAspectRatio={previewAspectRatio} />
         <Panel title="顔検出ステータス"><ul><li>顔: {runtime.state.landmarkFrame?.detected ? '検出中' : '顔が検出されていません'}</li><li>ランドマーク数: {runtime.state.landmarkFrame?.landmarkCount ?? 0}</li><li>顔数: {runtime.state.landmarkFrame?.faceCount ?? 0}</li><li>フレーム: {runtime.state.landmarkFrame?.frameCount ?? 0}</li><li>タイムスタンプ (ms): {Math.round(runtime.state.landmarkFrame?.timestampMs ?? 0)}</li></ul></Panel>
         <Panel title="リアルタイムプロファイラ">
           <div className="profiler-overlay">
@@ -530,7 +548,7 @@ export function App() {
             ...track,
             keyframes: track.keyframes.map((keyframe, kIndex) => kIndex === keyframeIndex ? { ...keyframe, value } : keyframe),
           } : track),
-        }))} onAddKeyframe={addSelectedTrackKeyframe} onDeleteKeyframe={deleteSelectedKeyframe} onPlayAnimation={() => { timelineRef.play(); syncTimelineSnapshot(); }} onPauseAnimation={() => { timelineRef.pause(); syncTimelineSnapshot(); }} onStopAnimation={() => { timelineRef.stop(); syncTimelineSnapshot(); }} onTimelineTimeChange={(value) => { timelineRef.seek(value); syncTimelineSnapshot(); }} setAnimationLoop={setAnimationLoop} onCaptureCompare={onCaptureCompare} presetNameInput={presetNameInput} setPresetNameInput={setPresetNameInput} presets={presets} activeStoredPresetId={activeStoredPresetId} onSavePreset={onSavePreset} onCreatePreset={onCreatePreset} onDeletePreset={onDeletePreset} onRenamePreset={onRenamePreset} onLoadPreset={onLoadPreset} selectedSamplePresetId={selectedSamplePresetId} onSelectSamplePreset={onSelectSamplePreset} onExportPreset={onExportPreset} onImportPresetText={onImportPresetText} presetMessage={presetMessage} pipelineStatus={pipelineState.status} onStartCamera={runtime.actions.startCamera} onStopCamera={runtime.actions.stopCamera} cameraState={runtime.state.cameraState} showLandmarks={showLandmarks} setShowLandmarks={setShowLandmarks} showCenters={showCenters} setShowCenters={setShowCenters} showWarpInfluence={showWarpInfluence} setShowWarpInfluence={setShowWarpInfluence} showWarpCenter={showWarpCenter} setShowWarpCenter={setShowWarpCenter} showFalloffRings={showFalloffRings} setShowFalloffRings={setShowFalloffRings} rendererMode={rendererMode} setRendererMode={setRendererMode} activeOperationIndex={activeOperationIndex} setActiveOperationIndex={setActiveOperationIndex} addOperation={addOperation} removeOperation={removeOperation} updateOperation={updateOperation} updateAxis={updateAxis} updateFalloffType={updateFalloffType} updateDirection={updateDirection} resolvedActiveOperation={resolvedActiveOperation} skinSmoothing={skinSmoothing} updateSkinSmoothing={updateSkinSmoothing} skinTone={skinTone} updateSkinTone={updateSkinTone} adaptiveQualityEnabled={runtime.quality.adaptiveQuality.enabled} onAdaptiveQualityEnabledChange={runtime.quality.setAdaptiveEnabled} selectedQuality={runtime.quality.adaptiveQuality.selectedQuality} currentQuality={runtime.quality.runtimeQuality} onSelectedQualityChange={runtime.quality.setSelectedQuality} capabilities={capabilities} temporalSmoothingEnabled={temporalSmoothingEnabled} setTemporalSmoothingEnabled={setTemporalSmoothingEnabled} temporalSmoothingAmount={temporalSmoothingAlpha} setTemporalSmoothingAmount={setTemporalSmoothingAlpha} />
+        }))} onAddKeyframe={addSelectedTrackKeyframe} onDeleteKeyframe={deleteSelectedKeyframe} onPlayAnimation={() => { timelineRef.play(); syncTimelineSnapshot(); }} onPauseAnimation={() => { timelineRef.pause(); syncTimelineSnapshot(); }} onStopAnimation={() => { timelineRef.stop(); syncTimelineSnapshot(); }} onTimelineTimeChange={(value) => { timelineRef.seek(value); syncTimelineSnapshot(); }} setAnimationLoop={setAnimationLoop} onCaptureCompare={onCaptureCompare} presetNameInput={presetNameInput} setPresetNameInput={setPresetNameInput} presets={presets} activeStoredPresetId={activeStoredPresetId} onSavePreset={onSavePreset} onCreatePreset={onCreatePreset} onDeletePreset={onDeletePreset} onRenamePreset={onRenamePreset} onLoadPreset={onLoadPreset} selectedSamplePresetId={selectedSamplePresetId} onSelectSamplePreset={onSelectSamplePreset} onExportPreset={onExportPreset} onImportPresetText={onImportPresetText} presetMessage={presetMessage} pipelineStatus={pipelineState.status} onStartCamera={runtime.actions.startCamera} onStopCamera={runtime.actions.stopCamera} cameraState={runtime.state.cameraState} showLandmarks={showLandmarks} setShowLandmarks={setShowLandmarks} showCenters={showCenters} setShowCenters={setShowCenters} showWarpInfluence={showWarpInfluence} setShowWarpInfluence={setShowWarpInfluence} showWarpCenter={showWarpCenter} setShowWarpCenter={setShowWarpCenter} showFalloffRings={showFalloffRings} setShowFalloffRings={setShowFalloffRings} beautyDebugOverlayMode={beautyDebugOverlayMode} setBeautyDebugOverlayMode={setBeautyDebugOverlayMode} rendererMode={rendererMode} setRendererMode={setRendererMode} activeOperationIndex={activeOperationIndex} setActiveOperationIndex={setActiveOperationIndex} addOperation={addOperation} removeOperation={removeOperation} updateOperation={updateOperation} updateAxis={updateAxis} updateFalloffType={updateFalloffType} updateDirection={updateDirection} resolvedActiveOperation={resolvedActiveOperation} skinSmoothing={skinSmoothing} updateSkinSmoothing={updateSkinSmoothing} skinTone={skinTone} updateSkinTone={updateSkinTone} adaptiveQualityEnabled={runtime.quality.adaptiveQuality.enabled} onAdaptiveQualityEnabledChange={runtime.quality.setAdaptiveEnabled} selectedQuality={runtime.quality.adaptiveQuality.selectedQuality} currentQuality={runtime.quality.runtimeQuality} onSelectedQualityChange={runtime.quality.setSelectedQuality} capabilities={capabilities} temporalSmoothingEnabled={temporalSmoothingEnabled} setTemporalSmoothingEnabled={setTemporalSmoothingEnabled} temporalSmoothingAmount={temporalSmoothingAlpha} setTemporalSmoothingAmount={setTemporalSmoothingAlpha} />
         <TimelinePanel clip={loadedAnimationClip} currentTime={animationTime} currentValues={timelineSnapshot.values} selectedTrackIndex={selectedTrackIndex} selectedKeyframeIndex={selectedKeyframeIndex} onSelectKeyframe={selectKeyframe} onSeek={(time) => {
           timelineRef.seek(time);
           syncTimelineSnapshot();

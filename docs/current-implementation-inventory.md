@@ -202,3 +202,7 @@
   - `clean_beauty`（きれいめ）
   - `glam_beauty`（盛り強め）
   - `lite_beauty`（低負荷）
+
+- Beauty Debug Overlay mode を追加 (`off` / `skin_mask` / `warp_influence` / `attenuation` / `stability`)。
+- 加工プレビュー上に専用 canvas を重ね、顔マスク・warp範囲・姿勢弱化・安定性を可視化。
+- debug overlay は UI 表示専用で、renderer の実処理および snapshot/export raw には非干渉。
