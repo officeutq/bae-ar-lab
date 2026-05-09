@@ -185,3 +185,20 @@
 6. Snapshotのmirror期待値仕様を明文化（プレビューと保存差）
 7. 配信者向けUIプリセット（Simple/Pro）
 8. Perf HUD拡張（median/p95, dropped frames, GC兆候）
+
+## 13. Butterflyve標準 baseline preset（natural_beauty）
+- 追加内容:
+  - `natural_beauty`（表示名: `ナチュラル美顔`）を sample preset に追加。
+  - `schemaVersion` は `CURRENT_PRESET_SCHEMA_VERSION` を利用。
+  - default preset を `natural_beauty` 相当の弱め設定に寄せ、初期体験を自然寄りへ統一。
+- baseline の狙い:
+  - 配信用に「加工感を抑えつつ、少し盛れる」ことを優先。
+  - 横顔・未検出復帰・低照度で破綻しにくい弱め warp + appearance 構成。
+- 現時点で継続調整が必要な点:
+  - 端末別（iOS/Android/PC）での最適強度チューニング。
+  - 低照度 + 高ISO ノイズ時の skin smoothing 見え方調整。
+  - 鼻・口の微調整量（自然さの個人差が出やすい）。
+- 次に作るべき preset 候補:
+  - `clean_beauty`（きれいめ）
+  - `glam_beauty`（盛り強め）
+  - `lite_beauty`（低負荷）

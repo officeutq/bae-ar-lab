@@ -103,3 +103,23 @@
 - quality状態: adaptive on/off, selected/current quality
 - 観測値: FPS, frame time, MediaPipe time, renderer time, yaw/pitch/roll, attenuation, face stability fade
 - 破綻内容: 発生条件・再現手順・期待値との差分
+
+## 5. ナチュラル美顔（natural_beauty）ベースライン評価
+
+### 評価手順
+1. サンプルプリセットで `ナチュラル美顔`（`natural_beauty`）を選択する。
+2. 正面で source / processed を確認し、肌質感・輪郭・目鼻口の違和感を目視する。
+3. snapshot を保存する（通常照明）。
+4. 横顔（左右）にして補正が弱まることを確認する。
+5. 顔を一度フレーム外へ出し、再入場時の復帰が急激でないことを確認する。
+6. 低照度で確認し、過剰補正やちらつきがないかを見る。
+7. Compare panel で source / processed の差を確認し、破綻の有無を記録する。
+
+### 合格基準
+- 加工感が強すぎない。
+- 肌の質感が残る。
+- 目が不自然に大きくならない。
+- 輪郭が歪まない。
+- 横顔で補正が弱まる。
+- 顔が戻った時に急復帰しない。
+- FPS が大きく落ちない。
