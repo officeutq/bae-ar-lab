@@ -1,0 +1,55 @@
+import type { WarpPreset } from '@app-types/preset';
+
+export const softBeautyPreset: WarpPreset = {
+  version: 1,
+  appearance: {
+    skinSmoothing: {
+      type: 'skin_smoothing',
+      enabled: true,
+      strength: 0.34,
+      radius: 1.1,
+      maskOpacity: 0.9,
+      showMaskPreview: false,
+    },
+    skinTone: {
+      type: 'skin_tone',
+      enabled: true,
+      brightness: 0.03,
+      saturation: 1.05,
+      warmth: 0.06,
+      blend: 0.62,
+    },
+  },
+  operations: [
+    {
+      id: 'left_eye_soft_enlarge',
+      enabled: true,
+      type: 'radial_warp',
+      target: 'left_eye',
+      strength: 0.05,
+      radius: 1.6,
+      falloff: { type: 'smoothstep' },
+      axis: { x: 1, y: 0.8 },
+      direction: { x: 0, y: 0 },
+      lineStart: { x: 0.3, y: 0.5 },
+      lineEnd: { x: 0.7, y: 0.5 },
+      width: 0.12,
+      polygon: [],
+    },
+    {
+      id: 'right_eye_soft_enlarge',
+      enabled: true,
+      type: 'radial_warp',
+      target: 'right_eye',
+      strength: 0.05,
+      radius: 1.6,
+      falloff: { type: 'smoothstep' },
+      axis: { x: 1, y: 0.8 },
+      direction: { x: 0, y: 0 },
+      lineStart: { x: 0.3, y: 0.5 },
+      lineEnd: { x: 0.7, y: 0.5 },
+      width: 0.12,
+      polygon: [],
+    },
+  ],
+};
