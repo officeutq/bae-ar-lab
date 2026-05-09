@@ -13,6 +13,7 @@ import { ProcessedPreviewPanel } from '@ui/panels/ProcessedPreviewPanel';
 import { SourcePreviewPanel } from '@ui/panels/SourcePreviewPanel';
 import { TimelinePanel } from '@ui/panels/TimelinePanel';
 import { WarpMathDebugPanel } from '@ui/panels/WarpMathDebugPanel';
+import { RuntimeDebugPanel } from '@ui/panels/RuntimeDebugPanel';
 import { useBeautyLabRuntime } from './hooks/useBeautyLabRuntime';
 import type { RendererMode } from '@engine/render/types';
 import { detectDeviceCapabilities } from '@engine/performance/detectDeviceCapabilities';
@@ -490,6 +491,7 @@ export function App() {
             <div>Recommended quality: {capabilities.recommendedQuality}</div>
           </div>
         </Panel>
+        <RuntimeDebugPanel temporalSmoothingEnabled={temporalSmoothingEnabled} temporalSmoothingAlpha={temporalSmoothingAlpha} faceStability={runtime.faceStability} facePose={runtime.pose.facePose} poseAttenuationFactor={runtime.pose.poseAttenuation.factor} currentQuality={runtime.quality.runtimeQuality} renderScale={runtime.quality.runtimePreset.renderScale} rendererMode={rendererMode} fps={runtime.profiler.fps} />
         <ControlPanel selectedTrackIndex={selectedTrackIndex} selectedKeyframeIndex={selectedKeyframeIndex} onSelectKeyframe={selectKeyframe} onSelectPrevKeyframe={() => selectAdjacentKeyframe(-1)} onSelectNextKeyframe={() => selectAdjacentKeyframe(1)} activePreset={activePreset} beautyIntensity={beautyIntensity} setBeautyIntensity={setBeautyIntensity} animationPlaying={animationPlaying} animationTime={animationTime} animationLoop={animationLoop} animationTrackCount={animationTrackCount} animationDuration={loadedAnimationClip.duration} animationClips={animationClips} selectedAnimationClipId={selectedAnimationClipId} loadedAnimationClipName={loadedAnimationClip.name} selectedAnimationClip={selectedAnimationClip} onSelectAnimationClip={setSelectedAnimationClipId} onLoadAnimationClip={() => {
           const clip = animationClips.find((item) => item.id === selectedAnimationClipId);
           if (!clip) return;
