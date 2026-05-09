@@ -15,6 +15,13 @@ import type { WarpOperation } from '@app-types/preset';
 import type { RendererMode } from '@engine/render/types';
 import { resolveOperationBindings } from '@engine/algorithms/resolveOperationBindings';
 import { createProfiler, type ProfilerSnapshot } from '@engine/profiler/createProfiler';
+import {
+  createAdaptiveQualityController,
+  QUALITY_PRESETS,
+  resolveRuntimeQuality,
+  type AdaptiveQualityState,
+  type QualityLevel,
+} from '@engine/performance/adaptiveQuality';
 
 type CameraViewState = 'idle' | 'starting' | 'running' | 'error';
 
@@ -64,6 +71,10 @@ export function useBeautyLabRuntime(
   const resolvedOperationsRef = useRef<WarpOperation[]>(operations);
   const resolvedActiveOperationRef = useRef<WarpOperation | null>(activeOperation);
   const profilerRef = useRef(createProfiler({ sampleWindow: 30 }));
+  const detectFrameCountRef = useRef(0);
+  const lastLandmarkFrameRef = useRef<FaceLandmarksFrame | null>(null);
+  const adaptiveQualityControllerRef = useRef(createAdaptiveQualityController('high'));
+  const adaptiveQualityRef = useRef<AdaptiveQualityState>({ enabled: true, selectedQuality: 'high', currentQuality: 'high' });
 
   const [cameraState, setCameraState] = useState<CameraViewState>('idle');
   const [cameraErrorMessage, setCameraErrorMessage] = useState<string | null>(null);
@@ -72,6 +83,10 @@ export function useBeautyLabRuntime(
   const [landmarkFrame, setLandmarkFrame] = useState<FaceLandmarksFrame | null>(null);
   const [faceGeometry, setFaceGeometry] = useState<FaceGeometry | null>(null);
   const [profilerSnapshot, setProfilerSnapshot] = useState<ProfilerSnapshot>(profilerRef.current.getSnapshot());
+  const [adaptiveQuality, setAdaptiveQuality] = useState<AdaptiveQualityState>(adaptiveQualityRef.current);
+
+  const runtimeQuality = resolveRuntimeQuality(adaptiveQualityRef.current);
+  const runtimePreset = QUALITY_PRESETS[runtimeQuality];
 
   useEffect(() => {
     activeOperationRef.current = activeOperation;
@@ -116,6 +131,9 @@ export function useBeautyLabRuntime(
         onRenderFrame: (renderTimeMs) => {
           setProfilerSnapshot((current) => ({ ...current, renderMs: renderTimeMs }));
         },
+        getRenderScale: () => QUALITY_PRESETS[resolveRuntimeQuality(adaptiveQualityRef.current)].renderScale,
+        getFrameSkip: () => QUALITY_PRESETS[resolveRuntimeQuality(adaptiveQualityRef.current)].frameSkip,
+        getSmoothingSampleCount: () => QUALITY_PRESETS[resolveRuntimeQuality(adaptiveQualityRef.current)].smoothingSampleCount,
       })
       : createCanvasRenderer({
         video: videoElement,
@@ -127,6 +145,8 @@ export function useBeautyLabRuntime(
         onRenderFrame: (renderTimeMs) => {
           setProfilerSnapshot((current) => ({ ...current, renderMs: renderTimeMs }));
         },
+        getRenderScale: () => QUALITY_PRESETS[resolveRuntimeQuality(adaptiveQualityRef.current)].renderScale,
+        getFrameSkip: () => QUALITY_PRESETS[resolveRuntimeQuality(adaptiveQualityRef.current)].frameSkip,
       });
     renderer.start();
     rendererRef.current = renderer;
@@ -151,9 +171,18 @@ export function useBeautyLabRuntime(
         return;
       }
 
+      const preset = QUALITY_PRESETS[resolveRuntimeQuality(adaptiveQualityRef.current)];
+      const shouldDetect = preset.mediapipeIntervalFrames <= 1
+        || detectFrameCountRef.current % preset.mediapipeIntervalFrames === 0;
+      detectFrameCountRef.current += 1;
       const detectStart = performance.now();
-      const result = faceLandmarkerController.detectForVideoFrame(videoElement, performance.now());
-      const mediapipeMs = performance.now() - detectStart;
+      const result = shouldDetect
+        ? faceLandmarkerController.detectForVideoFrame(videoElement, performance.now())
+        : (lastLandmarkFrameRef.current ?? { detected: false, landmarks: [], frameCount: 0, timestampMs: performance.now(), faceCount: 0, landmarkCount: 0 });
+      const mediapipeMs = shouldDetect ? performance.now() - detectStart : 0;
+      if (shouldDetect) {
+        lastLandmarkFrameRef.current = result;
+      }
       setLandmarkerState(faceLandmarkerController.getState());
       setLandmarkFrame(result);
       const nextGeometry = result.detected ? computeFaceGeometry({ landmarks: result.landmarks }) : null;
@@ -167,6 +196,14 @@ export function useBeautyLabRuntime(
       profilerRef.current.setBackend(rendererModeRef.current);
       profilerRef.current.setOperationCount(resolvedOperations.filter((operation) => operation.enabled).length);
       const nextSnapshot = profilerRef.current.commitFrame();
+      const adaptiveRef = adaptiveQualityRef.current;
+      if (adaptiveRef.enabled) {
+        const decision = adaptiveQualityControllerRef.current.evaluate(nextSnapshot.avgFps30, nextSnapshot.timestamp);
+        if (decision.changed) {
+          adaptiveQualityRef.current = { ...adaptiveRef, currentQuality: decision.nextQuality };
+          setAdaptiveQuality(adaptiveQualityRef.current);
+        }
+      }
       setProfilerSnapshot({ ...nextSnapshot, mediapipeMs });
 
       detectAnimationRef.current = requestAnimationFrame(tick);
@@ -210,6 +247,9 @@ export function useBeautyLabRuntime(
             onRenderFrame: (renderTimeMs) => {
               setProfilerSnapshot((current) => ({ ...current, renderMs: renderTimeMs }));
             },
+            getRenderScale: () => QUALITY_PRESETS[resolveRuntimeQuality(adaptiveQualityRef.current)].renderScale,
+            getFrameSkip: () => QUALITY_PRESETS[resolveRuntimeQuality(adaptiveQualityRef.current)].frameSkip,
+            getSmoothingSampleCount: () => QUALITY_PRESETS[resolveRuntimeQuality(adaptiveQualityRef.current)].smoothingSampleCount,
           })
           : createCanvasRenderer({
             video: videoElement,
@@ -221,6 +261,8 @@ export function useBeautyLabRuntime(
             onRenderFrame: (renderTimeMs) => {
               setProfilerSnapshot((current) => ({ ...current, renderMs: renderTimeMs }));
             },
+            getRenderScale: () => QUALITY_PRESETS[resolveRuntimeQuality(adaptiveQualityRef.current)].renderScale,
+            getFrameSkip: () => QUALITY_PRESETS[resolveRuntimeQuality(adaptiveQualityRef.current)].frameSkip,
           });
         renderer.start();
         rendererRef.current = renderer;
@@ -272,6 +314,20 @@ export function useBeautyLabRuntime(
     refs: { videoRef, overlayCanvasRef, processedCanvasRef },
     state: { cameraState, cameraErrorMessage, rendererState, landmarkerState, landmarkFrame, faceGeometry },
     profiler: profilerSnapshot,
+    quality: {
+      adaptiveQuality,
+      runtimeQuality,
+      runtimePreset,
+      setAdaptiveEnabled: (enabled: boolean) => {
+        adaptiveQualityRef.current = { ...adaptiveQualityRef.current, enabled };
+        setAdaptiveQuality(adaptiveQualityRef.current);
+      },
+      setSelectedQuality: (selectedQuality: QualityLevel) => {
+        adaptiveQualityControllerRef.current.setQuality(selectedQuality);
+        adaptiveQualityRef.current = { ...adaptiveQualityRef.current, selectedQuality, currentQuality: selectedQuality };
+        setAdaptiveQuality(adaptiveQualityRef.current);
+      },
+    },
     actions: { startCamera, stopCamera },
     resolved: {
       getOperations: () => resolvedOperationsRef.current,

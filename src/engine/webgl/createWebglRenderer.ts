@@ -21,6 +21,9 @@ type CreateWebglRendererOptions = {
   getFaceGeometry: () => FaceGeometry | null;
   getSkinSmoothing: () => { enabled: boolean; strength: number; radius: number; maskOpacity: number; showMaskPreview: boolean };
   getSkinTone: () => { enabled: boolean; brightness: number; saturation: number; warmth: number; blend: number };
+  getRenderScale?: () => number;
+  getFrameSkip?: () => number;
+  getSmoothingSampleCount?: () => number;
   onRenderFrame?: (renderTimeMs: number) => void;
 };
 
@@ -38,7 +41,7 @@ function getFalloffUniformValue(type: WarpOperation['falloff']['type']) {
   return 2;
 }
 
-export function createWebglRenderer({ video, canvas, getOperations, getFaceGeometry, getSkinSmoothing, getSkinTone, onRenderFrame }: CreateWebglRendererOptions): WebglRenderer {
+export function createWebglRenderer({ video, canvas, getOperations, getFaceGeometry, getSkinSmoothing, getSkinTone, getRenderScale, getFrameSkip, getSmoothingSampleCount, onRenderFrame }: CreateWebglRendererOptions): WebglRenderer {
   const gl = canvas.getContext('webgl2');
 
   if (!gl) {
@@ -76,8 +79,9 @@ export function createWebglRenderer({ video, canvas, getOperations, getFaceGeome
   const skinToneSaturationLocation = gl.getUniformLocation(program, 'uSkinToneSaturation');
   const skinToneWarmthLocation = gl.getUniformLocation(program, 'uSkinToneWarmth');
   const skinToneBlendLocation = gl.getUniformLocation(program, 'uSkinToneBlend');
+  const smoothingSampleCountLocation = gl.getUniformLocation(program, 'uSmoothingSampleCount');
 
-  if (positionLocation < 0 || !videoTextureLocation || !warpCentersLocation || !warpRadiiLocation || !warpStrengthsLocation || !warpAxesLocation || !warpDirectionsLocation || !lineStartsLocation || !lineEndsLocation || !lineWidthsLocation || !operationTypesLocation || !falloffTypesLocation || !enabledOpsLocation || !polygonPointsLocation || !polygonCountsLocation || !weightMapTypesLocation || !weightMapCentersLocation || !weightMapRadiiLocation || !smoothingEnabledLocation || !smoothingStrengthLocation || !smoothingRadiusLocation || !smoothingMaskOpacityLocation || !smoothingMaskPreviewLocation || !faceMaskPolygonLocation || !faceMaskCountLocation || !skinToneEnabledLocation || !skinToneBrightnessLocation || !skinToneSaturationLocation || !skinToneWarmthLocation || !skinToneBlendLocation) {
+  if (positionLocation < 0 || !videoTextureLocation || !warpCentersLocation || !warpRadiiLocation || !warpStrengthsLocation || !warpAxesLocation || !warpDirectionsLocation || !lineStartsLocation || !lineEndsLocation || !lineWidthsLocation || !operationTypesLocation || !falloffTypesLocation || !enabledOpsLocation || !polygonPointsLocation || !polygonCountsLocation || !weightMapTypesLocation || !weightMapCentersLocation || !weightMapRadiiLocation || !smoothingEnabledLocation || !smoothingStrengthLocation || !smoothingRadiusLocation || !smoothingMaskOpacityLocation || !smoothingMaskPreviewLocation || !faceMaskPolygonLocation || !faceMaskCountLocation || !skinToneEnabledLocation || !skinToneBrightnessLocation || !skinToneSaturationLocation || !skinToneWarmthLocation || !skinToneBlendLocation || !smoothingSampleCountLocation) {
     gl.deleteProgram(program);
     throw new Error('Failed to resolve shader attributes or uniforms.');
   }
@@ -109,6 +113,7 @@ export function createWebglRenderer({ video, canvas, getOperations, getFaceGeome
 
   let animationFrameId: number | null = null;
   let state: WebglRendererState = 'idle';
+  let frameCounter = 0;
 
   const syncCanvasSize = () => {
     const { videoWidth, videoHeight } = video;
@@ -117,9 +122,13 @@ export function createWebglRenderer({ video, canvas, getOperations, getFaceGeome
       return false;
     }
 
-    if (canvas.width !== videoWidth || canvas.height !== videoHeight) {
-      canvas.width = videoWidth;
-      canvas.height = videoHeight;
+    const scale = Math.max(0.3, Math.min(1, getRenderScale?.() ?? 1));
+    const scaledWidth = Math.max(1, Math.floor(videoWidth * scale));
+    const scaledHeight = Math.max(1, Math.floor(videoHeight * scale));
+
+    if (canvas.width !== scaledWidth || canvas.height !== scaledHeight) {
+      canvas.width = scaledWidth;
+      canvas.height = scaledHeight;
     }
 
     gl.viewport(0, 0, canvas.width, canvas.height);
@@ -131,7 +140,10 @@ export function createWebglRenderer({ video, canvas, getOperations, getFaceGeome
       return;
     }
 
-    if (syncCanvasSize()) {
+    const frameSkip = Math.max(0, getFrameSkip?.() ?? 0);
+    const shouldSkip = frameSkip > 0 && frameCounter % (frameSkip + 1) !== 0;
+    frameCounter += 1;
+    if (syncCanvasSize() && !shouldSkip) {
       const renderStart = performance.now();
       gl.useProgram(program);
       gl.activeTexture(gl.TEXTURE0);
@@ -254,6 +266,7 @@ export function createWebglRenderer({ video, canvas, getOperations, getFaceGeome
       gl.uniform1f(smoothingRadiusLocation, smoothing.radius);
       gl.uniform1f(smoothingMaskOpacityLocation, smoothing.maskOpacity);
       gl.uniform1i(smoothingMaskPreviewLocation, smoothing.showMaskPreview ? 1 : 0);
+      gl.uniform1i(smoothingSampleCountLocation, Math.max(3, Math.min(13, getSmoothingSampleCount?.() ?? 9)));
       gl.uniform2fv(faceMaskPolygonLocation, faceMask);
       gl.uniform1i(faceMaskCountLocation, faceMaskCount);
       gl.uniform1i(skinToneEnabledLocation, skinTone.enabled ? 1 : 0);
