@@ -318,3 +318,18 @@ input[type='range'] {
   color: #ff9aa8;
   font-size: 0.75rem;
 }
+
+
+.timeline-track__keyframe--selected {
+  background: #ffd166;
+  border-color: #ffe7a6;
+  box-shadow: 0 0 0 2px rgba(255, 209, 102, 0.35);
+}
+
+.keyframe-track--selected {
+  background: rgba(89, 193, 255, 0.08);
+}
+
+.keyframe-row--selected {
+  background: rgba(255, 209, 102, 0.16);
+}

@@ -65,12 +65,29 @@ export function App() {
   const [animationPlaying, setAnimationPlaying] = useState(false);
   const [selectedAnimationClipId, setSelectedAnimationClipId] = useState<string>('runtime_default');
   const [loadedAnimationClip, setLoadedAnimationClip] = useState<AnimationClip>(DEFAULT_ANIMATION_CLIP);
+  const [selectedTrackIndex, setSelectedTrackIndex] = useState<number | null>(0);
+  const [selectedKeyframeIndex, setSelectedKeyframeIndex] = useState<number | null>(0);
   const animationClips = useMemo(() => [DEFAULT_ANIMATION_CLIP, ...(activePreset.animations ?? [])], [activePreset]);
   const selectedAnimationClip = useMemo(
     () => animationClips.find((clip) => clip.id === selectedAnimationClipId) ?? null,
     [animationClips, selectedAnimationClipId],
   );
   const timelineRef = useMemo(() => createTimeline(loadedAnimationClip), [loadedAnimationClip]);
+
+  const selectKeyframe = (trackIndex: number, keyframeIndex: number) => {
+    setSelectedTrackIndex(trackIndex);
+    setSelectedKeyframeIndex(keyframeIndex);
+  };
+  const selectAdjacentKeyframe = (direction: -1 | 1) => {
+    const flattened = loadedAnimationClip.tracks.flatMap((track, trackIndex) => track.keyframes.map((_, keyframeIndex) => ({ trackIndex, keyframeIndex })));
+    if (flattened.length === 0) return;
+    const currentIndex = flattened.findIndex((item) => item.trackIndex === selectedTrackIndex && item.keyframeIndex === selectedKeyframeIndex);
+    const baseIndex = currentIndex >= 0 ? currentIndex : 0;
+    const nextIndex = Math.min(flattened.length - 1, Math.max(0, baseIndex + direction));
+    const next = flattened[nextIndex];
+    selectKeyframe(next.trackIndex, next.keyframeIndex);
+  };
+
   const syncTimelineSnapshot = () => {
     const snapshot = timelineRef.getSnapshot();
     setAnimationTime(snapshot.currentTime);
@@ -411,7 +428,7 @@ export function App() {
             <div>Recommended quality: {capabilities.recommendedQuality}</div>
           </div>
         </Panel>
-        <ControlPanel activePreset={activePreset} beautyIntensity={beautyIntensity} setBeautyIntensity={setBeautyIntensity} animationPlaying={animationPlaying} animationTime={animationTime} animationLoop={animationLoop} animationTrackCount={animationTrackCount} animationDuration={loadedAnimationClip.duration} animationClips={animationClips} selectedAnimationClipId={selectedAnimationClipId} loadedAnimationClipName={loadedAnimationClip.name} selectedAnimationClip={selectedAnimationClip} onSelectAnimationClip={setSelectedAnimationClipId} onLoadAnimationClip={() => {
+        <ControlPanel selectedTrackIndex={selectedTrackIndex} selectedKeyframeIndex={selectedKeyframeIndex} onSelectKeyframe={selectKeyframe} onSelectPrevKeyframe={() => selectAdjacentKeyframe(-1)} onSelectNextKeyframe={() => selectAdjacentKeyframe(1)} activePreset={activePreset} beautyIntensity={beautyIntensity} setBeautyIntensity={setBeautyIntensity} animationPlaying={animationPlaying} animationTime={animationTime} animationLoop={animationLoop} animationTrackCount={animationTrackCount} animationDuration={loadedAnimationClip.duration} animationClips={animationClips} selectedAnimationClipId={selectedAnimationClipId} loadedAnimationClipName={loadedAnimationClip.name} selectedAnimationClip={selectedAnimationClip} onSelectAnimationClip={setSelectedAnimationClipId} onLoadAnimationClip={() => {
           const clip = animationClips.find((item) => item.id === selectedAnimationClipId);
           if (!clip) return;
           setLoadedAnimationClip(clip);
@@ -445,7 +462,7 @@ export function App() {
             keyframes: track.keyframes.map((keyframe, kIndex) => kIndex === keyframeIndex ? { ...keyframe, value } : keyframe),
           } : track),
         }))} onPlayAnimation={() => { timelineRef.play(); syncTimelineSnapshot(); }} onPauseAnimation={() => { timelineRef.pause(); syncTimelineSnapshot(); }} onStopAnimation={() => { timelineRef.stop(); syncTimelineSnapshot(); }} onTimelineTimeChange={(value) => { timelineRef.seek(value); syncTimelineSnapshot(); }} setAnimationLoop={setAnimationLoop} onCaptureCompare={onCaptureCompare} presetNameInput={presetNameInput} setPresetNameInput={setPresetNameInput} presets={presets} activeStoredPresetId={activeStoredPresetId} onSavePreset={onSavePreset} onCreatePreset={onCreatePreset} onDeletePreset={onDeletePreset} onRenamePreset={onRenamePreset} onLoadPreset={onLoadPreset} selectedSamplePresetId={selectedSamplePresetId} onSelectSamplePreset={onSelectSamplePreset} onExportPreset={onExportPreset} onImportPresetText={onImportPresetText} presetMessage={presetMessage} pipelineStatus={pipelineState.status} onStartCamera={runtime.actions.startCamera} onStopCamera={runtime.actions.stopCamera} cameraState={runtime.state.cameraState} showLandmarks={showLandmarks} setShowLandmarks={setShowLandmarks} showCenters={showCenters} setShowCenters={setShowCenters} showWarpInfluence={showWarpInfluence} setShowWarpInfluence={setShowWarpInfluence} showWarpCenter={showWarpCenter} setShowWarpCenter={setShowWarpCenter} showFalloffRings={showFalloffRings} setShowFalloffRings={setShowFalloffRings} rendererMode={rendererMode} setRendererMode={setRendererMode} activeOperationIndex={activeOperationIndex} setActiveOperationIndex={setActiveOperationIndex} addOperation={addOperation} removeOperation={removeOperation} updateOperation={updateOperation} updateAxis={updateAxis} updateFalloffType={updateFalloffType} updateDirection={updateDirection} resolvedActiveOperation={resolvedActiveOperation} skinSmoothing={skinSmoothing} updateSkinSmoothing={updateSkinSmoothing} skinTone={skinTone} updateSkinTone={updateSkinTone} adaptiveQualityEnabled={runtime.quality.adaptiveQuality.enabled} onAdaptiveQualityEnabledChange={runtime.quality.setAdaptiveEnabled} selectedQuality={runtime.quality.adaptiveQuality.selectedQuality} currentQuality={runtime.quality.runtimeQuality} onSelectedQualityChange={runtime.quality.setSelectedQuality} capabilities={capabilities} />
-        <TimelinePanel clip={loadedAnimationClip} currentTime={animationTime} currentValues={timelineSnapshot.values} onSeek={(time) => {
+        <TimelinePanel clip={loadedAnimationClip} currentTime={animationTime} currentValues={timelineSnapshot.values} selectedTrackIndex={selectedTrackIndex} selectedKeyframeIndex={selectedKeyframeIndex} onSelectKeyframe={selectKeyframe} onSeek={(time) => {
           timelineRef.seek(time);
           syncTimelineSnapshot();
         }} onScrubStart={() => {
