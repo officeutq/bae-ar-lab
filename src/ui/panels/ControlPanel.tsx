@@ -1,4 +1,5 @@
 import type { WarpFalloffType, WarpPreset, WarpTarget } from '@app-types/preset';
+import type { StoredPreset } from '@engine/presets/types';
 import type { RendererMode } from '@engine/render/types';
 import { Panel } from '@ui/Panel';
 import { FalloffGraph } from '@ui/components/FalloffGraph';
@@ -28,6 +29,18 @@ type Props = {
   updateOperation: <K extends keyof WarpPreset['operations'][number]>(key: K, value: WarpPreset['operations'][number][K]) => void;
   updateAxis: (axisKey: 'x' | 'y', value: number) => void;
   updateFalloffType: (type: WarpFalloffType) => void;
+  presetNameInput: string;
+  setPresetNameInput: (name: string) => void;
+  presets: StoredPreset[];
+  activeStoredPresetId: string | null;
+  onSavePreset: () => void;
+  onCreatePreset: () => void;
+  onDeletePreset: () => void;
+  onRenamePreset: () => void;
+  onLoadPreset: (id: string) => void;
+  onExportPreset: () => void;
+  onImportPresetText: (text: string) => void;
+  presetMessage: string | null;
 };
 
 export function ControlPanel(props: Props) {
@@ -35,6 +48,29 @@ export function ControlPanel(props: Props) {
 
   return (
     <Panel title="Control Panel">
+      <div className="operation-controls">
+        <label>Preset name
+          <input type="text" value={props.presetNameInput} onChange={(e) => props.setPresetNameInput(e.target.value)} />
+        </label>
+        <label>Saved presets
+          <select value={props.activeStoredPresetId ?? ''} onChange={(e) => props.onLoadPreset(e.target.value)}>
+            <option value="">-- Select preset --</option>
+            {props.presets.map((preset) => <option key={preset.id} value={preset.id}>{preset.name}</option>)}
+          </select>
+        </label>
+        <div className="camera-controls">
+          <button type="button" onClick={props.onSavePreset}>Save current preset</button>
+          <button type="button" onClick={props.onCreatePreset}>Create new preset</button>
+          <button type="button" onClick={props.onRenamePreset} disabled={!props.activeStoredPresetId}>Rename preset</button>
+          <button type="button" onClick={props.onDeletePreset} disabled={!props.activeStoredPresetId}>Delete preset</button>
+          <button type="button" onClick={props.onExportPreset}>Export JSON</button>
+        </div>
+        <label>Import preset JSON (auto import on blur)
+          <textarea rows={6} placeholder="Paste preset JSON" onBlur={(e) => props.onImportPresetText(e.target.value)} />
+        </label>
+        {props.presetMessage && <p className="camera-status">{props.presetMessage}</p>}
+      </div>
+
       <div className="camera-controls">
         <button type="button" onClick={props.onStartCamera} disabled={props.cameraState === 'starting'}>Start Camera</button>
         <button type="button" onClick={props.onStopCamera} disabled={props.cameraState !== 'running'}>Stop Camera</button>
