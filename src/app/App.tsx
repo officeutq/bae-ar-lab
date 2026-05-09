@@ -75,6 +75,7 @@ export function App() {
       lineEnd: { x: 0.7, y: 0.5 },
       width: 0.12,
       polygon: [{ x: 0.35, y: 0.35 }, { x: 0.65, y: 0.35 }, { x: 0.65, y: 0.65 }, { x: 0.35, y: 0.65 }],
+      weightMap: { type: 'uniform', center: { x: 0.5, y: 0.5 }, radius: 0.5 },
     };
     setActivePreset((currentPreset) => {
       const nextIndex = currentPreset.operations.length;

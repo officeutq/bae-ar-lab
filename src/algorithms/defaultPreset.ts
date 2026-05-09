@@ -104,6 +104,7 @@ export const defaultWarpPreset: WarpPreset = {
       width: 0.06,
       polygon: [{ x: 0.25, y: 0.45 }, { x: 0.35, y: 0.42 }, { x: 0.4, y: 0.58 }, { x: 0.27, y: 0.63 }],
       binding: { type: 'landmark_region', region: 'left_cheek' },
+      weightMap: { type: 'radial_gradient', center: { x: 0.33, y: 0.52 }, radius: 0.16 },
     },
     {
       id: 'right_cheek_lift',
@@ -120,6 +121,7 @@ export const defaultWarpPreset: WarpPreset = {
       width: 0.06,
       polygon: [{ x: 0.6, y: 0.42 }, { x: 0.73, y: 0.45 }, { x: 0.71, y: 0.63 }, { x: 0.58, y: 0.58 }],
       binding: { type: 'landmark_region', region: 'right_cheek' },
+      weightMap: { type: 'radial_gradient', center: { x: 0.67, y: 0.52 }, radius: 0.16 },
     },
   ],
 };

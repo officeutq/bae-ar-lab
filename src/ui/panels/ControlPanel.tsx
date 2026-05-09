@@ -1,4 +1,4 @@
-import type { WarpFalloffType, WarpOperationType, WarpPreset, WarpTarget } from '@app-types/preset';
+import type { WarpFalloffType, WarpOperationType, WarpPreset, WarpTarget, WarpWeightMapType } from '@app-types/preset';
 import type { StoredPreset } from '@engine/presets/types';
 import type { RendererMode } from '@engine/render/types';
 import { Panel } from '@ui/Panel';
@@ -176,6 +176,20 @@ export function ControlPanel(props: Props) {
                   props.updateOperation('polygon', nextPolygon);
                 }}
               />
+            </label>
+            <label>Weight type
+              <select value={op?.weightMap?.type ?? 'uniform'} onChange={(e) => props.updateOperation('weightMap', { ...(op?.weightMap ?? { center: { x: 0.5, y: 0.5 }, radius: 0.5 }), type: e.target.value as WarpWeightMapType })}>
+                <option value="uniform">uniform</option><option value="radial_gradient">radial_gradient</option>
+              </select>
+            </label>
+            <label>Gradient Center X: {(op?.weightMap?.center.x ?? 0.5).toFixed(2)}
+              <input type="range" min={0} max={1} step={0.01} value={op?.weightMap?.center.x ?? 0.5} onChange={(e) => props.updateOperation('weightMap', { ...(op?.weightMap ?? { type: 'uniform', center: { x: 0.5, y: 0.5 }, radius: 0.5 }), center: { ...(op?.weightMap?.center ?? { x: 0.5, y: 0.5 }), x: Number(e.target.value) } })} />
+            </label>
+            <label>Gradient Center Y: {(op?.weightMap?.center.y ?? 0.5).toFixed(2)}
+              <input type="range" min={0} max={1} step={0.01} value={op?.weightMap?.center.y ?? 0.5} onChange={(e) => props.updateOperation('weightMap', { ...(op?.weightMap ?? { type: 'uniform', center: { x: 0.5, y: 0.5 }, radius: 0.5 }), center: { ...(op?.weightMap?.center ?? { x: 0.5, y: 0.5 }), y: Number(e.target.value) } })} />
+            </label>
+            <label>Gradient Radius: {(op?.weightMap?.radius ?? 0.5).toFixed(2)}
+              <input type="range" min={0.01} max={1} step={0.01} value={op?.weightMap?.radius ?? 0.5} onChange={(e) => props.updateOperation('weightMap', { ...(op?.weightMap ?? { type: 'uniform', center: { x: 0.5, y: 0.5 }, radius: 0.5 }), radius: Number(e.target.value) })} />
             </label>
             <label>Region Width: {(op?.width ?? 0).toFixed(2)}
               <input type="range" min={0.01} max={1} step={0.01} value={op?.width ?? 0.12} onChange={(e) => props.updateOperation('width', Number(e.target.value))} />
