@@ -23,7 +23,8 @@
 ## 2. カメラ・MediaPipe
 - カメラ開始/停止: `createCameraController().start/stop` でトラックを停止可能。
 - MediaPipe初期化: `FilesetResolver.forVisionTasks` + `FaceLandmarker.createFromOptions`。
-- wasm/model: CDN直指定（`@latest` wasm と `face_landmarker.task` URL）。
+- MediaPipe資産設定: `src/config/mediapipeAssets.ts` に `MEDIAPIPE_TASKS_VISION_VERSION` / wasm URL / model URL を定義し、初期化側は定数参照のみ。
+- wasm/model: `src/config/mediapipeAssets.ts` に集約。wasm は `@mediapipe/tasks-vision@0.10.22` に固定、model は `.../float16/1/face_landmarker.task` の固定URLを使用。
 - 検出結果保持:
   - `lastLandmarkFrameRef`（間引き時キャッシュ）
   - `landmarkFrame` state
@@ -107,7 +108,7 @@
   - Profiler: 最低限あり
 
 ## 10. Build / 開発環境
-- package: Vite + React + TS、`@mediapipe/tasks-vision` は `^0.10.22`。
+- package: Vite + React + TS、`@mediapipe/tasks-vision` は `0.10.22` に固定。
 - `npm install`: 成功。
 - `npm run build`: 成功。
 - `npm run dev`: 起動確認（10秒タイムアウトで意図終了）。
@@ -129,7 +130,7 @@
 - compare/デバッグ情報の見せ方
 
 ### C. 実装済みだが不安定
-- MediaPipe wasm `@latest` 参照（将来破壊リスク）
+- MediaPipe wasm は `@latest` を廃止し `0.10.22` に固定（破壊リスクを低減）
 - 顔未検出時のフェード遷移（ケースにより違和感）
 - backend切替直後/quality変動時の視覚的ちらつき可能性
 
@@ -140,7 +141,7 @@
 - preset/clipの高度管理（タグ、差分、履歴）
 
 ### E. Butterflyve組み込み前に必須
-1. MediaPipe資産のバージョン固定（wasm/modelのpinning）
+1. MediaPipe資産のバージョン固定（wasm: `0.10.22` 固定、model: `float16/1` 固定URL）
 2. preset schema契約とmigration戦略
 3. renderer backend contractの明文化（API/互換テスト）
 4. 非検出時/急旋回時の品質基準（stability・attenuation調整）

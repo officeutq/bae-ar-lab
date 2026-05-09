@@ -11,6 +11,7 @@ export default defineConfig({
       '@algorithms': '/src/algorithms',
       '@shaders': '/src/shaders',
       '@app-types': '/src/types',
+      '@config': '/src/config',
     },
   },
 });
