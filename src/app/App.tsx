@@ -494,7 +494,27 @@ export function App() {
             <div>推奨品質: {capabilities.recommendedQuality}</div>
           </div>
         </Panel>
-        <RuntimeDebugPanel temporalSmoothingEnabled={temporalSmoothingEnabled} temporalSmoothingAlpha={temporalSmoothingAlpha} faceStability={runtime.faceStability} facePose={runtime.pose.facePose} poseAttenuationFactor={runtime.pose.poseAttenuation.factor} currentQuality={runtime.quality.runtimeQuality} renderScale={runtime.quality.runtimePreset.renderScale} rendererMode={rendererMode} fps={runtime.profiler.fps} />
+        <RuntimeDebugPanel
+          temporalSmoothingEnabled={temporalSmoothingEnabled}
+          temporalSmoothingAlpha={temporalSmoothingAlpha}
+          faceDetected={Boolean(runtime.state.landmarkFrame?.detected)}
+          faceStability={runtime.faceStability}
+          facePose={runtime.pose.facePose}
+          poseAttenuationFactor={runtime.pose.poseAttenuation.factor}
+          poseAttenuationYawFactor={runtime.pose.poseAttenuation.yawFactor}
+          poseAttenuationPitchFactor={runtime.pose.poseAttenuation.pitchFactor}
+          activeOperationCount={runtime.profiler.operationCount}
+          frameSkip={runtime.quality.runtimePreset.frameSkip}
+          currentQuality={runtime.quality.runtimeQuality}
+          selectedQuality={runtime.quality.adaptiveQuality.selectedQuality}
+          adaptiveQualityEnabled={runtime.quality.adaptiveQuality.enabled}
+          renderScale={runtime.quality.runtimePreset.renderScale}
+          rendererMode={rendererMode}
+          fps={runtime.profiler.fps}
+          frameTimeMs={runtime.profiler.frameTimeMs}
+          mediapipeTimeMs={runtime.profiler.mediapipeMs}
+          rendererTimeMs={runtime.profiler.renderMs}
+        />
         <ControlPanel selectedTrackIndex={selectedTrackIndex} selectedKeyframeIndex={selectedKeyframeIndex} onSelectKeyframe={selectKeyframe} onSelectPrevKeyframe={() => selectAdjacentKeyframe(-1)} onSelectNextKeyframe={() => selectAdjacentKeyframe(1)} activePreset={activePreset} beautyIntensity={beautyIntensity} setBeautyIntensity={setBeautyIntensity} animationPlaying={animationPlaying} animationTime={animationTime} animationLoop={animationLoop} animationTrackCount={animationTrackCount} animationDuration={loadedAnimationClip.duration} animationClips={animationClips} selectedAnimationClipId={selectedAnimationClipId} loadedAnimationClipName={loadedAnimationClip.name} selectedAnimationClip={selectedAnimationClip} onSelectAnimationClip={setSelectedAnimationClipId} onLoadAnimationClip={() => {
           const clip = animationClips.find((item) => item.id === selectedAnimationClipId);
           if (!clip) return;

@@ -94,7 +94,8 @@
 
 ## 8. Performance / Profiler
 - FPS表示: 実装済み（profiler + runtime debug panel）。
-- frame time / renderer time / MediaPipe time: profiler snapshotで保持。
+- frame time / renderer time / MediaPipe time: profiler snapshotで保持し、Runtime Debugで常時可視化。
+- Runtime Debug拡張: face detected, face stability, yaw/pitch/roll, pose attenuation(total/yaw/pitch), active operation count, renderer backend, render scale, frame skip, adaptive quality状態(selected/current)を表示。
 - adaptive quality: 実装済み（quality preset + controller）。
 - device capability detection: 実装済み。
 - mobile/low spec fallback: 推奨renderer/quality と frame skip/render scale 調整あり。
@@ -117,7 +118,12 @@
 - `npm run dev`: 起動確認（10秒タイムアウトで意図終了）。
 - 既知ログ: npm の `Unknown env config "http-proxy"` warning。
 
-## 11. 不足点分類
+## 11. Runtime品質検証シナリオ
+- 追加ドキュメント: `docs/runtime-quality-scenarios.md` を追加。
+- 対象シナリオ: 通常正面 / 顔未検出 / 横顔(yaw大) / 急旋回 / 低照度 / 低スペック(FPS低下)。
+- Compare運用: snapshot→compareで差分確認し、preset JSONとセットで管理する最小手順を明記。
+
+## 12. 不足点分類
 
 ### A. すでに完成している
 - カメラ/MediaPipe基本ループ
@@ -156,7 +162,7 @@
 ## 優先Issue候補（上から優先）
 1. MediaPipe wasm/model URL pinning + integrity管理
 2. Preset schema versioning/migration実装
-3. Runtime品質検証シナリオ（顔未検出・横顔・低照度）作成
+3. Runtime品質検証シナリオ運用の定着（自動計測/記録フォーマット整備）
 4. Animation keyframe drag UI 実装
 5. Renderer backend切替/cleanup回帰テスト
 6. Snapshotのmirror期待値仕様を明文化（プレビューと保存差）
