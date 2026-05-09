@@ -6,8 +6,11 @@ type Props = {
   clip: AnimationClip;
   currentTime: number;
   currentValues: Record<string, number>;
+  selectedTrackIndex: number | null;
+  selectedKeyframeIndex: number | null;
   onSeek: (time: number) => void;
   onScrubStart: () => void;
+  onSelectKeyframe: (trackIndex: number, keyframeIndex: number) => void;
 };
 
 const TIMELINE_WIDTH = 100;
@@ -23,7 +26,7 @@ function toTimelinePercent(time: number, duration: number) {
   return clamp01(time / duration) * TIMELINE_WIDTH;
 }
 
-export function TimelinePanel({ clip, currentTime, currentValues, onSeek, onScrubStart }: Props) {
+export function TimelinePanel({ clip, currentTime, currentValues, selectedTrackIndex, selectedKeyframeIndex, onSeek, onScrubStart, onSelectKeyframe }: Props) {
   const scrubRef = useRef(false);
   const playheadPercent = toTimelinePercent(currentTime, clip.duration);
   const timeFromClientX = (clientX: number, rect: DOMRect) => clamp01((clientX - rect.left) / Math.max(1, rect.width)) * clip.duration;
@@ -77,12 +80,18 @@ export function TimelinePanel({ clip, currentTime, currentValues, onSeek, onScru
               >
                 {track.keyframes.map((keyframe, keyframeIndex) => {
                   const left = toTimelinePercent(keyframe.time, clip.duration);
+                  const isSelected = selectedTrackIndex === trackIndex && selectedKeyframeIndex === keyframeIndex;
                   return (
-                    <div
+                    <button
+                      type="button"
                       key={`${track.track}-${keyframe.time}-${keyframeIndex}`}
-                      className="timeline-track__keyframe"
+                      className={`timeline-track__keyframe${isSelected ? ' timeline-track__keyframe--selected' : ''}`}
                       style={{ left: `${left}%` }}
                       title={`t=${keyframe.time.toFixed(2)}s / v=${keyframe.value.toFixed(3)}`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onSelectKeyframe(trackIndex, keyframeIndex);
+                      }}
                     />
                   );
                 })}
