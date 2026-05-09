@@ -26,6 +26,7 @@ type Props = {
   onUpdateSelectedClipName: (value: string) => void;
   onUpdateSelectedClipDuration: (value: number) => void;
   onUpdateSelectedClipLoop: (value: boolean) => void;
+  onUpdateSelectedClipKeyframeTime: (trackIndex: number, keyframeIndex: number, value: number) => void;
   onUpdateSelectedClipKeyframeValue: (trackIndex: number, keyframeIndex: number, value: number) => void;
   onPlayAnimation: () => void;
   onPauseAnimation: () => void;
@@ -172,7 +173,7 @@ export function ControlPanel(props: Props) {
               <input type="number" min={0.01} step={0.01} value={props.selectedAnimationClip.duration} onChange={(e) => props.onUpdateSelectedClipDuration(Number(e.target.value))} />
             </label>
             <label><input type="checkbox" checked={Boolean(props.selectedAnimationClip.loop)} onChange={(e) => props.onUpdateSelectedClipLoop(e.target.checked)} />Clip loop</label>
-            <p className="camera-status">Tracks (read-only path / editable keyframe value)</p>
+            <p className="camera-status">Tracks (read-only path / editable keyframe time/value)</p>
             <ul>
               {props.selectedAnimationClip.tracks.map((track, trackIndex) => (
                 <li key={`${track.track}-${trackIndex}`}>
@@ -180,7 +181,7 @@ export function ControlPanel(props: Props) {
                   <ul>
                     {track.keyframes.map((keyframe, keyframeIndex) => (
                       <li key={`${track.track}-${keyframe.time}-${keyframeIndex}`}>
-                        <span>t={keyframe.time.toFixed(2)}s</span>
+                        <input type="number" min={0} max={props.selectedAnimationClip?.duration ?? 0} step={0.01} value={keyframe.time} onChange={(e) => props.onUpdateSelectedClipKeyframeTime(trackIndex, keyframeIndex, Number(e.target.value))} />
                         <input type="number" step={0.01} value={keyframe.value} onChange={(e) => props.onUpdateSelectedClipKeyframeValue(trackIndex, keyframeIndex, Number(e.target.value))} />
                       </li>
                     ))}
