@@ -9,6 +9,8 @@ import { FalloffGraph } from '@ui/components/FalloffGraph';
 
 type Props = {
   activePreset: WarpPreset;
+  beautyIntensity: number;
+  setBeautyIntensity: (value: number) => void;
   pipelineStatus: string;
   onStartCamera: () => void;
   onStopCamera: () => void;
@@ -87,6 +89,17 @@ export function ControlPanel(props: Props) {
             <option value="face_slim">Face Slim</option>
             <option value="skin_tone">Skin Tone</option>
           </select>
+        </label>
+
+        <label>Beauty Intensity: {Math.round(props.beautyIntensity * 100)}%
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.01}
+            value={props.beautyIntensity}
+            onChange={(e) => props.setBeautyIntensity(Number(e.target.value))}
+          />
         </label>
         <label>Saved presets
           <select value={props.activeStoredPresetId ?? ''} onChange={(e) => props.onLoadPreset(e.target.value)}>
