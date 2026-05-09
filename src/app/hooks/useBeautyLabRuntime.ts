@@ -18,6 +18,7 @@ import { createProfiler, type ProfilerSnapshot } from '@engine/profiler/createPr
 import { createTemporalFilter } from '@engine/temporal/createTemporalFilter';
 import { smoothLandmarks } from '@engine/temporal/smoothLandmarks';
 import { smoothOperations } from '@engine/temporal/smoothOperations';
+import { createFaceStabilityController, type FaceStabilitySnapshot } from '@engine/temporal/createFaceStabilityController';
 import {
   createAdaptiveQualityController,
   QUALITY_PRESETS,
@@ -83,6 +84,8 @@ export function useBeautyLabRuntime(
   const landmarkTemporalFilterRef = useRef(createTemporalFilter());
   const operationTemporalFilterRef = useRef(createTemporalFilter());
   const adaptiveQualityRef = useRef<AdaptiveQualityState>({ enabled: adaptiveQualityEnabledByDefault, selectedQuality: initialQuality, currentQuality: initialQuality });
+  const faceStabilityRef = useRef(createFaceStabilityController());
+  const lastStableGeometryRef = useRef<FaceGeometry | null>(null);
 
   const [cameraState, setCameraState] = useState<CameraViewState>('idle');
   const [cameraErrorMessage, setCameraErrorMessage] = useState<string | null>(null);
@@ -92,6 +95,7 @@ export function useBeautyLabRuntime(
   const [faceGeometry, setFaceGeometry] = useState<FaceGeometry | null>(null);
   const [profilerSnapshot, setProfilerSnapshot] = useState<ProfilerSnapshot>(profilerRef.current.getSnapshot());
   const [adaptiveQuality, setAdaptiveQuality] = useState<AdaptiveQualityState>(adaptiveQualityRef.current);
+  const [faceStability, setFaceStability] = useState<FaceStabilitySnapshot>(faceStabilityRef.current.getSnapshot());
 
   const runtimeQuality = resolveRuntimeQuality(adaptiveQualityRef.current);
   const runtimePreset = QUALITY_PRESETS[runtimeQuality];
@@ -134,8 +138,8 @@ export function useBeautyLabRuntime(
         canvas: canvasElement,
         getOperations: () => resolvedOperationsRef.current,
         getFaceGeometry: () => faceGeometryRef.current,
-        getSkinSmoothing: () => skinSmoothing,
-        getSkinTone: () => skinTone,
+        getSkinSmoothing: () => ({ ...skinSmoothing, strength: skinSmoothing.strength * faceStabilityRef.current.getSnapshot().fade }),
+        getSkinTone: () => ({ ...skinTone, blend: skinTone.blend * faceStabilityRef.current.getSnapshot().fade }),
         onRenderFrame: (renderTimeMs) => {
           setProfilerSnapshot((current) => ({ ...current, renderMs: renderTimeMs }));
         },
@@ -197,17 +201,27 @@ export function useBeautyLabRuntime(
       }
       setLandmarkerState(faceLandmarkerController.getState());
       setLandmarkFrame(runtimeFrame);
-      const nextGeometry = runtimeFrame.detected ? computeFaceGeometry({ landmarks: runtimeFrame.landmarks }) : null;
-      setFaceGeometry(nextGeometry);
-      faceGeometryRef.current = nextGeometry;
-      const boundOperations = resolveOperationBindings(operationsRef.current, nextGeometry);
+
+      const stability = faceStabilityRef.current.update(runtimeFrame.detected);
+      setFaceStability(stability);
+      const detectedGeometry = runtimeFrame.detected ? computeFaceGeometry({ landmarks: runtimeFrame.landmarks }) : null;
+      if (detectedGeometry) {
+        lastStableGeometryRef.current = detectedGeometry;
+      }
+      const geometryForRuntime = detectedGeometry ?? (stability.fade > 0 ? lastStableGeometryRef.current : null);
+      setFaceGeometry(geometryForRuntime);
+      faceGeometryRef.current = geometryForRuntime;
+      const boundOperations = resolveOperationBindings(operationsRef.current, geometryForRuntime).map((operation) => ({
+        ...operation,
+        strength: operation.strength * stability.fade,
+      }));
       const resolvedOperations = temporalSmoothing.enabled
         ? smoothOperations(boundOperations, operationTemporalFilterRef.current, temporalSmoothing.alpha)
         : boundOperations;
       resolvedOperationsRef.current = resolvedOperations;
       const activeIndex = operationsRef.current.findIndex((op) => op.id === activeOperationRef.current?.id);
       resolvedActiveOperationRef.current = activeIndex >= 0 ? resolvedOperations[activeIndex] : null;
-      overlayRef.current?.render(runtimeFrame.landmarks, nextGeometry, resolvedActiveOperationRef.current);
+      overlayRef.current?.render(runtimeFrame.landmarks, geometryForRuntime, resolvedActiveOperationRef.current);
       profilerRef.current.setBackend(rendererModeRef.current);
       profilerRef.current.setOperationCount(resolvedOperations.filter((operation) => operation.enabled).length);
       const nextSnapshot = profilerRef.current.commitFrame();
@@ -235,6 +249,9 @@ export function useBeautyLabRuntime(
     setLandmarkFrame(null);
     setFaceGeometry(null);
     faceGeometryRef.current = null;
+    lastStableGeometryRef.current = null;
+    faceStabilityRef.current.reset();
+    setFaceStability(faceStabilityRef.current.getSnapshot());
 
     try {
       setLandmarkerState('loading');
@@ -259,8 +276,8 @@ export function useBeautyLabRuntime(
             canvas: canvasElement,
             getOperations: () => resolvedOperationsRef.current,
             getFaceGeometry: () => faceGeometryRef.current,
-            getSkinSmoothing: () => skinSmoothing,
-            getSkinTone: () => skinTone,
+            getSkinSmoothing: () => ({ ...skinSmoothing, strength: skinSmoothing.strength * faceStabilityRef.current.getSnapshot().fade }),
+            getSkinTone: () => ({ ...skinTone, blend: skinTone.blend * faceStabilityRef.current.getSnapshot().fade }),
             onRenderFrame: (renderTimeMs) => {
               setProfilerSnapshot((current) => ({ ...current, renderMs: renderTimeMs }));
             },
@@ -324,6 +341,9 @@ export function useBeautyLabRuntime(
     setLandmarkFrame(null);
     setFaceGeometry(null);
     faceGeometryRef.current = null;
+    lastStableGeometryRef.current = null;
+    faceStabilityRef.current.reset();
+    setFaceStability(faceStabilityRef.current.getSnapshot());
     setCameraState('idle');
     setCameraErrorMessage(null);
     profilerRef.current.reset();
@@ -333,6 +353,7 @@ export function useBeautyLabRuntime(
     refs: { videoRef, overlayCanvasRef, processedCanvasRef },
     state: { cameraState, cameraErrorMessage, rendererState, landmarkerState, landmarkFrame, faceGeometry },
     profiler: profilerSnapshot,
+    faceStability,
     quality: {
       adaptiveQuality,
       runtimeQuality,
