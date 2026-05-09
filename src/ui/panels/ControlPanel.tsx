@@ -111,7 +111,7 @@ export function ControlPanel(props: Props) {
         <label><input type="checkbox" checked={op?.enabled ?? false} onChange={(e) => props.updateOperation('enabled', e.target.checked)} />Operation enabled</label>
         <label>Operation type
           <select value={op?.type ?? 'radial_warp'} onChange={(e) => props.updateOperation('type', e.target.value as WarpOperationType)}>
-            <option value="radial_warp">radial_warp</option><option value="directional_warp">directional_warp</option><option value="line_warp">line_warp</option>
+            <option value="radial_warp">radial_warp</option><option value="directional_warp">directional_warp</option><option value="line_warp">line_warp</option><option value="region_warp">region_warp</option>
           </select>
         </label>
         <label>Target
@@ -149,6 +149,26 @@ export function ControlPanel(props: Props) {
               <input type="range" min={0} max={1} step={0.01} value={op?.lineEnd.y ?? 0.5} onChange={(e) => props.updateOperation('lineEnd', { ...(op?.lineEnd ?? { x: 0.7, y: 0.5 }), y: Number(e.target.value) })} />
             </label>
             <label>Width: {(op?.width ?? 0).toFixed(2)}
+              <input type="range" min={0.01} max={1} step={0.01} value={op?.width ?? 0.12} onChange={(e) => props.updateOperation('width', Number(e.target.value))} />
+            </label>
+          </>
+        )}
+        {op?.type === 'region_warp' && (
+          <>
+            <label>Polygon points (x,y per line)
+              <textarea
+                rows={6}
+                value={(op?.polygon ?? []).map((point) => `${point.x.toFixed(3)},${point.y.toFixed(3)}`).join('\n')}
+                onChange={(e) => {
+                  const nextPolygon = e.target.value.split('\n').map((line) => line.trim()).filter(Boolean).map((line) => {
+                    const [x, y] = line.split(',').map((value) => Number(value.trim()));
+                    return { x, y };
+                  }).filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y));
+                  props.updateOperation('polygon', nextPolygon);
+                }}
+              />
+            </label>
+            <label>Region Width: {(op?.width ?? 0).toFixed(2)}
               <input type="range" min={0.01} max={1} step={0.01} value={op?.width ?? 0.12} onChange={(e) => props.updateOperation('width', Number(e.target.value))} />
             </label>
           </>
