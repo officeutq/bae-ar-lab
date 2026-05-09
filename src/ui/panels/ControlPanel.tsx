@@ -116,7 +116,7 @@ export function ControlPanel(props: Props) {
             }}
           >
             <option value="">-- サンプルプリセットを選択 --</option>
-            <option value="natural">ナチュラル</option>
+            <option value="natural_beauty">ナチュラル美顔</option>
             <option value="soft_beauty">ソフトビューティー</option>
             <option value="strong_beauty">ストロングビューティー</option>
             <option value="face_slim">輪郭補正</option>
