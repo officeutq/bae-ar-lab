@@ -34,6 +34,10 @@ import {
 
 const DEBUG_GRID_SIZE = 8;
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
+const clampKeyframeTime = (value: number, duration: number) => {
+  if (!Number.isFinite(value)) return 0;
+  return Math.min(Math.max(0, value), Math.max(0, duration));
+};
 const DEFAULT_ANIMATION_CLIP: AnimationClip = {
   id: 'runtime_default',
   name: 'Runtime Default',
@@ -416,7 +420,25 @@ export function App() {
         }} onUpdateSelectedClipName={(value) => updateSelectedAnimationClip((clip) => ({ ...clip, name: value }))} onUpdateSelectedClipDuration={(value) => {
           const safeValue = Number.isFinite(value) ? Math.max(0.01, value) : 0.01;
           updateSelectedAnimationClip((clip) => ({ ...clip, duration: safeValue }));
-        }} onUpdateSelectedClipLoop={(value) => updateSelectedAnimationClip((clip) => ({ ...clip, loop: value }))} onUpdateSelectedClipKeyframeValue={(trackIndex, keyframeIndex, value) => updateSelectedAnimationClip((clip) => ({
+        }} onUpdateSelectedClipKeyframeTime={(trackIndex, keyframeIndex, value) => updateSelectedAnimationClip((clip) => {
+          const nextTracks = clip.tracks.map((track, tIndex) => {
+            if (tIndex !== trackIndex) return track;
+            const nextKeyframes = track.keyframes.map((keyframe, kIndex) => (
+              kIndex === keyframeIndex
+                ? { ...keyframe, time: clampKeyframeTime(value, clip.duration) }
+                : keyframe
+            ));
+            nextKeyframes.sort((a, b) => a.time - b.time);
+            return {
+              ...track,
+              keyframes: nextKeyframes,
+            };
+          });
+          return {
+            ...clip,
+            tracks: nextTracks,
+          };
+        })} onUpdateSelectedClipLoop={(value) => updateSelectedAnimationClip((clip) => ({ ...clip, loop: value }))} onUpdateSelectedClipKeyframeValue={(trackIndex, keyframeIndex, value) => updateSelectedAnimationClip((clip) => ({
           ...clip,
           tracks: clip.tracks.map((track, tIndex) => tIndex === trackIndex ? {
             ...track,
