@@ -135,3 +135,26 @@ button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+.operation-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.operation-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.95rem;
+}
+
+.operation-controls input[type='checkbox'] {
+  margin-right: 8px;
+}
+
+select,
+input[type='range'] {
+  width: 100%;
+}
