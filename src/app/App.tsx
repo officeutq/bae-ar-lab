@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type MouseEvent } from 'react';
 import type { WarpFalloffType } from '@app-types/preset';
 import { defaultWarpPreset } from '@algorithms/defaultPreset';
 import { createInitialPipelineState } from '@engine/pipeline';
-import { applyRadialWarp } from '@engine/math/warp/applyRadialWarp';
+import { applyWarpOperations } from '@engine/math/warp/applyWarpOperations';
 import { Panel } from '@ui/Panel';
 import { ControlPanel } from '@ui/panels/ControlPanel';
 import { JsonOutputPanel } from '@ui/panels/JsonOutputPanel';
@@ -57,6 +57,9 @@ export function App() {
   const updateFalloffType = (falloffType: WarpFalloffType) => {
     setActivePreset((currentPreset) => ({ ...currentPreset, operations: currentPreset.operations.map((operation, index) => index === activeOperationIndex ? { ...operation, falloff: { type: falloffType } } : operation) }));
   };
+  const updateDirection = (directionKey: 'x' | 'y', value: number) => {
+    setActivePreset((currentPreset) => ({ ...currentPreset, operations: currentPreset.operations.map((operation, index) => index === activeOperationIndex ? { ...operation, direction: { ...operation.direction, [directionKey]: value } } : operation) }));
+  };
   const addOperation = () => {
     const newOperation: WarpOperation = {
       id: `operation_${Date.now()}`,
@@ -67,6 +70,7 @@ export function App() {
       radius: 1,
       falloff: { type: 'smoothstep' },
       axis: { x: 1, y: 1 },
+      direction: { x: 0, y: 0 },
     };
     setActivePreset((currentPreset) => {
       const nextIndex = currentPreset.operations.length;
@@ -158,11 +162,13 @@ export function App() {
 
   const debugOperation = activeOperation;
   const debugCenter = { x: 0.5, y: 0.5 };
-  const debugWarpResult = applyRadialWarp({ uv: debugUv, center: debugCenter, radius: debugOperation?.radius ?? 1, strength: debugOperation?.strength ?? 0, axis: debugOperation?.axis ?? { x: 1, y: 1 }, falloff: debugOperation?.falloff.type ?? 'smoothstep' });
+  const debugWarpResult = applyWarpOperations(debugUv, debugOperation ? [debugOperation] : [], {
+    leftEyeCenter: debugCenter, rightEyeCenter: debugCenter, mouthCenter: debugCenter, noseCenter: debugCenter, faceCenter: debugCenter, leftEyeWidth: 1, rightEyeWidth: 1, mouthWidth: 1, faceWidth: 1,
+  });
   const debugGridPoints = Array.from({ length: DEBUG_GRID_SIZE * DEBUG_GRID_SIZE }, (_, index) => {
     const gx = index % DEBUG_GRID_SIZE; const gy = Math.floor(index / DEBUG_GRID_SIZE); const uv = { x: gx / (DEBUG_GRID_SIZE - 1), y: gy / (DEBUG_GRID_SIZE - 1) };
-    const warped = applyRadialWarp({ uv, center: debugCenter, radius: debugOperation?.radius ?? 1, strength: debugOperation?.strength ?? 0, axis: debugOperation?.axis ?? { x: 1, y: 1 }, falloff: debugOperation?.falloff.type ?? 'smoothstep' });
-    return { uv, warpedUv: warped.warpedUv };
+    const warpedUv = applyWarpOperations(uv, debugOperation ? [debugOperation] : [], { leftEyeCenter: debugCenter, rightEyeCenter: debugCenter, mouthCenter: debugCenter, noseCenter: debugCenter, faceCenter: debugCenter, leftEyeWidth: 1, rightEyeWidth: 1, mouthWidth: 1, faceWidth: 1 });
+    return { uv, warpedUv };
   });
 
   return (
@@ -172,8 +178,8 @@ export function App() {
         <SourcePreviewPanel videoRef={runtime.refs.videoRef} overlayCanvasRef={runtime.refs.overlayCanvasRef} cameraState={runtime.state.cameraState} landmarkerState={runtime.state.landmarkerState} cameraErrorMessage={runtime.state.cameraErrorMessage} />
         <ProcessedPreviewPanel processedCanvasRef={runtime.refs.processedCanvasRef} rendererState={runtime.state.rendererState} rendererMode={rendererMode} />
         <Panel title="Face Detection Status"><ul><li>Face: {runtime.state.landmarkFrame?.detected ? 'detected' : 'not detected'}</li><li>Landmark count: {runtime.state.landmarkFrame?.landmarkCount ?? 0}</li><li>Face count: {runtime.state.landmarkFrame?.faceCount ?? 0}</li><li>Frame: {runtime.state.landmarkFrame?.frameCount ?? 0}</li><li>Timestamp (ms): {Math.round(runtime.state.landmarkFrame?.timestampMs ?? 0)}</li></ul></Panel>
-        <ControlPanel activePreset={activePreset} presetNameInput={presetNameInput} setPresetNameInput={setPresetNameInput} presets={presets} activeStoredPresetId={activeStoredPresetId} onSavePreset={onSavePreset} onCreatePreset={onCreatePreset} onDeletePreset={onDeletePreset} onRenamePreset={onRenamePreset} onLoadPreset={onLoadPreset} onExportPreset={onExportPreset} onImportPresetText={onImportPresetText} presetMessage={presetMessage} pipelineStatus={pipelineState.status} onStartCamera={runtime.actions.startCamera} onStopCamera={runtime.actions.stopCamera} cameraState={runtime.state.cameraState} showLandmarks={showLandmarks} setShowLandmarks={setShowLandmarks} showCenters={showCenters} setShowCenters={setShowCenters} showWarpInfluence={showWarpInfluence} setShowWarpInfluence={setShowWarpInfluence} showWarpCenter={showWarpCenter} setShowWarpCenter={setShowWarpCenter} showFalloffRings={showFalloffRings} setShowFalloffRings={setShowFalloffRings} rendererMode={rendererMode} setRendererMode={setRendererMode} activeOperationIndex={activeOperationIndex} setActiveOperationIndex={setActiveOperationIndex} addOperation={addOperation} removeOperation={removeOperation} updateOperation={updateOperation} updateAxis={updateAxis} updateFalloffType={updateFalloffType} />
-        <WarpMathDebugPanel debugUv={debugUv} debugCenter={debugCenter} debugWarpResult={debugWarpResult} debugGridPoints={debugGridPoints} onMouseMove={(event: MouseEvent<HTMLDivElement>) => { const rect = event.currentTarget.getBoundingClientRect(); setDebugUv({ x: clamp01((event.clientX - rect.left) / Math.max(1, rect.width)), y: clamp01((event.clientY - rect.top) / Math.max(1, rect.height)) }); }} />
+        <ControlPanel activePreset={activePreset} presetNameInput={presetNameInput} setPresetNameInput={setPresetNameInput} presets={presets} activeStoredPresetId={activeStoredPresetId} onSavePreset={onSavePreset} onCreatePreset={onCreatePreset} onDeletePreset={onDeletePreset} onRenamePreset={onRenamePreset} onLoadPreset={onLoadPreset} onExportPreset={onExportPreset} onImportPresetText={onImportPresetText} presetMessage={presetMessage} pipelineStatus={pipelineState.status} onStartCamera={runtime.actions.startCamera} onStopCamera={runtime.actions.stopCamera} cameraState={runtime.state.cameraState} showLandmarks={showLandmarks} setShowLandmarks={setShowLandmarks} showCenters={showCenters} setShowCenters={setShowCenters} showWarpInfluence={showWarpInfluence} setShowWarpInfluence={setShowWarpInfluence} showWarpCenter={showWarpCenter} setShowWarpCenter={setShowWarpCenter} showFalloffRings={showFalloffRings} setShowFalloffRings={setShowFalloffRings} rendererMode={rendererMode} setRendererMode={setRendererMode} activeOperationIndex={activeOperationIndex} setActiveOperationIndex={setActiveOperationIndex} addOperation={addOperation} removeOperation={removeOperation} updateOperation={updateOperation} updateAxis={updateAxis} updateFalloffType={updateFalloffType} updateDirection={updateDirection} />
+        <WarpMathDebugPanel debugUv={debugUv} debugCenter={debugCenter} debugWarpResult={{ warpedUv: debugWarpResult, influence: 0 }} debugGridPoints={debugGridPoints} onMouseMove={(event: MouseEvent<HTMLDivElement>) => { const rect = event.currentTarget.getBoundingClientRect(); setDebugUv({ x: clamp01((event.clientX - rect.left) / Math.max(1, rect.width)), y: clamp01((event.clientY - rect.top) / Math.max(1, rect.height)) }); }} />
         <JsonOutputPanel preset={pipelineState.activePreset} geometry={runtime.state.faceGeometry} />
       </div>
     </main>

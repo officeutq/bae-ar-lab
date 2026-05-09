@@ -1,6 +1,6 @@
 import type { WarpOperation } from '@app-types/preset';
 import type { FaceGeometry } from '@engine/geometry/types';
-import { applyRadialWarpOperations } from '@engine/math/warp/applyRadialWarpOperations';
+import { applyWarpOperations } from '@engine/math/warp/applyWarpOperations';
 const PREVIEW_WIDTH = 320;
 
 function clamp01(value: number) {
@@ -60,7 +60,7 @@ export function createCpuWarpRenderer() {
       const v = y / Math.max(1, targetHeight - 1);
       for (let x = 0; x < targetWidth; x += 1) {
         const u = x / Math.max(1, targetWidth - 1);
-        const warpedUv = applyRadialWarpOperations({ x: u, y: v }, operations, geometry);
+        const warpedUv = applyWarpOperations({ x: u, y: v }, operations, geometry);
 
         const sx = Math.round(clamp01(warpedUv.x) * (targetWidth - 1));
         const sy = Math.round(clamp01(warpedUv.y) * (targetHeight - 1));

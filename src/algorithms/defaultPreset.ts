@@ -17,6 +17,10 @@ export const defaultWarpPreset: WarpPreset = {
         x: 1,
         y: 0.7,
       },
+      direction: {
+        x: 0,
+        y: 0,
+      },
     },
     {
       id: 'right_eye_enlarge',
@@ -31,6 +35,10 @@ export const defaultWarpPreset: WarpPreset = {
       axis: {
         x: 1,
         y: 0.7,
+      },
+      direction: {
+        x: 0,
+        y: 0,
       },
     },
   ],
