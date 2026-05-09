@@ -91,12 +91,17 @@ ul {
 
 .processed-canvas {
   width: 100%;
-  height: auto;
+  height: 100%;
   aspect-ratio: 16 / 9;
   border-radius: 8px;
   background: #0b0e14;
   border: 1px solid #2d3340;
   display: block;
+}
+
+.source-preview .processed-canvas {
+  position: absolute;
+  inset: 0;
 }
 
 .camera-status {
