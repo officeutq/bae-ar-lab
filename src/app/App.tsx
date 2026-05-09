@@ -29,7 +29,7 @@ export function App() {
   const [debugUv, setDebugUv] = useState({ x: 0.5, y: 0.5 });
 
   const activeOperation = activePreset.operations[activeOperationIndex] ?? null;
-  const runtime = useBeautyLabRuntime(activeOperation, {
+  const runtime = useBeautyLabRuntime(activeOperation, activePreset.operations, {
     showLandmarks, showCenters, showWarpInfluence, showWarpCenter, showFalloffRings,
   }, rendererMode);
 

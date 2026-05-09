@@ -15,6 +15,7 @@ type CreateCanvasRendererOptions = {
   canvas: HTMLCanvasElement;
   getCpuWarpPreviewEnabled?: () => boolean;
   getActiveOperation?: () => WarpOperation | null;
+  getOperations?: () => WarpOperation[];
   getFaceGeometry?: () => FaceGeometry | null;
 };
 
@@ -24,6 +25,7 @@ export function createCanvasRenderer({
   getCpuWarpPreviewEnabled,
   getActiveOperation,
   getFaceGeometry,
+  getOperations,
 }: CreateCanvasRendererOptions): CanvasRenderer {
   const context = canvas.getContext('2d');
 
@@ -59,11 +61,14 @@ export function createCanvasRenderer({
 
     if (hasSize) {
       if (getCpuWarpPreviewEnabled?.()) {
+        const activeOperation = getActiveOperation?.() ?? null;
+        const operations = getOperations?.() ?? (activeOperation ? [activeOperation] : []);
+
         cpuWarpRenderer.render({
           video,
           canvas,
           context,
-          operation: getActiveOperation?.() ?? null,
+          operations,
           geometry: getFaceGeometry?.() ?? null,
         });
       } else {
