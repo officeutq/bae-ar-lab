@@ -46,6 +46,7 @@ type Props = {
   onSelectSamplePreset: (id: SamplePresetId) => void;
   onExportPreset: () => void;
   onImportPresetText: (text: string) => void;
+  onCaptureCompare: () => void;
   presetMessage: string | null;
   resolvedActiveOperation: WarpPreset['operations'][number] | null;
   skinSmoothing: { enabled: boolean; strength: number; radius: number; maskOpacity: number; showMaskPreview: boolean };
@@ -94,6 +95,7 @@ export function ControlPanel(props: Props) {
           </select>
         </label>
         <div className="camera-controls">
+          <button type="button" onClick={props.onCaptureCompare}>Capture Compare</button>
           <button type="button" onClick={props.onSavePreset}>Save current preset</button>
           <button type="button" onClick={props.onCreatePreset}>Create new preset</button>
           <button type="button" onClick={props.onRenamePreset} disabled={!props.activeStoredPresetId}>Rename preset</button>

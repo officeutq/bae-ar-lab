@@ -7,6 +7,8 @@ export type SnapshotExportResult =
 type SnapshotExporter = {
   exportCanvasSnapshot: (canvas: HTMLCanvasElement | null, kind: SnapshotKind) => SnapshotExportResult;
   exportVideoSnapshot: (video: HTMLVideoElement | null, kind: SnapshotKind) => SnapshotExportResult;
+  readCanvasSnapshotDataUrl: (canvas: HTMLCanvasElement | null) => string | null;
+  readVideoSnapshotDataUrl: (video: HTMLVideoElement | null) => string | null;
 };
 
 const MIME_TYPE = 'image/png';
@@ -48,6 +50,13 @@ function exportBlob(blob: Blob | null, filename: string): SnapshotExportResult {
 }
 
 export function createSnapshotExporter(nowProvider: () => Date = () => new Date()): SnapshotExporter {
+  const readCanvasSnapshotDataUrl = (canvas: HTMLCanvasElement | null): string | null => {
+    if (!canvas || canvas.width <= 0 || canvas.height <= 0) {
+      return null;
+    }
+    return canvas.toDataURL(MIME_TYPE);
+  };
+
   return {
     exportCanvasSnapshot(canvas, kind) {
       if (!canvas) {
@@ -81,6 +90,21 @@ export function createSnapshotExporter(nowProvider: () => Date = () => new Date(
       }
       context.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
       return this.exportCanvasSnapshot(tempCanvas, kind);
+    },
+    readCanvasSnapshotDataUrl,
+    readVideoSnapshotDataUrl(video) {
+      if (!video || video.videoWidth <= 0 || video.videoHeight <= 0) {
+        return null;
+      }
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = video.videoWidth;
+      tempCanvas.height = video.videoHeight;
+      const context = tempCanvas.getContext('2d');
+      if (!context) {
+        return null;
+      }
+      context.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+      return readCanvasSnapshotDataUrl(tempCanvas);
     },
   };
 }
