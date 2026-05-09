@@ -12,6 +12,7 @@ import {
   type CanvasRendererState,
 } from '@engine/render/createCanvasRenderer';
 import { Panel } from '@ui/Panel';
+import { FalloffGraph } from '@ui/components/FalloffGraph';
 import { computeFaceGeometry } from '@engine/geometry/computeFaceGeometry';
 import type { FaceGeometry } from '@engine/geometry/types';
 
@@ -335,6 +336,8 @@ export function App() {
                 <option value="gaussian">gaussian</option>
               </select>
             </label>
+
+            <FalloffGraph type={activePreset.operations[0]?.falloff.type ?? 'smoothstep'} sampleCount={64} />
 
             <label>
               Axis X: {(activePreset.operations[0]?.axis.x ?? 0).toFixed(2)}
