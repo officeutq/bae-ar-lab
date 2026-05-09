@@ -432,7 +432,7 @@ export function App() {
     const afterDataUrl = snapshotExporter.readCanvasSnapshotDataUrl(getActiveProcessedCanvas());
 
     if (!beforeDataUrl || !afterDataUrl) {
-      setPresetMessage('Compare capture failed: source/processed frame is unavailable.');
+      setPresetMessage('比較キャプチャに失敗しました: 元映像または加工映像が取得できません。');
       return;
     }
 
@@ -440,12 +440,13 @@ export function App() {
       beforeDataUrl,
       afterDataUrl,
       capturedAt: new Date().toISOString(),
-      presetName: presetNameInput || 'Untitled preset',
+      presetName: presetNameInput || '未命名プリセット',
     });
-    setPresetMessage('Compare capture completed.');
+    setPresetMessage('比較キャプチャが完了しました。');
   };
 
   const resolvedActiveOperation = runtime.resolved.getActiveOperation();
+  const previewAspectRatio = `${runtime.state.previewSize.width > 0 ? runtime.state.previewSize.width : 16} / ${runtime.state.previewSize.height > 0 ? runtime.state.previewSize.height : 9}`;
   const debugOperation = resolvedActiveOperation;
   const debugCenter = { x: 0.5, y: 0.5 };
   const debugGeometry = {
@@ -463,12 +464,12 @@ export function App() {
 
   return (
     <main className="app-shell">
-      <h1 className="app-shell__title">Beauty AR & Face Warp Lab</h1>
+      <h1 className="app-shell__title">ビューティーAR・フェイスワープ実験ラボ</h1>
       <div className="panel-grid">
-        <SourcePreviewPanel videoRef={runtime.refs.videoRef} overlayCanvasRef={runtime.refs.overlayCanvasRef} cameraState={runtime.state.cameraState} landmarkerState={runtime.state.landmarkerState} cameraErrorMessage={runtime.state.cameraErrorMessage} onCaptureSource={onCaptureSource} />
-        <ProcessedPreviewPanel canvas2dRef={runtime.refs.canvas2dRef} webglCanvasRef={runtime.refs.webglCanvasRef} rendererState={runtime.state.rendererState} rendererMode={rendererMode} onCaptureProcessed={onCaptureProcessed} />
-        <Panel title="Face Detection Status"><ul><li>Face: {runtime.state.landmarkFrame?.detected ? 'detected' : 'not detected'}</li><li>Landmark count: {runtime.state.landmarkFrame?.landmarkCount ?? 0}</li><li>Face count: {runtime.state.landmarkFrame?.faceCount ?? 0}</li><li>Frame: {runtime.state.landmarkFrame?.frameCount ?? 0}</li><li>Timestamp (ms): {Math.round(runtime.state.landmarkFrame?.timestampMs ?? 0)}</li></ul></Panel>
-        <Panel title="Realtime Profiler">
+        <SourcePreviewPanel videoRef={runtime.refs.videoRef} overlayCanvasRef={runtime.refs.overlayCanvasRef} cameraState={runtime.state.cameraState} landmarkerState={runtime.state.landmarkerState} cameraErrorMessage={runtime.state.cameraErrorMessage} onCaptureSource={onCaptureSource} previewAspectRatio={previewAspectRatio} />
+        <ProcessedPreviewPanel canvas2dRef={runtime.refs.canvas2dRef} webglCanvasRef={runtime.refs.webglCanvasRef} rendererState={runtime.state.rendererState} rendererMode={rendererMode} onCaptureProcessed={onCaptureProcessed} previewAspectRatio={previewAspectRatio} />
+        <Panel title="顔検出ステータス"><ul><li>顔: {runtime.state.landmarkFrame?.detected ? '検出中' : '顔が検出されていません'}</li><li>ランドマーク数: {runtime.state.landmarkFrame?.landmarkCount ?? 0}</li><li>顔数: {runtime.state.landmarkFrame?.faceCount ?? 0}</li><li>フレーム: {runtime.state.landmarkFrame?.frameCount ?? 0}</li><li>タイムスタンプ (ms): {Math.round(runtime.state.landmarkFrame?.timestampMs ?? 0)}</li></ul></Panel>
+        <Panel title="リアルタイムプロファイラ">
           <div className="profiler-overlay">
             <div>FPS: {runtime.profiler.fps.toFixed(1)}</div>
             <div>AVG FPS (30): {runtime.profiler.avgFps30.toFixed(1)}</div>
@@ -487,10 +488,10 @@ export function App() {
             <div>Quality: {runtime.quality.runtimeQuality}</div>
             <div>Render scale: {runtime.quality.runtimePreset.renderScale.toFixed(2)}</div>
             <div>Device: {capabilities.deviceType}</div>
-            <div>WebGL2: {capabilities.webgl2Available ? 'available' : 'unavailable'}</div>
-            <div>Memory (GB): {capabilities.deviceMemoryGb ?? 'n/a'}</div>
-            <div>Cores: {capabilities.hardwareConcurrency ?? 'n/a'}</div>
-            <div>Recommended quality: {capabilities.recommendedQuality}</div>
+            <div>WebGL2: {capabilities.webgl2Available ? '利用可能' : '利用不可'}</div>
+            <div>メモリ (GB): {capabilities.deviceMemoryGb ?? 'n/a'}</div>
+            <div>CPUコア数: {capabilities.hardwareConcurrency ?? 'n/a'}</div>
+            <div>推奨品質: {capabilities.recommendedQuality}</div>
           </div>
         </Panel>
         <RuntimeDebugPanel temporalSmoothingEnabled={temporalSmoothingEnabled} temporalSmoothingAlpha={temporalSmoothingAlpha} faceStability={runtime.faceStability} facePose={runtime.pose.facePose} poseAttenuationFactor={runtime.pose.poseAttenuation.factor} currentQuality={runtime.quality.runtimeQuality} renderScale={runtime.quality.runtimePreset.renderScale} rendererMode={rendererMode} fps={runtime.profiler.fps} />

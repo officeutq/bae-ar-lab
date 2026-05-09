@@ -9,19 +9,20 @@ type Props = {
   landmarkerState: FaceLandmarkerRuntimeState;
   cameraErrorMessage: string | null;
   onCaptureSource: () => void;
+  previewAspectRatio: string;
 };
 
-export function SourcePreviewPanel({ videoRef, overlayCanvasRef, cameraState, landmarkerState, cameraErrorMessage, onCaptureSource }: Props) {
+export function SourcePreviewPanel({ videoRef, overlayCanvasRef, cameraState, landmarkerState, cameraErrorMessage, onCaptureSource, previewAspectRatio }: Props) {
   return (
-    <Panel title="Source Preview">
-      <div className="source-preview">
-        <video className="source-video" ref={videoRef} autoPlay playsInline muted />
+    <Panel title="入力プレビュー">
+      <div className="source-preview" style={{ aspectRatio: previewAspectRatio }}>
+        <video className="source-video preview-mirror" ref={videoRef} autoPlay playsInline muted />
         <canvas className="overlay-canvas" ref={overlayCanvasRef} />
       </div>
-      <p className="camera-status">Camera state: {cameraState}</p>
-      <p className="camera-status">Landmarker state: {landmarkerState}</p>
+      <p className="camera-status">カメラ状態: {cameraState}</p>
+      <p className="camera-status">ランドマーカー状態: {landmarkerState}</p>
       {cameraErrorMessage ? <p className="camera-error">{cameraErrorMessage}</p> : null}
-      <button type="button" onClick={onCaptureSource}>Capture Source</button>
+      <button type="button" onClick={onCaptureSource}>元映像を撮影</button>
     </Panel>
   );
 }
