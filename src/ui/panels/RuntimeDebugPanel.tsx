@@ -7,25 +7,45 @@ import { Panel } from '@ui/Panel';
 type Props = {
   temporalSmoothingEnabled: boolean;
   temporalSmoothingAlpha: number;
+  faceDetected: boolean;
   faceStability: FaceStabilitySnapshot;
   facePose: FacePose | null;
   poseAttenuationFactor: number;
+  poseAttenuationYawFactor: number;
+  poseAttenuationPitchFactor: number;
+  activeOperationCount: number;
+  frameSkip: number;
   currentQuality: QualityLevel;
+  selectedQuality: QualityLevel;
+  adaptiveQualityEnabled: boolean;
   renderScale: number;
   rendererMode: RendererMode;
   fps: number;
+  frameTimeMs: number;
+  mediapipeTimeMs: number;
+  rendererTimeMs: number;
 };
 
 export function RuntimeDebugPanel({
   temporalSmoothingEnabled,
   temporalSmoothingAlpha,
+  faceDetected,
   faceStability,
   facePose,
   poseAttenuationFactor,
+  poseAttenuationYawFactor,
+  poseAttenuationPitchFactor,
+  activeOperationCount,
+  frameSkip,
   currentQuality,
+  selectedQuality,
+  adaptiveQualityEnabled,
   renderScale,
   rendererMode,
   fps,
+  frameTimeMs,
+  mediapipeTimeMs,
+  rendererTimeMs,
 }: Props) {
   return (
     <Panel title="Runtime Debug">
@@ -37,6 +57,7 @@ export function RuntimeDebugPanel({
 
       <h4>Face Stability</h4>
       <ul>
+        <li>detected: {faceDetected ? 'yes' : 'no'}</li>
         <li>state: {faceStability.status}</li>
         <li>confidence: {faceStability.confidence.toFixed(2)}</li>
         <li>fade: {faceStability.fade.toFixed(2)}</li>
@@ -48,14 +69,23 @@ export function RuntimeDebugPanel({
         <li>pitch: {facePose?.pitch.toFixed(1) ?? 'n/a'}</li>
         <li>roll: {facePose?.roll.toFixed(1) ?? 'n/a'}</li>
         <li>attenuation factor: {poseAttenuationFactor.toFixed(2)}</li>
+        <li>yaw attenuation: {poseAttenuationYawFactor.toFixed(2)}</li>
+        <li>pitch attenuation: {poseAttenuationPitchFactor.toFixed(2)}</li>
       </ul>
 
       <h4>Quality</h4>
       <ul>
+        <li>adaptive quality: {adaptiveQualityEnabled ? 'enabled' : 'disabled'}</li>
+        <li>selected quality: {selectedQuality}</li>
         <li>current quality: {currentQuality}</li>
         <li>render scale: {renderScale.toFixed(2)}</li>
+        <li>frame skip: {frameSkip}</li>
         <li>renderer backend: {rendererMode}</li>
+        <li>active operations: {activeOperationCount}</li>
         <li>FPS: {fps.toFixed(1)}</li>
+        <li>frame time: {frameTimeMs.toFixed(2)} ms</li>
+        <li>MediaPipe time: {mediapipeTimeMs.toFixed(2)} ms</li>
+        <li>renderer time: {rendererTimeMs.toFixed(2)} ms</li>
       </ul>
     </Panel>
   );
