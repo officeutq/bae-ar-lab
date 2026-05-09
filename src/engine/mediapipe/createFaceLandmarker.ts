@@ -1,44 +1,18 @@
+import { FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
+
 import type {
   FaceLandmarkerController,
   FaceLandmarkerRuntimeState,
   FaceLandmarksFrame,
-  FaceLandmarkPoint,
 } from './types';
 
-type VisionModule = {
-  FilesetResolver: {
-    forVisionTasks: (wasmRootPath: string) => Promise<unknown>;
-  };
-  FaceLandmarker: {
-    createFromOptions: (
-      vision: unknown,
-      options: {
-        baseOptions: { modelAssetPath: string };
-        runningMode: 'VIDEO';
-        numFaces: number;
-      },
-    ) => Promise<FaceLandmarkerInstance>;
-  };
-};
-
-type FaceLandmarkerInstance = {
-  detectForVideo: (
-    videoFrame: HTMLVideoElement,
-    timestampMs: number,
-  ) => {
-    faceLandmarks?: Array<Array<FaceLandmarkPoint>>;
-  };
-  close: () => void;
-};
-
-const VISION_CDN_ESM_URL = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/+esm';
-const WASM_ROOT_PATH = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/wasm';
+const WASM_ROOT_PATH = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm';
 const MODEL_ASSET_PATH =
   'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
 
 export function createFaceLandmarker(): FaceLandmarkerController {
   let state: FaceLandmarkerRuntimeState = 'idle';
-  let faceLandmarker: FaceLandmarkerInstance | null = null;
+  let faceLandmarker: FaceLandmarker | null = null;
   let frameCount = 0;
 
   const initialize = async () => {
@@ -49,10 +23,9 @@ export function createFaceLandmarker(): FaceLandmarkerController {
     state = 'loading';
 
     try {
-      const visionModule = (await import(/* @vite-ignore */ VISION_CDN_ESM_URL)) as VisionModule;
-      const vision = await visionModule.FilesetResolver.forVisionTasks(WASM_ROOT_PATH);
+      const vision = await FilesetResolver.forVisionTasks(WASM_ROOT_PATH);
 
-      faceLandmarker = await visionModule.FaceLandmarker.createFromOptions(vision, {
+      faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
         baseOptions: { modelAssetPath: MODEL_ASSET_PATH },
         runningMode: 'VIDEO',
         numFaces: 1,
