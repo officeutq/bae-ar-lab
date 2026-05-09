@@ -1,7 +1,12 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { defaultWarpPreset } from '@algorithms/defaultPreset';
 import { createCameraController, type CameraError } from '@engine/camera/createCameraController';
 import { createInitialPipelineState } from '@engine/pipeline';
+import {
+  createCanvasRenderer,
+  type CanvasRenderer,
+  type CanvasRendererState,
+} from '@engine/render/createCanvasRenderer';
 import { Panel } from '@ui/Panel';
 
 type CameraViewState = 'idle' | 'starting' | 'running' | 'error';
@@ -23,9 +28,20 @@ export function App() {
   const pipelineState = useMemo(() => createInitialPipelineState(defaultWarpPreset), []);
   const cameraController = useMemo(() => createCameraController(), []);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const processedCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const rendererRef = useRef<CanvasRenderer | null>(null);
 
   const [cameraState, setCameraState] = useState<CameraViewState>('idle');
   const [cameraErrorMessage, setCameraErrorMessage] = useState<string | null>(null);
+  const [rendererState, setRendererState] = useState<CanvasRendererState>('idle');
+
+
+  useEffect(() => {
+    return () => {
+      rendererRef.current?.stop();
+      rendererRef.current = null;
+    };
+  }, []);
 
   const handleStartCamera = async () => {
     setCameraState('starting');
@@ -36,6 +52,23 @@ export function App() {
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+
+      const videoElement = videoRef.current;
+      const canvasElement = processedCanvasRef.current;
+
+      if (videoElement && canvasElement) {
+        rendererRef.current?.stop();
+
+        const renderer = createCanvasRenderer({
+          video: videoElement,
+          canvas: canvasElement,
+        });
+
+        renderer.start();
+        rendererRef.current = renderer;
+        setRendererState(renderer.getState());
       }
 
       setCameraState('running');
@@ -47,6 +80,12 @@ export function App() {
   };
 
   const handleStopCamera = () => {
+    rendererRef.current?.stop();
+
+    if (rendererRef.current) {
+      setRendererState(rendererRef.current.getState());
+    }
+
     cameraController.stop();
 
     if (videoRef.current) {
@@ -68,7 +107,8 @@ export function App() {
         </Panel>
 
         <Panel title="Processed Preview">
-          <p className="placeholder">Processed output placeholder (rendering pipeline not implemented).</p>
+          <canvas className="processed-canvas" ref={processedCanvasRef} />
+          <p className="camera-status">Renderer state: {rendererState}</p>
         </Panel>
 
         <Panel title="Control Panel">

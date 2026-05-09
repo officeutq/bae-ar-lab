@@ -74,6 +74,17 @@ ul {
   object-fit: cover;
 }
 
+
+.processed-canvas {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  border-radius: 8px;
+  background: #0b0e14;
+  border: 1px solid #2d3340;
+  display: block;
+}
+
 .camera-status {
   margin: 10px 0 0;
   color: #d2d9ea;
