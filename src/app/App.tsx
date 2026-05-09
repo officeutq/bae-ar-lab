@@ -42,6 +42,7 @@ export function App() {
   const rendererRef = useRef<CanvasRenderer | null>(null);
   const overlayRef = useRef<LandmarkOverlay | null>(null);
   const detectAnimationRef = useRef<number | null>(null);
+  const activeOperationRef = useRef(activePreset.operations[0] ?? null);
 
   const [cameraState, setCameraState] = useState<CameraViewState>('idle');
   const [cameraErrorMessage, setCameraErrorMessage] = useState<string | null>(null);
@@ -50,6 +51,9 @@ export function App() {
   const [landmarkFrame, setLandmarkFrame] = useState<FaceLandmarksFrame | null>(null);
   const [showLandmarks, setShowLandmarks] = useState(true);
   const [showCenters, setShowCenters] = useState(true);
+  const [showWarpInfluence, setShowWarpInfluence] = useState(true);
+  const [showWarpCenter, setShowWarpCenter] = useState(true);
+  const [showFalloffRings, setShowFalloffRings] = useState(true);
   const [faceGeometry, setFaceGeometry] = useState<FaceGeometry | null>(null);
 
   useEffect(() => {
@@ -66,8 +70,18 @@ export function App() {
   }, [faceLandmarkerController]);
 
   useEffect(() => {
-    overlayRef.current?.updateToggles({ showLandmarks, showCenters });
-  }, [showCenters, showLandmarks]);
+    activeOperationRef.current = activePreset.operations[0] ?? null;
+  }, [activePreset]);
+
+  useEffect(() => {
+    overlayRef.current?.updateToggles({
+      showLandmarks,
+      showCenters,
+      showWarpInfluence,
+      showWarpCenter,
+      showFalloffRings,
+    });
+  }, [showCenters, showFalloffRings, showLandmarks, showWarpCenter, showWarpInfluence]);
 
   const startFaceLandmarkLoop = () => {
     const tick = () => {
@@ -80,8 +94,9 @@ export function App() {
       const result = faceLandmarkerController.detectForVideoFrame(videoElement, performance.now());
       setLandmarkerState(faceLandmarkerController.getState());
       setLandmarkFrame(result);
-      setFaceGeometry(result.detected ? computeFaceGeometry({ landmarks: result.landmarks }) : null);
-      overlayRef.current?.render(result.landmarks);
+      const nextGeometry = result.detected ? computeFaceGeometry({ landmarks: result.landmarks }) : null;
+      setFaceGeometry(nextGeometry);
+      overlayRef.current?.render(result.landmarks, nextGeometry, activeOperationRef.current);
 
       detectAnimationRef.current = requestAnimationFrame(tick);
     };
@@ -178,7 +193,13 @@ export function App() {
 
       if (overlayCanvasElement) {
         overlayRef.current = createLandmarkOverlay(overlayCanvasElement);
-        overlayRef.current.updateToggles({ showLandmarks, showCenters });
+        overlayRef.current.updateToggles({
+          showLandmarks,
+          showCenters,
+          showWarpInfluence,
+          showWarpCenter,
+          showFalloffRings,
+        });
         overlayRef.current.syncSize();
       }
 
@@ -276,6 +297,31 @@ export function App() {
               />
               Show centers
             </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={showWarpInfluence}
+                onChange={(event) => setShowWarpInfluence(event.target.checked)}
+              />
+              Show warp influence
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={showWarpCenter}
+                onChange={(event) => setShowWarpCenter(event.target.checked)}
+              />
+              Show warp center
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={showFalloffRings}
+                onChange={(event) => setShowFalloffRings(event.target.checked)}
+              />
+              Show falloff rings
+            </label>
+
           </div>
           <div className="operation-controls">
             <label>
