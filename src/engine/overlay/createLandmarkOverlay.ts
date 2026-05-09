@@ -1,3 +1,7 @@
+import type { WarpOperation } from '@app-types/preset';
+import type { FaceGeometry } from '@engine/geometry/types';
+import { createWarpVisualization } from './createWarpVisualization';
+
 export type LandmarkPoint = {
   x: number;
   y: number;
@@ -7,12 +11,15 @@ export type LandmarkPoint = {
 export type LandmarkOverlayToggles = {
   showLandmarks: boolean;
   showCenters: boolean;
+  showWarpInfluence: boolean;
+  showWarpCenter: boolean;
+  showFalloffRings: boolean;
 };
 
 export type LandmarkOverlay = {
   syncSize: () => void;
   updateToggles: (toggles: Partial<LandmarkOverlayToggles>) => void;
-  render: (landmarks: LandmarkPoint[] | null) => void;
+  render: (landmarks: LandmarkPoint[] | null, geometry?: FaceGeometry | null, operation?: WarpOperation | null) => void;
   clear: () => void;
 };
 
@@ -49,7 +56,11 @@ export function createLandmarkOverlay(canvas: HTMLCanvasElement): LandmarkOverla
   const toggles: LandmarkOverlayToggles = {
     showLandmarks: true,
     showCenters: true,
+    showWarpInfluence: true,
+    showWarpCenter: true,
+    showFalloffRings: true,
   };
+  const warpVisualization = createWarpVisualization(context);
 
   const syncSize = () => {
     const rect = canvas.getBoundingClientRect();
@@ -73,7 +84,7 @@ export function createLandmarkOverlay(canvas: HTMLCanvasElement): LandmarkOverla
     context.fill();
   };
 
-  const render = (landmarks: LandmarkPoint[] | null) => {
+  const render = (landmarks: LandmarkPoint[] | null, geometry?: FaceGeometry | null, operation?: WarpOperation | null) => {
     syncSize();
     clear();
 
@@ -109,6 +120,14 @@ export function createLandmarkOverlay(canvas: HTMLCanvasElement): LandmarkOverla
         drawPoint(clamp01(rightEyeCenter.x) * width, clamp01(rightEyeCenter.y) * height, 4, '#ff8ed9');
       }
     }
+
+    if (geometry && operation) {
+      warpVisualization.draw(canvas, geometry, operation, {
+        showWarpInfluence: toggles.showWarpInfluence,
+        showWarpCenter: toggles.showWarpCenter,
+        showFalloffRings: toggles.showFalloffRings,
+      });
+    }
   };
 
   const updateToggles = (nextToggles: Partial<LandmarkOverlayToggles>) => {
@@ -118,6 +137,18 @@ export function createLandmarkOverlay(canvas: HTMLCanvasElement): LandmarkOverla
 
     if (typeof nextToggles.showCenters === 'boolean') {
       toggles.showCenters = nextToggles.showCenters;
+    }
+
+    if (typeof nextToggles.showWarpInfluence === 'boolean') {
+      toggles.showWarpInfluence = nextToggles.showWarpInfluence;
+    }
+
+    if (typeof nextToggles.showWarpCenter === 'boolean') {
+      toggles.showWarpCenter = nextToggles.showWarpCenter;
+    }
+
+    if (typeof nextToggles.showFalloffRings === 'boolean') {
+      toggles.showFalloffRings = nextToggles.showFalloffRings;
     }
   };
 
