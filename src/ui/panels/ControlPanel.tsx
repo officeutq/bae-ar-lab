@@ -11,6 +11,15 @@ type Props = {
   activePreset: WarpPreset;
   beautyIntensity: number;
   setBeautyIntensity: (value: number) => void;
+  animationPlaying: boolean;
+  animationTime: number;
+  animationLoop: boolean;
+  animationTrackCount: number;
+  onPlayAnimation: () => void;
+  onPauseAnimation: () => void;
+  onStopAnimation: () => void;
+  onTimelineTimeChange: (value: number) => void;
+  setAnimationLoop: (value: boolean) => void;
   pipelineStatus: string;
   onStartCamera: () => void;
   onStopCamera: () => void;
@@ -119,6 +128,20 @@ export function ControlPanel(props: Props) {
           <textarea rows={6} placeholder="Paste preset JSON" onBlur={(e) => props.onImportPresetText(e.target.value)} />
         </label>
         {props.presetMessage && <p className="camera-status">{props.presetMessage}</p>}
+      </div>
+
+      <div className="operation-controls">
+        <p className="camera-status">Animation time: {props.animationTime.toFixed(2)}s</p>
+        <p className="camera-status">Active track count: {props.animationTrackCount}</p>
+        <div className="camera-controls">
+          <button type="button" onClick={props.onPlayAnimation}>Play animation</button>
+          <button type="button" onClick={props.onPauseAnimation} disabled={!props.animationPlaying}>Pause animation</button>
+          <button type="button" onClick={props.onStopAnimation}>Stop animation</button>
+        </div>
+        <label><input type="checkbox" checked={props.animationLoop} onChange={(e) => props.setAnimationLoop(e.target.checked)} />Loop animation</label>
+        <label>Timeline time: {props.animationTime.toFixed(2)}s
+          <input type="range" min={0} max={3} step={0.01} value={props.animationTime} onChange={(e) => props.onTimelineTimeChange(Number(e.target.value))} />
+        </label>
       </div>
 
       <div className="camera-controls">
