@@ -1,4 +1,9 @@
-import type { FaceLandmarkerController, FaceLandmarkerRuntimeState, FaceLandmarksFrame } from './types';
+import type {
+  FaceLandmarkerController,
+  FaceLandmarkerRuntimeState,
+  FaceLandmarksFrame,
+  FaceLandmarkPoint,
+} from './types';
 
 type VisionModule = {
   FilesetResolver: {
@@ -21,7 +26,7 @@ type FaceLandmarkerInstance = {
     videoFrame: HTMLVideoElement,
     timestampMs: number,
   ) => {
-    faceLandmarks?: Array<Array<unknown>>;
+    faceLandmarks?: Array<Array<FaceLandmarkPoint>>;
   };
   close: () => void;
 };
@@ -77,6 +82,7 @@ export function createFaceLandmarker(): FaceLandmarkerController {
       faceCount: result.faceLandmarks?.length ?? 0,
       timestampMs,
       frameCount,
+      landmarks: firstFaceLandmarks,
     };
   };
 

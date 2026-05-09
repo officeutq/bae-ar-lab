@@ -3,6 +3,7 @@ import { defaultWarpPreset } from '@algorithms/defaultPreset';
 import { createCameraController, type CameraError } from '@engine/camera/createCameraController';
 import { createFaceLandmarker } from '@engine/mediapipe/createFaceLandmarker';
 import type { FaceLandmarksFrame, FaceLandmarkerRuntimeState } from '@engine/mediapipe/types';
+import { createLandmarkOverlay, type LandmarkOverlay } from '@engine/overlay/createLandmarkOverlay';
 import { createInitialPipelineState } from '@engine/pipeline';
 import {
   createCanvasRenderer,
@@ -31,8 +32,10 @@ export function App() {
   const cameraController = useMemo(() => createCameraController(), []);
   const faceLandmarkerController = useMemo(() => createFaceLandmarker(), []);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const overlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const processedCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const rendererRef = useRef<CanvasRenderer | null>(null);
+  const overlayRef = useRef<LandmarkOverlay | null>(null);
   const detectAnimationRef = useRef<number | null>(null);
 
   const [cameraState, setCameraState] = useState<CameraViewState>('idle');
@@ -40,6 +43,8 @@ export function App() {
   const [rendererState, setRendererState] = useState<CanvasRendererState>('idle');
   const [landmarkerState, setLandmarkerState] = useState<FaceLandmarkerRuntimeState>('idle');
   const [landmarkFrame, setLandmarkFrame] = useState<FaceLandmarksFrame | null>(null);
+  const [showLandmarks, setShowLandmarks] = useState(true);
+  const [showCenters, setShowCenters] = useState(true);
 
   useEffect(() => {
     return () => {
@@ -48,9 +53,15 @@ export function App() {
       }
       rendererRef.current?.stop();
       rendererRef.current = null;
+      overlayRef.current?.clear();
+      overlayRef.current = null;
       faceLandmarkerController.dispose();
     };
   }, [faceLandmarkerController]);
+
+  useEffect(() => {
+    overlayRef.current?.updateToggles({ showLandmarks, showCenters });
+  }, [showCenters, showLandmarks]);
 
   const startFaceLandmarkLoop = () => {
     const tick = () => {
@@ -63,6 +74,7 @@ export function App() {
       const result = faceLandmarkerController.detectForVideoFrame(videoElement, performance.now());
       setLandmarkerState(faceLandmarkerController.getState());
       setLandmarkFrame(result);
+      overlayRef.current?.render(result.landmarks);
 
       detectAnimationRef.current = requestAnimationFrame(tick);
     };
@@ -89,6 +101,7 @@ export function App() {
 
       const videoElement = videoRef.current;
       const canvasElement = processedCanvasRef.current;
+      const overlayCanvasElement = overlayCanvasRef.current;
 
       if (videoElement && canvasElement) {
         rendererRef.current?.stop();
@@ -101,6 +114,12 @@ export function App() {
         renderer.start();
         rendererRef.current = renderer;
         setRendererState(renderer.getState());
+      }
+
+      if (overlayCanvasElement) {
+        overlayRef.current = createLandmarkOverlay(overlayCanvasElement);
+        overlayRef.current.updateToggles({ showLandmarks, showCenters });
+        overlayRef.current.syncSize();
       }
 
       startFaceLandmarkLoop();
@@ -132,6 +151,8 @@ export function App() {
       videoRef.current.srcObject = null;
     }
 
+    overlayRef.current?.clear();
+
     faceLandmarkerController.dispose();
     setLandmarkerState(faceLandmarkerController.getState());
     setLandmarkFrame(null);
@@ -144,7 +165,10 @@ export function App() {
       <h1 className="app-shell__title">Beauty AR & Face Warp Lab</h1>
       <div className="panel-grid">
         <Panel title="Source Preview">
-          <video className="source-video" ref={videoRef} autoPlay playsInline muted />
+          <div className="source-preview">
+            <video className="source-video" ref={videoRef} autoPlay playsInline muted />
+            <canvas className="overlay-canvas" ref={overlayCanvasRef} />
+          </div>
           <p className="camera-status">Camera state: {cameraState}</p>
           <p className="camera-status">Landmarker state: {landmarkerState}</p>
           {cameraErrorMessage ? <p className="camera-error">{cameraErrorMessage}</p> : null}
@@ -173,6 +197,24 @@ export function App() {
             <button type="button" onClick={handleStopCamera} disabled={cameraState !== 'running'}>
               Stop Camera
             </button>
+          </div>
+          <div className="overlay-controls">
+            <label>
+              <input
+                type="checkbox"
+                checked={showLandmarks}
+                onChange={(event) => setShowLandmarks(event.target.checked)}
+              />
+              Show landmarks
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={showCenters}
+                onChange={(event) => setShowCenters(event.target.checked)}
+              />
+              Show centers
+            </label>
           </div>
           <ul>
             <li>Status: {pipelineState.status}</li>
