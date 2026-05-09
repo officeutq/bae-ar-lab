@@ -18,5 +18,20 @@ export const defaultWarpPreset: WarpPreset = {
         y: 0.7,
       },
     },
+    {
+      id: 'right_eye_enlarge',
+      enabled: true,
+      type: 'radial_warp',
+      target: 'right_eye',
+      strength: 0.08,
+      radius: 1.8,
+      falloff: {
+        type: 'smoothstep',
+      },
+      axis: {
+        x: 1,
+        y: 0.7,
+      },
+    },
   ],
 };
