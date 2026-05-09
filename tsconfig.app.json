@@ -2,7 +2,11 @@
   "compilerOptions": {
     "target": "ES2020",
     "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2020",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "module": "ESNext",
     "skipLibCheck": true,
     "moduleResolution": "Bundler",
@@ -16,15 +20,28 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "baseUrl": "./src",
-    "ignoreDeprecations": "6.0",
     "paths": {
-      "@app/*": ["app/*"],
-      "@ui/*": ["ui/*"],
-      "@engine/*": ["engine/*"],
-      "@algorithms/*": ["algorithms/*"],
-      "@shaders/*": ["shaders/*"],
-      "@types/*": ["types/*"]
+      "@app/*": [
+        "app/*"
+      ],
+      "@ui/*": [
+        "ui/*"
+      ],
+      "@engine/*": [
+        "engine/*"
+      ],
+      "@algorithms/*": [
+        "algorithms/*"
+      ],
+      "@shaders/*": [
+        "shaders/*"
+      ],
+      "@types/*": [
+        "types/*"
+      ]
     }
   },
-  "include": ["src"]
+  "include": [
+    "src"
+  ]
 }
