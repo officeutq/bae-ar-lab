@@ -38,6 +38,9 @@
       ],
       "@app-types/*": [
         "types/*"
+      ],
+      "@config/*": [
+        "config/*"
       ]
     }
   },

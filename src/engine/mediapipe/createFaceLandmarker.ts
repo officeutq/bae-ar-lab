@@ -6,9 +6,7 @@ import type {
   FaceLandmarksFrame,
 } from './types';
 
-const WASM_ROOT_PATH = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm';
-const MODEL_ASSET_PATH =
-  'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
+import { FACE_LANDMARKER_MODEL_URL, MEDIAPIPE_WASM_BASE_URL } from '@config/mediapipeAssets';
 
 export function createFaceLandmarker(): FaceLandmarkerController {
   let state: FaceLandmarkerRuntimeState = 'idle';
@@ -23,10 +21,10 @@ export function createFaceLandmarker(): FaceLandmarkerController {
     state = 'loading';
 
     try {
-      const vision = await FilesetResolver.forVisionTasks(WASM_ROOT_PATH);
+      const vision = await FilesetResolver.forVisionTasks(MEDIAPIPE_WASM_BASE_URL);
 
       faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
-        baseOptions: { modelAssetPath: MODEL_ASSET_PATH },
+        baseOptions: { modelAssetPath: FACE_LANDMARKER_MODEL_URL },
         runningMode: 'VIDEO',
         numFaces: 1,
       });
