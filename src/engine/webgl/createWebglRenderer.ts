@@ -19,6 +19,7 @@ type CreateWebglRendererOptions = {
   canvas: HTMLCanvasElement;
   getOperations: () => WarpOperation[];
   getFaceGeometry: () => FaceGeometry | null;
+  getSkinSmoothing: () => { enabled: boolean; strength: number; radius: number; maskOpacity: number; showMaskPreview: boolean };
 };
 
 const FALLBACK_SIZE = 0.05;
@@ -35,7 +36,7 @@ function getFalloffUniformValue(type: WarpOperation['falloff']['type']) {
   return 2;
 }
 
-export function createWebglRenderer({ video, canvas, getOperations, getFaceGeometry }: CreateWebglRendererOptions): WebglRenderer {
+export function createWebglRenderer({ video, canvas, getOperations, getFaceGeometry, getSkinSmoothing }: CreateWebglRendererOptions): WebglRenderer {
   const gl = canvas.getContext('webgl2');
 
   if (!gl) {
@@ -61,8 +62,15 @@ export function createWebglRenderer({ video, canvas, getOperations, getFaceGeome
   const weightMapTypesLocation = gl.getUniformLocation(program, 'uWeightMapTypes');
   const weightMapCentersLocation = gl.getUniformLocation(program, 'uWeightMapCenters');
   const weightMapRadiiLocation = gl.getUniformLocation(program, 'uWeightMapRadii');
+  const smoothingEnabledLocation = gl.getUniformLocation(program, 'uSmoothingEnabled');
+  const smoothingStrengthLocation = gl.getUniformLocation(program, 'uSmoothingStrength');
+  const smoothingRadiusLocation = gl.getUniformLocation(program, 'uSmoothingRadius');
+  const smoothingMaskOpacityLocation = gl.getUniformLocation(program, 'uSmoothingMaskOpacity');
+  const smoothingMaskPreviewLocation = gl.getUniformLocation(program, 'uSmoothingMaskPreview');
+  const faceMaskPolygonLocation = gl.getUniformLocation(program, 'uFaceMaskPolygon');
+  const faceMaskCountLocation = gl.getUniformLocation(program, 'uFaceMaskCount');
 
-  if (positionLocation < 0 || !videoTextureLocation || !warpCentersLocation || !warpRadiiLocation || !warpStrengthsLocation || !warpAxesLocation || !warpDirectionsLocation || !lineStartsLocation || !lineEndsLocation || !lineWidthsLocation || !operationTypesLocation || !falloffTypesLocation || !enabledOpsLocation || !polygonPointsLocation || !polygonCountsLocation || !weightMapTypesLocation || !weightMapCentersLocation || !weightMapRadiiLocation) {
+  if (positionLocation < 0 || !videoTextureLocation || !warpCentersLocation || !warpRadiiLocation || !warpStrengthsLocation || !warpAxesLocation || !warpDirectionsLocation || !lineStartsLocation || !lineEndsLocation || !lineWidthsLocation || !operationTypesLocation || !falloffTypesLocation || !enabledOpsLocation || !polygonPointsLocation || !polygonCountsLocation || !weightMapTypesLocation || !weightMapCentersLocation || !weightMapRadiiLocation || !smoothingEnabledLocation || !smoothingStrengthLocation || !smoothingRadiusLocation || !smoothingMaskOpacityLocation || !smoothingMaskPreviewLocation || !faceMaskPolygonLocation || !faceMaskCountLocation) {
     gl.deleteProgram(program);
     throw new Error('Failed to resolve shader attributes or uniforms.');
   }
@@ -139,6 +147,9 @@ export function createWebglRenderer({ video, canvas, getOperations, getFaceGeome
       const weightMapTypes = new Int32Array(MAX_OPERATIONS);
       const weightMapCenters = new Float32Array(MAX_OPERATIONS * 2);
       const weightMapRadii = new Float32Array(MAX_OPERATIONS);
+      const smoothing = getSkinSmoothing();
+      const faceMask = new Float32Array(MAX_POLYGON_POINTS * 2);
+      let faceMaskCount = 0;
 
       for (let i = 0; i < MAX_OPERATIONS; i += 1) {
         warpAxes[i * 2] = 1;
@@ -155,6 +166,12 @@ export function createWebglRenderer({ video, canvas, getOperations, getFaceGeome
       }
 
       if (geometry) {
+        const facePolygon = [...geometry.leftCheekPolygon, ...geometry.rightCheekPolygon].slice(0, MAX_POLYGON_POINTS);
+        faceMaskCount = facePolygon.length;
+        for (let i = 0; i < faceMaskCount; i += 1) {
+          faceMask[i * 2] = clamp01(facePolygon[i].x);
+          faceMask[i * 2 + 1] = clamp01(facePolygon[i].y);
+        }
         const operations = getOperations().filter((operation) => operation.enabled).slice(0, MAX_OPERATIONS);
 
         operations.forEach((operation, index) => {
@@ -223,6 +240,13 @@ export function createWebglRenderer({ video, canvas, getOperations, getFaceGeome
       gl.uniform1iv(weightMapTypesLocation, weightMapTypes);
       gl.uniform2fv(weightMapCentersLocation, weightMapCenters);
       gl.uniform1fv(weightMapRadiiLocation, weightMapRadii);
+      gl.uniform1i(smoothingEnabledLocation, smoothing.enabled ? 1 : 0);
+      gl.uniform1f(smoothingStrengthLocation, smoothing.strength);
+      gl.uniform1f(smoothingRadiusLocation, smoothing.radius);
+      gl.uniform1f(smoothingMaskOpacityLocation, smoothing.maskOpacity);
+      gl.uniform1i(smoothingMaskPreviewLocation, smoothing.showMaskPreview ? 1 : 0);
+      gl.uniform2fv(faceMaskPolygonLocation, faceMask);
+      gl.uniform1i(faceMaskCountLocation, faceMaskCount);
       gl.bindVertexArray(vao);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
       gl.bindVertexArray(null);

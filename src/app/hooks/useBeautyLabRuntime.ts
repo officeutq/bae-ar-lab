@@ -40,7 +40,13 @@ function getCameraErrorMessage(error: CameraError) {
 
 type PreviewRenderer = CanvasRenderer | WebglRenderer;
 
-export function useBeautyLabRuntime(activeOperation: WarpOperation | null, operations: WarpOperation[], overlayToggles: OverlayToggles, rendererMode: RendererMode) {
+export function useBeautyLabRuntime(
+  activeOperation: WarpOperation | null,
+  operations: WarpOperation[],
+  overlayToggles: OverlayToggles,
+  rendererMode: RendererMode,
+  skinSmoothing: { enabled: boolean; strength: number; radius: number; maskOpacity: number; showMaskPreview: boolean },
+) {
   const cameraController = useMemo(() => createCameraController(), []);
   const faceLandmarkerController = useMemo(() => createFaceLandmarker(), []);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -101,6 +107,7 @@ export function useBeautyLabRuntime(activeOperation: WarpOperation | null, opera
         canvas: canvasElement,
         getOperations: () => resolvedOperationsRef.current,
         getFaceGeometry: () => faceGeometryRef.current,
+        getSkinSmoothing: () => skinSmoothing,
       })
       : createCanvasRenderer({
         video: videoElement,
@@ -113,7 +120,7 @@ export function useBeautyLabRuntime(activeOperation: WarpOperation | null, opera
     renderer.start();
     rendererRef.current = renderer;
     setRendererState(renderer.getState());
-  }, [cameraState, rendererMode]);
+  }, [cameraState, rendererMode, skinSmoothing]);
 
   useEffect(() => () => {
     if (detectAnimationRef.current !== null) {
@@ -181,6 +188,7 @@ export function useBeautyLabRuntime(activeOperation: WarpOperation | null, opera
             canvas: canvasElement,
             getOperations: () => resolvedOperationsRef.current,
             getFaceGeometry: () => faceGeometryRef.current,
+            getSkinSmoothing: () => skinSmoothing,
           })
           : createCanvasRenderer({
             video: videoElement,

@@ -43,6 +43,8 @@ type Props = {
   onImportPresetText: (text: string) => void;
   presetMessage: string | null;
   resolvedActiveOperation: WarpPreset['operations'][number] | null;
+  skinSmoothing: { enabled: boolean; strength: number; radius: number; maskOpacity: number; showMaskPreview: boolean };
+  updateSkinSmoothing: (patch: Partial<{ enabled: boolean; strength: number; radius: number; maskOpacity: number; showMaskPreview: boolean }>) => void;
 };
 
 export function ControlPanel(props: Props) {
@@ -213,6 +215,24 @@ export function ControlPanel(props: Props) {
         </label>
         <label>Direction Y: {(op?.direction.y ?? 0).toFixed(2)}
           <input type="range" min={-2} max={2} step={0.05} value={op?.direction.y ?? 0} onChange={(e) => props.updateDirection('y', Number(e.target.value))} />
+        </label>
+        <hr />
+        <label>
+          <input type="checkbox" checked={props.skinSmoothing.enabled} onChange={(e) => props.updateSkinSmoothing({ enabled: e.target.checked })} />
+          Enable skin smoothing
+        </label>
+        <label>Smoothing strength: {props.skinSmoothing.strength.toFixed(2)}
+          <input type="range" min={0} max={1} step={0.01} value={props.skinSmoothing.strength} onChange={(e) => props.updateSkinSmoothing({ strength: Number(e.target.value) })} />
+        </label>
+        <label>Smoothing radius: {props.skinSmoothing.radius.toFixed(2)}
+          <input type="range" min={0.5} max={3} step={0.05} value={props.skinSmoothing.radius} onChange={(e) => props.updateSkinSmoothing({ radius: Number(e.target.value) })} />
+        </label>
+        <label>Mask opacity: {props.skinSmoothing.maskOpacity.toFixed(2)}
+          <input type="range" min={0} max={1} step={0.01} value={props.skinSmoothing.maskOpacity} onChange={(e) => props.updateSkinSmoothing({ maskOpacity: Number(e.target.value) })} />
+        </label>
+        <label>
+          <input type="checkbox" checked={props.skinSmoothing.showMaskPreview} onChange={(e) => props.updateSkinSmoothing({ showMaskPreview: e.target.checked })} />
+          Show smoothing mask preview
         </label>
       </div>
       <ul>
