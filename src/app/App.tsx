@@ -13,6 +13,7 @@ import { WarpMathDebugPanel } from '@ui/panels/WarpMathDebugPanel';
 import { useBeautyLabRuntime } from './hooks/useBeautyLabRuntime';
 import type { RendererMode } from '@engine/render/types';
 import { detectDeviceCapabilities } from '@engine/performance/detectDeviceCapabilities';
+import { createSnapshotExporter } from '@engine/capture/createSnapshotExporter';
 import type { WarpOperation, WarpPreset } from '@app-types/preset';
 import {
   deletePreset,
@@ -46,6 +47,7 @@ export function App() {
   const capabilities = useMemo(() => detectDeviceCapabilities(), []);
   const [rendererMode, setRendererMode] = useState<RendererMode>(capabilities.recommendedRendererMode);
   const [debugUv, setDebugUv] = useState({ x: 0.5, y: 0.5 });
+  const snapshotExporter = useMemo(() => createSnapshotExporter(), []);
   useEffect(() => {
     if (!capabilities.webgl2Available && rendererMode === 'webgl') {
       setRendererMode('canvas2d');
@@ -221,6 +223,17 @@ export function App() {
     setPresetMessage('Imported preset JSON. Save it to persist.');
   };
 
+
+  const onCaptureSource = () => {
+    const result = snapshotExporter.exportVideoSnapshot(runtime.refs.videoRef.current, 'source');
+    setPresetMessage(result.ok ? `Captured: ${result.filename}` : result.reason);
+  };
+
+  const onCaptureProcessed = () => {
+    const result = snapshotExporter.exportCanvasSnapshot(runtime.refs.processedCanvasRef.current, 'processed');
+    setPresetMessage(result.ok ? `Captured: ${result.filename}` : result.reason);
+  };
+
   const resolvedActiveOperation = runtime.resolved.getActiveOperation();
   const debugOperation = resolvedActiveOperation;
   const debugCenter = { x: 0.5, y: 0.5 };
@@ -241,8 +254,8 @@ export function App() {
     <main className="app-shell">
       <h1 className="app-shell__title">Beauty AR & Face Warp Lab</h1>
       <div className="panel-grid">
-        <SourcePreviewPanel videoRef={runtime.refs.videoRef} overlayCanvasRef={runtime.refs.overlayCanvasRef} cameraState={runtime.state.cameraState} landmarkerState={runtime.state.landmarkerState} cameraErrorMessage={runtime.state.cameraErrorMessage} />
-        <ProcessedPreviewPanel processedCanvasRef={runtime.refs.processedCanvasRef} rendererState={runtime.state.rendererState} rendererMode={rendererMode} />
+        <SourcePreviewPanel videoRef={runtime.refs.videoRef} overlayCanvasRef={runtime.refs.overlayCanvasRef} cameraState={runtime.state.cameraState} landmarkerState={runtime.state.landmarkerState} cameraErrorMessage={runtime.state.cameraErrorMessage} onCaptureSource={onCaptureSource} />
+        <ProcessedPreviewPanel processedCanvasRef={runtime.refs.processedCanvasRef} rendererState={runtime.state.rendererState} rendererMode={rendererMode} onCaptureProcessed={onCaptureProcessed} />
         <Panel title="Face Detection Status"><ul><li>Face: {runtime.state.landmarkFrame?.detected ? 'detected' : 'not detected'}</li><li>Landmark count: {runtime.state.landmarkFrame?.landmarkCount ?? 0}</li><li>Face count: {runtime.state.landmarkFrame?.faceCount ?? 0}</li><li>Frame: {runtime.state.landmarkFrame?.frameCount ?? 0}</li><li>Timestamp (ms): {Math.round(runtime.state.landmarkFrame?.timestampMs ?? 0)}</li></ul></Panel>
         <Panel title="Realtime Profiler">
           <div className="profiler-overlay">
