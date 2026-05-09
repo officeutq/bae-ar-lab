@@ -3,6 +3,7 @@ precision mediump float;
 
 uniform sampler2D uVideoTexture;
 const int MAX_OPERATIONS = 8;
+const int MAX_POLYGON_POINTS = 6;
 uniform vec2 uWarpCenters[MAX_OPERATIONS];
 uniform float uWarpRadii[MAX_OPERATIONS];
 uniform float uWarpStrengths[MAX_OPERATIONS];
@@ -14,6 +15,8 @@ uniform float uLineWidths[MAX_OPERATIONS];
 uniform int uOperationTypes[MAX_OPERATIONS];
 uniform int uFalloffTypes[MAX_OPERATIONS];
 uniform int uEnabledOps[MAX_OPERATIONS];
+uniform vec2 uPolygonPoints[MAX_OPERATIONS * MAX_POLYGON_POINTS];
+uniform int uPolygonCounts[MAX_OPERATIONS];
 
 in vec2 v_uv;
 out vec4 outColor;
@@ -43,6 +46,23 @@ void main() {
       vec2 p = a + ab * t;
       float lineDistance = length(warpedUv - p);
       normalizedDistance = lineDistance / max(0.0001, uLineWidths[i]);
+    } else if (uOperationTypes[i] == 3) {
+      int count = uPolygonCounts[i];
+      bool inside = true;
+      float minDistance = 1000.0;
+      for (int p = 0; p < MAX_POLYGON_POINTS; p++) {
+        if (p >= count) break;
+        vec2 a = uPolygonPoints[i * MAX_POLYGON_POINTS + p];
+        vec2 b = uPolygonPoints[i * MAX_POLYGON_POINTS + ((p + 1) % count)];
+        vec2 ab = b - a;
+        float cross = ab.x * (warpedUv.y - a.y) - ab.y * (warpedUv.x - a.x);
+        if (cross < -0.00001) inside = false;
+        float denom = max(dot(ab, ab), 0.000001);
+        float t = clamp(dot(warpedUv - a, ab) / denom, 0.0, 1.0);
+        vec2 proj = a + ab * t;
+        minDistance = min(minDistance, length(warpedUv - proj));
+      }
+      normalizedDistance = inside ? 0.0 : (minDistance / max(0.0001, uLineWidths[i]));
     } else {
       vec2 axis = max(uWarpAxes[i], vec2(0.0001));
       delta = warpedUv - uWarpCenters[i];
@@ -55,7 +75,7 @@ void main() {
 
     if (normalizedDistance <= 1.0) {
       float influence = getFalloff(normalizedDistance, uFalloffTypes[i]);
-      if (uOperationTypes[i] == 1 || uOperationTypes[i] == 2) {
+      if (uOperationTypes[i] == 1 || uOperationTypes[i] == 2 || uOperationTypes[i] == 3) {
         warpedUv = clamp(warpedUv + uWarpDirections[i] * (uWarpStrengths[i] * influence), 0.0, 1.0);
       } else {
         vec2 displacement = delta * (uWarpStrengths[i] * influence);

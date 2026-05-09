@@ -74,6 +74,7 @@ export function App() {
       lineStart: { x: 0.3, y: 0.5 },
       lineEnd: { x: 0.7, y: 0.5 },
       width: 0.12,
+      polygon: [{ x: 0.35, y: 0.35 }, { x: 0.65, y: 0.35 }, { x: 0.65, y: 0.65 }, { x: 0.35, y: 0.65 }],
     };
     setActivePreset((currentPreset) => {
       const nextIndex = currentPreset.operations.length;

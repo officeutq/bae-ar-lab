@@ -100,6 +100,24 @@ export function createWarpVisualization(context: CanvasRenderingContext2D) {
       drawDirectionArrow(context, (startX + endX) * 0.5, (startY + endY) * 0.5, operation.direction.x, operation.direction.y, halfWidthPx);
       return;
     }
+    if (operation.type === 'region_warp') {
+      const polygon = operation.polygon.map((point) => ({ x: clamp01(point.x) * canvas.width, y: clamp01(point.y) * canvas.height }));
+      if (polygon.length < 3) return;
+      context.beginPath();
+      context.moveTo(polygon[0].x, polygon[0].y);
+      polygon.slice(1).forEach((point) => context.lineTo(point.x, point.y));
+      context.closePath();
+      context.fillStyle = 'rgba(255, 160, 80, 0.12)';
+      context.fill();
+      context.strokeStyle = 'rgba(255, 120, 40, 0.95)';
+      context.lineWidth = 2;
+      context.stroke();
+      const center = polygon.reduce((acc, point) => ({ x: acc.x + point.x, y: acc.y + point.y }), { x: 0, y: 0 });
+      const cx = center.x / polygon.length;
+      const cy = center.y / polygon.length;
+      drawDirectionArrow(context, cx, cy, operation.direction.x, operation.direction.y, Math.max(16, operation.width * Math.min(canvas.width, canvas.height)));
+      return;
+    }
 
     const target = getTargetGeometry(operation.target, geometry);
     const centerX = clamp01(target.center.x) * canvas.width;

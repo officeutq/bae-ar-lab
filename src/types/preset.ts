@@ -1,4 +1,4 @@
-export type WarpOperationType = 'radial_warp' | 'directional_warp' | 'line_warp';
+export type WarpOperationType = 'radial_warp' | 'directional_warp' | 'line_warp' | 'region_warp';
 
 export type WarpTarget = 'left_eye' | 'right_eye' | 'face_center' | 'mouth' | 'nose' | 'left_jaw' | 'right_jaw' | 'chin_line';
 
@@ -41,6 +41,7 @@ export type WarpOperation = {
   lineStart: WarpAxis;
   lineEnd: WarpAxis;
   width: number;
+  polygon: WarpAxis[];
   binding?: LandmarkLineBinding;
 };
 

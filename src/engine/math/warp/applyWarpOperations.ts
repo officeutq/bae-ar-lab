@@ -3,6 +3,7 @@ import type { FaceGeometry } from '@engine/geometry/types';
 import { getWarpTargetGeometry } from '@engine/render/getWarpTargetGeometry';
 import { applyDirectionalWarp } from './applyDirectionalWarp';
 import { applyLineWarp } from './applyLineWarp';
+import { applyRegionWarp } from './applyRegionWarp';
 import { applyRadialWarp } from './applyRadialWarp';
 import type { Vec2 } from './types';
 
@@ -26,6 +27,16 @@ export function applyWarpOperations(uv: Vec2, operations: WarpOperation[], geome
         uv: currentUv,
         lineStart: operation.lineStart,
         lineEnd: operation.lineEnd,
+        width: operation.width,
+        strength: operation.strength,
+        direction: operation.direction,
+        falloff: operation.falloff.type,
+      }).warpedUv;
+    }
+    if (operation.type === 'region_warp') {
+      return applyRegionWarp({
+        uv: currentUv,
+        polygon: operation.polygon,
         width: operation.width,
         strength: operation.strength,
         direction: operation.direction,

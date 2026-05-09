@@ -23,6 +23,7 @@ type CreateWebglRendererOptions = {
 
 const FALLBACK_SIZE = 0.05;
 const MAX_OPERATIONS = 8;
+const MAX_POLYGON_POINTS = 6;
 
 function clamp01(value: number) {
   return Math.min(1, Math.max(0, value));
@@ -55,8 +56,10 @@ export function createWebglRenderer({ video, canvas, getOperations, getFaceGeome
   const operationTypesLocation = gl.getUniformLocation(program, 'uOperationTypes');
   const falloffTypesLocation = gl.getUniformLocation(program, 'uFalloffTypes');
   const enabledOpsLocation = gl.getUniformLocation(program, 'uEnabledOps');
+  const polygonPointsLocation = gl.getUniformLocation(program, 'uPolygonPoints');
+  const polygonCountsLocation = gl.getUniformLocation(program, 'uPolygonCounts');
 
-  if (positionLocation < 0 || !videoTextureLocation || !warpCentersLocation || !warpRadiiLocation || !warpStrengthsLocation || !warpAxesLocation || !warpDirectionsLocation || !lineStartsLocation || !lineEndsLocation || !lineWidthsLocation || !operationTypesLocation || !falloffTypesLocation || !enabledOpsLocation) {
+  if (positionLocation < 0 || !videoTextureLocation || !warpCentersLocation || !warpRadiiLocation || !warpStrengthsLocation || !warpAxesLocation || !warpDirectionsLocation || !lineStartsLocation || !lineEndsLocation || !lineWidthsLocation || !operationTypesLocation || !falloffTypesLocation || !enabledOpsLocation || !polygonPointsLocation || !polygonCountsLocation) {
     gl.deleteProgram(program);
     throw new Error('Failed to resolve shader attributes or uniforms.');
   }
@@ -128,6 +131,8 @@ export function createWebglRenderer({ video, canvas, getOperations, getFaceGeome
       const lineStarts = new Float32Array(MAX_OPERATIONS * 2);
       const lineEnds = new Float32Array(MAX_OPERATIONS * 2);
       const lineWidths = new Float32Array(MAX_OPERATIONS);
+      const polygonPoints = new Float32Array(MAX_OPERATIONS * MAX_POLYGON_POINTS * 2);
+      const polygonCounts = new Int32Array(MAX_OPERATIONS);
 
       for (let i = 0; i < MAX_OPERATIONS; i += 1) {
         warpAxes[i * 2] = 1;
@@ -152,7 +157,7 @@ export function createWebglRenderer({ video, canvas, getOperations, getFaceGeome
           const warpAxisY = Math.max(0.0001, operation.axis.y);
           const directionX = operation.direction.x;
           const directionY = operation.direction.y;
-          const operationType = operation.type === 'directional_warp' ? 1 : operation.type === 'line_warp' ? 2 : 0;
+          const operationType = operation.type === 'directional_warp' ? 1 : operation.type === 'line_warp' ? 2 : operation.type === 'region_warp' ? 3 : 0;
           const falloffType = getFalloffUniformValue(operation.falloff.type);
 
           if (![warpCenterX, warpCenterY, warpRadius, warpStrength, warpAxisX, warpAxisY, directionX, directionY].every(Number.isFinite)) {
@@ -175,6 +180,14 @@ export function createWebglRenderer({ video, canvas, getOperations, getFaceGeome
           lineEnds[index * 2] = clamp01(operation.lineEnd.x);
           lineEnds[index * 2 + 1] = clamp01(operation.lineEnd.y);
           lineWidths[index] = Math.max(0.0001, operation.width);
+          const pointCount = Math.min(MAX_POLYGON_POINTS, operation.polygon.length);
+          polygonCounts[index] = pointCount;
+          for (let p = 0; p < pointCount; p += 1) {
+            const point = operation.polygon[p];
+            const base = (index * MAX_POLYGON_POINTS + p) * 2;
+            polygonPoints[base] = clamp01(point.x);
+            polygonPoints[base + 1] = clamp01(point.y);
+          }
         });
       }
 
@@ -190,6 +203,8 @@ export function createWebglRenderer({ video, canvas, getOperations, getFaceGeome
       gl.uniform2fv(lineStartsLocation, lineStarts);
       gl.uniform2fv(lineEndsLocation, lineEnds);
       gl.uniform1fv(lineWidthsLocation, lineWidths);
+      gl.uniform2fv(polygonPointsLocation, polygonPoints);
+      gl.uniform1iv(polygonCountsLocation, polygonCounts);
       gl.bindVertexArray(vao);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
       gl.bindVertexArray(null);

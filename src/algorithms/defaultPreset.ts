@@ -24,6 +24,7 @@ export const defaultWarpPreset: WarpPreset = {
       lineStart: { x: 0.3, y: 0.5 },
       lineEnd: { x: 0.7, y: 0.5 },
       width: 0.12,
+      polygon: [{ x: 0.3, y: 0.35 }, { x: 0.5, y: 0.25 }, { x: 0.7, y: 0.35 }, { x: 0.65, y: 0.55 }, { x: 0.35, y: 0.55 }],
     },
     {
       id: 'right_eye_enlarge',
@@ -46,6 +47,7 @@ export const defaultWarpPreset: WarpPreset = {
       lineStart: { x: 0.3, y: 0.5 },
       lineEnd: { x: 0.7, y: 0.5 },
       width: 0.12,
+      polygon: [{ x: 0.3, y: 0.35 }, { x: 0.5, y: 0.25 }, { x: 0.7, y: 0.35 }, { x: 0.65, y: 0.55 }, { x: 0.35, y: 0.55 }],
     },
     {
       id: 'left_face_slim',
@@ -60,6 +62,7 @@ export const defaultWarpPreset: WarpPreset = {
       lineStart: { x: 0.25, y: 0.45 },
       lineEnd: { x: 0.45, y: 0.72 },
       width: 0.09,
+      polygon: [{ x: 0.22, y: 0.42 }, { x: 0.42, y: 0.42 }, { x: 0.45, y: 0.7 }, { x: 0.28, y: 0.76 }],
       binding: {
         type: 'landmark_line',
         start: 'left_cheek',
@@ -79,6 +82,7 @@ export const defaultWarpPreset: WarpPreset = {
       lineStart: { x: 0.75, y: 0.45 },
       lineEnd: { x: 0.55, y: 0.72 },
       width: 0.09,
+      polygon: [{ x: 0.58, y: 0.42 }, { x: 0.78, y: 0.42 }, { x: 0.72, y: 0.76 }, { x: 0.55, y: 0.7 }],
       binding: {
         type: 'landmark_line',
         start: 'right_cheek',
