@@ -21,13 +21,17 @@ type Props = {
   setShowFalloffRings: (value: boolean) => void;
   rendererMode: RendererMode;
   setRendererMode: (value: RendererMode) => void;
+  activeOperationIndex: number;
+  setActiveOperationIndex: (value: number) => void;
+  addOperation: () => void;
+  removeOperation: () => void;
   updateOperation: <K extends keyof WarpPreset['operations'][number]>(key: K, value: WarpPreset['operations'][number][K]) => void;
   updateAxis: (axisKey: 'x' | 'y', value: number) => void;
   updateFalloffType: (type: WarpFalloffType) => void;
 };
 
 export function ControlPanel(props: Props) {
-  const op = props.activePreset.operations[0];
+  const op = props.activePreset.operations[props.activeOperationIndex];
 
   return (
     <Panel title="Control Panel">
@@ -49,7 +53,23 @@ export function ControlPanel(props: Props) {
           </select>
         </label>
       </div>
+      <div className="operation-list-controls">
+        <label>Active operation
+          <select value={props.activeOperationIndex} onChange={(e) => props.setActiveOperationIndex(Number(e.target.value))}>
+            {props.activePreset.operations.map((operation, index) => (
+              <option key={operation.id} value={index}>{index}: {operation.id}</option>
+            ))}
+          </select>
+        </label>
+        <div className="camera-controls">
+          <button type="button" onClick={props.addOperation}>Add operation</button>
+          <button type="button" onClick={props.removeOperation} disabled={props.activePreset.operations.length <= 1}>Remove operation</button>
+        </div>
+      </div>
       <div className="operation-controls">
+        <label>Operation id
+          <input type="text" value={op?.id ?? ''} onChange={(e) => props.updateOperation('id', e.target.value)} />
+        </label>
         <label><input type="checkbox" checked={op?.enabled ?? false} onChange={(e) => props.updateOperation('enabled', e.target.checked)} />Operation enabled</label>
         <label>Target
           <select value={op?.target ?? 'left_eye'} onChange={(e) => props.updateOperation('target', e.target.value as WarpTarget)}>
