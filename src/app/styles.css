@@ -300,7 +300,9 @@ input[type='range'] {
   background: #59c1ff;
   border: 1px solid #0f1420;
   transform: translate(-50%, -50%);
+  cursor: grab;
 }
+.timeline-track__keyframe:active { cursor: grabbing; }
 
 .timeline-track__playhead {
   position: absolute;
@@ -324,6 +326,9 @@ input[type='range'] {
   background: #ffd166;
   border-color: #ffe7a6;
   box-shadow: 0 0 0 2px rgba(255, 209, 102, 0.35);
+}
+.timeline-track__keyframe--selected:active {
+  box-shadow: 0 0 0 3px rgba(255, 209, 102, 0.45);
 }
 
 .keyframe-track--selected {
