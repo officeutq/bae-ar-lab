@@ -15,6 +15,9 @@ import type { WarpOperation } from '@app-types/preset';
 import type { RendererMode } from '@engine/render/types';
 import { resolveOperationBindings } from '@engine/algorithms/resolveOperationBindings';
 import { createProfiler, type ProfilerSnapshot } from '@engine/profiler/createProfiler';
+import { createTemporalFilter } from '@engine/temporal/createTemporalFilter';
+import { smoothLandmarks } from '@engine/temporal/smoothLandmarks';
+import { smoothOperations } from '@engine/temporal/smoothOperations';
 import {
   createAdaptiveQualityController,
   QUALITY_PRESETS,
@@ -55,6 +58,7 @@ export function useBeautyLabRuntime(
   rendererMode: RendererMode,
   skinSmoothing: { enabled: boolean; strength: number; radius: number; maskOpacity: number; showMaskPreview: boolean },
   skinTone: { enabled: boolean; brightness: number; saturation: number; warmth: number; blend: number },
+  temporalSmoothing: { enabled: boolean; alpha: number },
   initialQuality: QualityLevel = 'high',
   adaptiveQualityEnabledByDefault = true,
 ) {
@@ -76,6 +80,8 @@ export function useBeautyLabRuntime(
   const detectFrameCountRef = useRef(0);
   const lastLandmarkFrameRef = useRef<FaceLandmarksFrame | null>(null);
   const adaptiveQualityControllerRef = useRef(createAdaptiveQualityController(initialQuality));
+  const landmarkTemporalFilterRef = useRef(createTemporalFilter());
+  const operationTemporalFilterRef = useRef(createTemporalFilter());
   const adaptiveQualityRef = useRef<AdaptiveQualityState>({ enabled: adaptiveQualityEnabledByDefault, selectedQuality: initialQuality, currentQuality: initialQuality });
 
   const [cameraState, setCameraState] = useState<CameraViewState>('idle');
@@ -181,20 +187,27 @@ export function useBeautyLabRuntime(
       const result = shouldDetect
         ? faceLandmarkerController.detectForVideoFrame(videoElement, performance.now())
         : (lastLandmarkFrameRef.current ?? { detected: false, landmarks: [], frameCount: 0, timestampMs: performance.now(), faceCount: 0, landmarkCount: 0 });
+      const smoothedLandmarks = temporalSmoothing.enabled && result.detected
+        ? smoothLandmarks(result.landmarks, landmarkTemporalFilterRef.current, temporalSmoothing.alpha)
+        : result.landmarks;
+      const runtimeFrame = { ...result, landmarks: smoothedLandmarks };
       const mediapipeMs = shouldDetect ? performance.now() - detectStart : 0;
       if (shouldDetect) {
-        lastLandmarkFrameRef.current = result;
+        lastLandmarkFrameRef.current = runtimeFrame;
       }
       setLandmarkerState(faceLandmarkerController.getState());
-      setLandmarkFrame(result);
-      const nextGeometry = result.detected ? computeFaceGeometry({ landmarks: result.landmarks }) : null;
+      setLandmarkFrame(runtimeFrame);
+      const nextGeometry = runtimeFrame.detected ? computeFaceGeometry({ landmarks: runtimeFrame.landmarks }) : null;
       setFaceGeometry(nextGeometry);
       faceGeometryRef.current = nextGeometry;
-      const resolvedOperations = resolveOperationBindings(operationsRef.current, nextGeometry);
+      const boundOperations = resolveOperationBindings(operationsRef.current, nextGeometry);
+      const resolvedOperations = temporalSmoothing.enabled
+        ? smoothOperations(boundOperations, operationTemporalFilterRef.current, temporalSmoothing.alpha)
+        : boundOperations;
       resolvedOperationsRef.current = resolvedOperations;
       const activeIndex = operationsRef.current.findIndex((op) => op.id === activeOperationRef.current?.id);
       resolvedActiveOperationRef.current = activeIndex >= 0 ? resolvedOperations[activeIndex] : null;
-      overlayRef.current?.render(result.landmarks, nextGeometry, resolvedActiveOperationRef.current);
+      overlayRef.current?.render(runtimeFrame.landmarks, nextGeometry, resolvedActiveOperationRef.current);
       profilerRef.current.setBackend(rendererModeRef.current);
       profilerRef.current.setOperationCount(resolvedOperations.filter((operation) => operation.enabled).length);
       const nextSnapshot = profilerRef.current.commitFrame();
@@ -217,6 +230,8 @@ export function useBeautyLabRuntime(
   const startCamera = async () => {
     setCameraState('starting');
     setCameraErrorMessage(null);
+    landmarkTemporalFilterRef.current.reset();
+    operationTemporalFilterRef.current.reset();
     setLandmarkFrame(null);
     setFaceGeometry(null);
     faceGeometryRef.current = null;
@@ -304,6 +319,8 @@ export function useBeautyLabRuntime(
     overlayRef.current?.clear();
     faceLandmarkerController.dispose();
     setLandmarkerState(faceLandmarkerController.getState());
+    landmarkTemporalFilterRef.current.reset();
+    operationTemporalFilterRef.current.reset();
     setLandmarkFrame(null);
     setFaceGeometry(null);
     faceGeometryRef.current = null;

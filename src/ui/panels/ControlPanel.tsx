@@ -90,6 +90,10 @@ type Props = {
   currentQuality: QualityLevel;
   onSelectedQualityChange: (value: QualityLevel) => void;
   capabilities: DeviceCapabilities;
+  temporalSmoothingEnabled: boolean;
+  setTemporalSmoothingEnabled: (value: boolean) => void;
+  temporalSmoothingAmount: number;
+  setTemporalSmoothingAmount: (value: number) => void;
 };
 
 export function ControlPanel(props: Props) {
@@ -221,6 +225,11 @@ export function ControlPanel(props: Props) {
         <p className="camera-status">Device: {props.capabilities.deviceType} / WebGL2: {props.capabilities.webgl2Available ? 'yes' : 'no'}</p>
         <p className="camera-status">Recommended: {props.capabilities.recommendedRendererMode}, {props.capabilities.recommendedQuality} (max ops {props.capabilities.maxRecommendedOperationCount})</p>
         <p className="camera-status">Memory/Cores: {props.capabilities.deviceMemoryGb ?? 'n/a'} GB / {props.capabilities.hardwareConcurrency ?? 'n/a'}</p>
+        <label><input type="checkbox" checked={props.temporalSmoothingEnabled} onChange={(e) => props.setTemporalSmoothingEnabled(e.target.checked)} />Temporal smoothing</label>
+        <label>Smoothing amount: {props.temporalSmoothingAmount.toFixed(2)}
+          <input type="range" min={0.01} max={1} step={0.01} value={props.temporalSmoothingAmount} onChange={(e) => props.setTemporalSmoothingAmount(Number(e.target.value))} />
+        </label>
+        <p className="camera-status">Temporal enabled: {props.temporalSmoothingEnabled ? 'yes' : 'no'} / alpha: {props.temporalSmoothingAmount.toFixed(2)}</p>
         <label><input type="checkbox" checked={props.showLandmarks} onChange={(e) => props.setShowLandmarks(e.target.checked)} />Show landmarks</label>
         <label><input type="checkbox" checked={props.showCenters} onChange={(e) => props.setShowCenters(e.target.checked)} />Show centers</label>
         <label><input type="checkbox" checked={props.showWarpInfluence} onChange={(e) => props.setShowWarpInfluence(e.target.checked)} />Show warp influence</label>
