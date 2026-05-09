@@ -419,15 +419,17 @@ export function App() {
     setPresetMessage(result.ok ? `Captured: ${result.filename}` : result.reason);
   };
 
+  const getActiveProcessedCanvas = () => (rendererMode === 'webgl' ? runtime.refs.webglCanvasRef.current : runtime.refs.canvas2dRef.current);
+
   const onCaptureProcessed = () => {
-    const result = snapshotExporter.exportCanvasSnapshot(runtime.refs.processedCanvasRef.current, 'processed');
+    const result = snapshotExporter.exportCanvasSnapshot(getActiveProcessedCanvas(), 'processed');
     setPresetMessage(result.ok ? `Captured: ${result.filename}` : result.reason);
   };
 
 
   const onCaptureCompare = () => {
     const beforeDataUrl = snapshotExporter.readVideoSnapshotDataUrl(runtime.refs.videoRef.current);
-    const afterDataUrl = snapshotExporter.readCanvasSnapshotDataUrl(runtime.refs.processedCanvasRef.current);
+    const afterDataUrl = snapshotExporter.readCanvasSnapshotDataUrl(getActiveProcessedCanvas());
 
     if (!beforeDataUrl || !afterDataUrl) {
       setPresetMessage('Compare capture failed: source/processed frame is unavailable.');
@@ -464,7 +466,7 @@ export function App() {
       <h1 className="app-shell__title">Beauty AR & Face Warp Lab</h1>
       <div className="panel-grid">
         <SourcePreviewPanel videoRef={runtime.refs.videoRef} overlayCanvasRef={runtime.refs.overlayCanvasRef} cameraState={runtime.state.cameraState} landmarkerState={runtime.state.landmarkerState} cameraErrorMessage={runtime.state.cameraErrorMessage} onCaptureSource={onCaptureSource} />
-        <ProcessedPreviewPanel processedCanvasRef={runtime.refs.processedCanvasRef} rendererState={runtime.state.rendererState} rendererMode={rendererMode} onCaptureProcessed={onCaptureProcessed} />
+        <ProcessedPreviewPanel canvas2dRef={runtime.refs.canvas2dRef} webglCanvasRef={runtime.refs.webglCanvasRef} rendererState={runtime.state.rendererState} rendererMode={rendererMode} onCaptureProcessed={onCaptureProcessed} />
         <Panel title="Face Detection Status"><ul><li>Face: {runtime.state.landmarkFrame?.detected ? 'detected' : 'not detected'}</li><li>Landmark count: {runtime.state.landmarkFrame?.landmarkCount ?? 0}</li><li>Face count: {runtime.state.landmarkFrame?.faceCount ?? 0}</li><li>Frame: {runtime.state.landmarkFrame?.frameCount ?? 0}</li><li>Timestamp (ms): {Math.round(runtime.state.landmarkFrame?.timestampMs ?? 0)}</li></ul></Panel>
         <Panel title="Realtime Profiler">
           <div className="profiler-overlay">
