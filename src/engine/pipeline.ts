@@ -1,4 +1,4 @@
-import type { WarpPreset } from '@types/preset';
+import type { WarpPreset } from '@app-types/preset';
 
 export type PipelineState = {
   status: 'idle' | 'ready';

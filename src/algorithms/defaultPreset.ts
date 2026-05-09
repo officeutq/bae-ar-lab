@@ -1,4 +1,4 @@
-import type { WarpPreset } from '@types/preset';
+import type { WarpPreset } from '@app-types/preset';
 
 export const defaultWarpPreset: WarpPreset = {
   id: 'default-warp-v1',
