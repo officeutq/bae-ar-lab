@@ -1,4 +1,4 @@
-export const MEDIAPIPE_TASKS_VISION_VERSION = '0.10.22';
+export const MEDIAPIPE_TASKS_VISION_VERSION = '0.10.35';
 
 export const MEDIAPIPE_WASM_BASE_URL =
   `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MEDIAPIPE_TASKS_VISION_VERSION}/wasm`;
