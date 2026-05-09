@@ -1,0 +1,158 @@
+# BAE AR Lab 実装棚卸し（2026-05-09）
+
+本資料は、`/workspace/bae-ar-lab` 時点のコードを対象に、Butterflyve 組み込み前の顔加工エンジン開発環境としての完成度を整理したもの。
+
+- 対象: runtime / renderer / UI / preset / animation / capture / performance / build
+- 実施コマンド: `npm install`, `npm run build`, `timeout 10s npm run dev`
+
+## 1. 全体構成
+- エントリポイント: `src/main.tsx` → `src/app/App.tsx`。
+- 実行系の中核: `src/app/hooks/useBeautyLabRuntime.ts`。
+- renderer 分離: `src/engine/render` (canvas2d/cpu debug), `src/engine/webgl`。
+- preset 分離: 型は `src/types/preset.ts`、保存は `src/engine/presets/presetStorage.ts`。
+- animation 分離: `src/engine/animation/*`（timeline + keyframe interpolation）。
+- capture 分離: `src/engine/capture/createSnapshotExporter.ts`。
+- データフロー（要約）:
+  1) Camera start
+  2) FaceLandmarker detect
+  3) Geometry/Pose計算
+  4) binding + temporal smoothing + stability fade + pose attenuation
+  5) renderer input
+  6) preview/capture/UI更新
+
+## 2. カメラ・MediaPipe
+- カメラ開始/停止: `createCameraController().start/stop` でトラックを停止可能。
+- MediaPipe初期化: `FilesetResolver.forVisionTasks` + `FaceLandmarker.createFromOptions`。
+- wasm/model: CDN直指定（`@latest` wasm と `face_landmarker.task` URL）。
+- 検出結果保持:
+  - `lastLandmarkFrameRef`（間引き時キャッシュ）
+  - `landmarkFrame` state
+  - `lastStableGeometryRef`（未検出時のフェード用）
+- 顔未検出時: `faceStability` fade > 0 の間は直前安定形状を利用。
+- cleanup: unmount で `cancelAnimationFrame`, `renderer.stop`, `overlay.clear`, `faceLandmarker.dispose`, `camera.stop` 実施。
+
+## 3. Renderer Backend
+- 実装済み backend:
+  - `canvas2d`
+  - `cpu_warp_debug`
+  - `webgl`
+- factory構造: runtime hook で `rendererMode` に応じ `createWebglRenderer` or `createCanvasRenderer` を作成。
+- `renderer.stop()`: canvas/webglとも `cancelAnimationFrame` でループ停止。
+- requestAnimationFrame cleanup: renderer内 stop + runtime unmount cleanup 両方あり。
+- canvas分離: `ProcessedPreviewPanel` に canvas2d/webgl の2canvasを持ち、表示切替。
+- backend切替安全性: 切替時に `rendererRef.current?.stop()` 後に新renderer作成。基本安全。
+
+## 4. Beauty / Warp
+- 実装済み加工:
+  - appearance: `skin_smoothing`, `skin_tone`
+  - warp op type: `radial_warp`, `directional_warp`, `line_warp`, `region_warp`
+  - weight map: `uniform`, `radial_gradient`
+- 計算場所:
+  - 幾何/pose: `src/engine/geometry/*`
+  - warp数学: `src/engine/math/warp/*`
+  - binding: `src/engine/algorithms/resolveOperationBindings.ts`
+  - GPU反映: `src/engine/webgl/createWebglRenderer.ts` のuniform転送
+  - CPUデバッグ反映: `src/engine/render/createCpuWarpRenderer.ts`
+- pose/yaw attenuation: 実装あり（`computePoseAttenuation`）。
+- stability fade: 実装あり（`createFaceStabilityController`）。
+- 破綻回避:
+  - clamp/最小値ガード（半径・軸・line width等）
+  - 非finite値スキップ
+  - operation数上限（WebGL側 MAX_OPERATIONS）
+
+## 5. Preset
+- 型定義: `WarpPreset` + `WarpOperation` がJSONシリアライズ可能設計。
+- sample preset: `src/algorithms/presets/*` に複数。
+- save/load/import/export: `presetStorage.ts` で実装済み。
+- 永続化: `localStorage` (`beauty-lab-presets`)。
+- intensity/blend:
+  - beauty intensity: `blendPresetByIntensity`
+  - skin tone blend: appearance内パラメータで保持
+- Butterflyve標準プリセット適合性: 形式は十分。ただし schema version運用・互換戦略は最小実装。
+
+## 6. Animation
+- timeline: 実装済み（play/pause/seek/update/loop）。
+- keyframe editing: UIで時刻/値編集可。
+- keyframe drag: 専用のドラッグUIは未実装（数値入力中心）。
+- animation clip: presetに `animations?: AnimationClip[]` を保持可能。
+- animation persistence: preset保存時に `activePreset` ごと保存される。
+- runtime反映: timeline snapshot values を毎frame `applyAnimatedValues` で preset/intensity に適用。
+
+## 7. Preview / Capture
+- source preview: 実装済み。
+- processed preview: 実装済み。
+- mirror表示: `preview-mirror` class によりプレビューはミラー。
+- camera aspect ratio: `previewAspectRatio` で反映。
+- compare panel: 実装済み（キャプチャ差分比較）。
+- snapshot export: source(video) / processed(canvas) をPNG出力可能。
+- mirror影響: 出力は raw video/canvas基準で、CSSミラーの見た目とは一致しない可能性あり。
+- preview/capture責務分離: captureロジックは `createSnapshotExporter` に分離済み。
+
+## 8. Performance / Profiler
+- FPS表示: 実装済み（profiler + runtime debug panel）。
+- frame time / renderer time / MediaPipe time: profiler snapshotで保持。
+- adaptive quality: 実装済み（quality preset + controller）。
+- device capability detection: 実装済み。
+- mobile/low spec fallback: 推奨renderer/quality と frame skip/render scale 調整あり。
+- memory leak検証情報: 直接的なメモリ統計は未実装。cleanup実装はある。
+
+## 9. UI / 日本語化
+- 日本語化済み範囲: Control/Preview 系は概ね日本語。
+- 英語残存: Runtime Debug、一部エラー文、内部ラベル/型名。
+- 各パネル状態:
+  - ControlPanel: 機能多いが密度高く、配信者向けには導線整理余地
+  - PreviewPanel群: 実用域
+  - Preset: 保存/読込/JSON運用可
+  - Animation: 編集可だがDCC的な操作性は未達
+  - Profiler: 最低限あり
+
+## 10. Build / 開発環境
+- package: Vite + React + TS、`@mediapipe/tasks-vision` は `^0.10.22`。
+- `npm install`: 成功。
+- `npm run build`: 成功。
+- `npm run dev`: 起動確認（10秒タイムアウトで意図終了）。
+- 既知ログ: npm の `Unknown env config "http-proxy"` warning。
+
+## 11. 不足点分類
+
+### A. すでに完成している
+- カメラ/MediaPipe基本ループ
+- 複数renderer backend切替
+- warp4種 + skin smoothing/tone
+- preset保存/読込/import/export
+- source/processed preview と snapshot
+
+### B. 実装済みだが品質調整が必要
+- UI導線（配信者向けモード設計）
+- preset schema versioning と互換ポリシー
+- animation編集UX（トラック可視化/操作性）
+- compare/デバッグ情報の見せ方
+
+### C. 実装済みだが不安定
+- MediaPipe wasm `@latest` 参照（将来破壊リスク）
+- 顔未検出時のフェード遷移（ケースにより違和感）
+- backend切替直後/quality変動時の視覚的ちらつき可能性
+
+### D. 未実装
+- keyframe drag UI
+- 高度なcapture（動画録画、連番）
+- メモリプロファイル統合
+- preset/clipの高度管理（タグ、差分、履歴）
+
+### E. Butterflyve組み込み前に必須
+1. MediaPipe資産のバージョン固定（wasm/modelのpinning）
+2. preset schema契約とmigration戦略
+3. renderer backend contractの明文化（API/互換テスト）
+4. 非検出時/急旋回時の品質基準（stability・attenuation調整）
+5. minimal operator UI と advanced UI の分離
+6. e2eスモーク（camera起動→検出→描画→capture）自動化
+
+## 優先Issue候補（上から優先）
+1. MediaPipe wasm/model URL pinning + integrity管理
+2. Preset schema versioning/migration実装
+3. Runtime品質検証シナリオ（顔未検出・横顔・低照度）作成
+4. Animation keyframe drag UI 実装
+5. Renderer backend切替/cleanup回帰テスト
+6. Snapshotのmirror期待値仕様を明文化（プレビューと保存差）
+7. 配信者向けUIプリセット（Simple/Pro）
+8. Perf HUD拡張（median/p95, dropped frames, GC兆候）
