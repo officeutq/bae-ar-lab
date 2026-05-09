@@ -45,6 +45,8 @@ type Props = {
   resolvedActiveOperation: WarpPreset['operations'][number] | null;
   skinSmoothing: { enabled: boolean; strength: number; radius: number; maskOpacity: number; showMaskPreview: boolean };
   updateSkinSmoothing: (patch: Partial<{ enabled: boolean; strength: number; radius: number; maskOpacity: number; showMaskPreview: boolean }>) => void;
+  skinTone: { enabled: boolean; brightness: number; saturation: number; warmth: number; blend: number };
+  updateSkinTone: (patch: Partial<{ enabled: boolean; brightness: number; saturation: number; warmth: number; blend: number }>) => void;
 };
 
 export function ControlPanel(props: Props) {
@@ -233,6 +235,23 @@ export function ControlPanel(props: Props) {
         <label>
           <input type="checkbox" checked={props.skinSmoothing.showMaskPreview} onChange={(e) => props.updateSkinSmoothing({ showMaskPreview: e.target.checked })} />
           Show smoothing mask preview
+        </label>
+        <hr />
+        <label>
+          <input type="checkbox" checked={props.skinTone.enabled} onChange={(e) => props.updateSkinTone({ enabled: e.target.checked })} />
+          Enable skin tone correction
+        </label>
+        <label>Brightness: {props.skinTone.brightness.toFixed(2)}
+          <input type="range" min={-0.2} max={0.2} step={0.01} value={props.skinTone.brightness} onChange={(e) => props.updateSkinTone({ brightness: Number(e.target.value) })} />
+        </label>
+        <label>Saturation: {props.skinTone.saturation.toFixed(2)}
+          <input type="range" min={0} max={2} step={0.01} value={props.skinTone.saturation} onChange={(e) => props.updateSkinTone({ saturation: Number(e.target.value) })} />
+        </label>
+        <label>Warmth: {props.skinTone.warmth.toFixed(2)}
+          <input type="range" min={-1} max={1} step={0.01} value={props.skinTone.warmth} onChange={(e) => props.updateSkinTone({ warmth: Number(e.target.value) })} />
+        </label>
+        <label>Blend: {props.skinTone.blend.toFixed(2)}
+          <input type="range" min={0} max={1} step={0.01} value={props.skinTone.blend} onChange={(e) => props.updateSkinTone({ blend: Number(e.target.value) })} />
         </label>
       </div>
       <ul>

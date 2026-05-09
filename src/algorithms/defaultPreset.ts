@@ -11,6 +11,14 @@ export const defaultWarpPreset: WarpPreset = {
       maskOpacity: 1,
       showMaskPreview: false,
     },
+    skinTone: {
+      type: 'skin_tone',
+      enabled: true,
+      brightness: 0.03,
+      saturation: 1.05,
+      warmth: 0.05,
+      blend: 0.6,
+    },
   },
   operations: [
     {
