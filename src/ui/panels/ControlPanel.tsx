@@ -100,12 +100,12 @@ export function ControlPanel(props: Props) {
   const op = props.activePreset.operations[props.activeOperationIndex];
 
   return (
-    <Panel title="Control Panel">
+    <Panel title="コントロールパネル">
       <div className="operation-controls">
-        <label>Preset name
+        <label>プリセット名
           <input type="text" value={props.presetNameInput} onChange={(e) => props.setPresetNameInput(e.target.value)} />
         </label>
-        <label>Sample presets
+        <label>サンプルプリセット
           <select
             value={props.selectedSamplePresetId}
             onChange={(e) => {
@@ -115,16 +115,16 @@ export function ControlPanel(props: Props) {
               }
             }}
           >
-            <option value="">-- Select sample preset --</option>
-            <option value="natural">Natural</option>
-            <option value="soft_beauty">Soft Beauty</option>
-            <option value="strong_beauty">Strong Beauty</option>
-            <option value="face_slim">Face Slim</option>
-            <option value="skin_tone">Skin Tone</option>
+            <option value="">-- サンプルプリセットを選択 --</option>
+            <option value="natural">ナチュラル</option>
+            <option value="soft_beauty">ソフトビューティー</option>
+            <option value="strong_beauty">ストロングビューティー</option>
+            <option value="face_slim">輪郭補正</option>
+            <option value="skin_tone">肌色</option>
           </select>
         </label>
 
-        <label>Beauty Intensity: {Math.round(props.beautyIntensity * 100)}%
+        <label>美肌強度: {Math.round(props.beautyIntensity * 100)}%
           <input
             type="range"
             min={0}
@@ -134,63 +134,63 @@ export function ControlPanel(props: Props) {
             onChange={(e) => props.setBeautyIntensity(Number(e.target.value))}
           />
         </label>
-        <label>Saved presets
+        <label>保存済みプリセット
           <select value={props.activeStoredPresetId ?? ''} onChange={(e) => props.onLoadPreset(e.target.value)}>
-            <option value="">-- Select preset --</option>
+            <option value="">-- プリセットを選択 --</option>
             {props.presets.map((preset) => <option key={preset.id} value={preset.id}>{preset.name}</option>)}
           </select>
         </label>
         <div className="camera-controls">
-          <button type="button" onClick={props.onCaptureCompare}>Capture Compare</button>
-          <button type="button" onClick={props.onSavePreset}>Save current preset</button>
-          <button type="button" onClick={props.onCreatePreset}>Create new preset</button>
-          <button type="button" onClick={props.onRenamePreset} disabled={!props.activeStoredPresetId}>Rename preset</button>
-          <button type="button" onClick={props.onDeletePreset} disabled={!props.activeStoredPresetId}>Delete preset</button>
-          <button type="button" onClick={props.onExportPreset}>Export JSON</button>
+          <button type="button" onClick={props.onCaptureCompare}>比較キャプチャ</button>
+          <button type="button" onClick={props.onSavePreset}>現在のプリセットを保存</button>
+          <button type="button" onClick={props.onCreatePreset}>新しいプリセットを作成</button>
+          <button type="button" onClick={props.onRenamePreset} disabled={!props.activeStoredPresetId}>プリセット名を変更</button>
+          <button type="button" onClick={props.onDeletePreset} disabled={!props.activeStoredPresetId}>プリセットを削除</button>
+          <button type="button" onClick={props.onExportPreset}>JSONを書き出し</button>
         </div>
-        <label>Import preset JSON (auto import on blur)
-          <textarea rows={6} placeholder="Paste preset JSON" onBlur={(e) => props.onImportPresetText(e.target.value)} />
+        <label>プリセットJSONをインポート（フォーカス解除で反映）
+          <textarea rows={6} placeholder="プリセットJSONを貼り付け" onBlur={(e) => props.onImportPresetText(e.target.value)} />
         </label>
         {props.presetMessage && <p className="camera-status">{props.presetMessage}</p>}
       </div>
 
       <div className="operation-controls">
-        <p className="camera-status">Animation time: {props.animationTime.toFixed(2)}s</p>
-        <p className="camera-status">Loaded clip: {props.loadedAnimationClipName}</p>
-        <p className="camera-status">Active track count: {props.animationTrackCount}</p>
-        <label>Animation clip
+        <p className="camera-status">アニメーション時間: {props.animationTime.toFixed(2)}s</p>
+        <p className="camera-status">読み込み済みクリップ: {props.loadedAnimationClipName}</p>
+        <p className="camera-status">有効トラック数: {props.animationTrackCount}</p>
+        <label>アニメーションクリップ
           <select value={props.selectedAnimationClipId} onChange={(e) => props.onSelectAnimationClip(e.target.value)}>
             {props.animationClips.map((clip) => <option key={clip.id} value={clip.id}>{clip.name}</option>)}
           </select>
         </label>
         <div className="camera-controls">
-          <button type="button" onClick={props.onLoadAnimationClip}>Load clip</button>
+          <button type="button" onClick={props.onLoadAnimationClip}>クリップ読み込み</button>
         </div>
         <div className="camera-controls">
-          <button type="button" onClick={props.onPlayAnimation}>Play animation</button>
-          <button type="button" onClick={props.onPauseAnimation} disabled={!props.animationPlaying}>Pause animation</button>
-          <button type="button" onClick={props.onStopAnimation}>Stop animation</button>
+          <button type="button" onClick={props.onPlayAnimation}>再生</button>
+          <button type="button" onClick={props.onPauseAnimation} disabled={!props.animationPlaying}>一時停止</button>
+          <button type="button" onClick={props.onStopAnimation}>停止</button>
         </div>
-        <label><input type="checkbox" checked={props.animationLoop} onChange={(e) => props.setAnimationLoop(e.target.checked)} />Loop animation</label>
-        <label>Timeline time: {props.animationTime.toFixed(2)}s
+        <label><input type="checkbox" checked={props.animationLoop} onChange={(e) => props.setAnimationLoop(e.target.checked)} />ループ再生</label>
+        <label>タイムライン時間: {props.animationTime.toFixed(2)}s
           <input type="range" min={0} max={props.animationDuration} step={0.01} value={props.animationTime} onChange={(e) => props.onTimelineTimeChange(Number(e.target.value))} />
         </label>
         {props.selectedAnimationClip && (
           <>
-            <label>Clip name
+            <label>クリップ名
               <input type="text" value={props.selectedAnimationClip.name} onChange={(e) => props.onUpdateSelectedClipName(e.target.value)} />
             </label>
-            <label>Clip duration (sec)
+            <label>クリップ長（秒）
               <input type="number" min={0.01} step={0.01} value={props.selectedAnimationClip.duration} onChange={(e) => props.onUpdateSelectedClipDuration(Number(e.target.value))} />
             </label>
-            <label><input type="checkbox" checked={Boolean(props.selectedAnimationClip.loop)} onChange={(e) => props.onUpdateSelectedClipLoop(e.target.checked)} />Clip loop</label>
+            <label><input type="checkbox" checked={Boolean(props.selectedAnimationClip.loop)} onChange={(e) => props.onUpdateSelectedClipLoop(e.target.checked)} />クリップをループ</label>
             <div className="camera-controls">
-              <button type="button" onClick={props.onSelectPrevKeyframe}>Prev keyframe</button>
-              <button type="button" onClick={props.onSelectNextKeyframe}>Next keyframe</button>
-              <button type="button" onClick={props.onAddKeyframe}>Add keyframe</button>
-              <button type="button" onClick={props.onDeleteKeyframe} disabled={props.selectedTrackIndex === null || props.selectedKeyframeIndex === null}>Delete keyframe</button>
+              <button type="button" onClick={props.onSelectPrevKeyframe}>前のキーフレーム</button>
+              <button type="button" onClick={props.onSelectNextKeyframe}>次のキーフレーム</button>
+              <button type="button" onClick={props.onAddKeyframe}>キーフレーム追加</button>
+              <button type="button" onClick={props.onDeleteKeyframe} disabled={props.selectedTrackIndex === null || props.selectedKeyframeIndex === null}>キーフレーム削除</button>
             </div>
-            <p className="camera-status">Tracks (read-only path / editable keyframe time/value)</p>
+            <p className="camera-status">トラック（パスは表示のみ、時間と値は編集可）</p>
             <ul>
               {props.selectedAnimationClip.tracks.map((track, trackIndex) => (
                 <li key={`${track.track}-${trackIndex}`} className={props.selectedTrackIndex === trackIndex ? 'keyframe-track--selected' : ''}>
@@ -211,40 +211,40 @@ export function ControlPanel(props: Props) {
       </div>
 
       <div className="camera-controls">
-        <button type="button" onClick={props.onStartCamera} disabled={props.cameraState === 'starting'}>Start Camera</button>
-        <button type="button" onClick={props.onStopCamera} disabled={props.cameraState !== 'running'}>Stop Camera</button>
+        <button type="button" onClick={props.onStartCamera} disabled={props.cameraState === 'starting'}>カメラ開始</button>
+        <button type="button" onClick={props.onStopCamera} disabled={props.cameraState !== 'running'}>カメラ停止</button>
       </div>
       <div className="overlay-controls">
-        <label><input type="checkbox" checked={props.adaptiveQualityEnabled} onChange={(e) => props.onAdaptiveQualityEnabledChange(e.target.checked)} />Adaptive quality</label>
-        <label>Manual quality
+        <label><input type="checkbox" checked={props.adaptiveQualityEnabled} onChange={(e) => props.onAdaptiveQualityEnabledChange(e.target.checked)} />自動品質調整</label>
+        <label>手動品質
           <select value={props.selectedQuality} onChange={(e) => props.onSelectedQualityChange(e.target.value as QualityLevel)}>
             <option value="ultra">ultra</option><option value="high">high</option><option value="medium">medium</option><option value="low">low</option>
           </select>
         </label>
-        <p className="camera-status">Current quality: {props.currentQuality}</p>
-        <p className="camera-status">Device: {props.capabilities.deviceType} / WebGL2: {props.capabilities.webgl2Available ? 'yes' : 'no'}</p>
-        <p className="camera-status">Recommended: {props.capabilities.recommendedRendererMode}, {props.capabilities.recommendedQuality} (max ops {props.capabilities.maxRecommendedOperationCount})</p>
-        <p className="camera-status">Memory/Cores: {props.capabilities.deviceMemoryGb ?? 'n/a'} GB / {props.capabilities.hardwareConcurrency ?? 'n/a'}</p>
-        <label><input type="checkbox" checked={props.temporalSmoothingEnabled} onChange={(e) => props.setTemporalSmoothingEnabled(e.target.checked)} />Temporal smoothing</label>
-        <label>Smoothing amount: {props.temporalSmoothingAmount.toFixed(2)}
+        <p className="camera-status">現在の品質: {props.currentQuality}</p>
+        <p className="camera-status">端末: {props.capabilities.deviceType} / WebGL2: {props.capabilities.webgl2Available ? 'yes' : 'no'}</p>
+        <p className="camera-status">推奨: {props.capabilities.recommendedRendererMode}, {props.capabilities.recommendedQuality} (max ops {props.capabilities.maxRecommendedOperationCount})</p>
+        <p className="camera-status">メモリ/コア: {props.capabilities.deviceMemoryGb ?? 'n/a'} GB / {props.capabilities.hardwareConcurrency ?? 'n/a'}</p>
+        <label><input type="checkbox" checked={props.temporalSmoothingEnabled} onChange={(e) => props.setTemporalSmoothingEnabled(e.target.checked)} />時間方向スムージング</label>
+        <label>スムージング量: {props.temporalSmoothingAmount.toFixed(2)}
           <input type="range" min={0.01} max={1} step={0.01} value={props.temporalSmoothingAmount} onChange={(e) => props.setTemporalSmoothingAmount(Number(e.target.value))} />
         </label>
-        <p className="camera-status">Temporal enabled: {props.temporalSmoothingEnabled ? 'yes' : 'no'} / alpha: {props.temporalSmoothingAmount.toFixed(2)}</p>
-        <label><input type="checkbox" checked={props.showLandmarks} onChange={(e) => props.setShowLandmarks(e.target.checked)} />Show landmarks</label>
-        <label><input type="checkbox" checked={props.showCenters} onChange={(e) => props.setShowCenters(e.target.checked)} />Show centers</label>
-        <label><input type="checkbox" checked={props.showWarpInfluence} onChange={(e) => props.setShowWarpInfluence(e.target.checked)} />Show warp influence</label>
-        <label><input type="checkbox" checked={props.showWarpCenter} onChange={(e) => props.setShowWarpCenter(e.target.checked)} />Show warp center</label>
-        <label><input type="checkbox" checked={props.showFalloffRings} onChange={(e) => props.setShowFalloffRings(e.target.checked)} />Show falloff rings</label>
-        <label>Renderer Backend
+        <p className="camera-status">時間方向スムージング: {props.temporalSmoothingEnabled ? 'yes' : 'no'} / alpha: {props.temporalSmoothingAmount.toFixed(2)}</p>
+        <label><input type="checkbox" checked={props.showLandmarks} onChange={(e) => props.setShowLandmarks(e.target.checked)} />ランドマーク表示</label>
+        <label><input type="checkbox" checked={props.showCenters} onChange={(e) => props.setShowCenters(e.target.checked)} />中心点表示</label>
+        <label><input type="checkbox" checked={props.showWarpInfluence} onChange={(e) => props.setShowWarpInfluence(e.target.checked)} />ワープ影響範囲表示</label>
+        <label><input type="checkbox" checked={props.showWarpCenter} onChange={(e) => props.setShowWarpCenter(e.target.checked)} />ワープ中心表示</label>
+        <label><input type="checkbox" checked={props.showFalloffRings} onChange={(e) => props.setShowFalloffRings(e.target.checked)} />フォールオフリング表示</label>
+        <label>描画方式
           <select value={props.rendererMode} onChange={(e) => props.setRendererMode(e.target.value as RendererMode)}>
             <option value="canvas2d">Canvas 2D</option>
-            <option value="cpu_warp_debug">CPU Warp Debug</option>
+            <option value="cpu_warp_debug">CPUワープデバッグ</option>
             <option value="webgl" disabled={!props.capabilities.webgl2Available}>WebGL</option>
           </select>
         </label>
       </div>
       <div className="operation-list-controls">
-        <label>Active operation
+        <label>対象オペレーション
           <select value={props.activeOperationIndex} onChange={(e) => props.setActiveOperationIndex(Number(e.target.value))}>
             {props.activePreset.operations.map((operation, index) => (
               <option key={operation.id} value={index}>{index}: {operation.id}</option>
@@ -252,12 +252,12 @@ export function ControlPanel(props: Props) {
           </select>
         </label>
         <div className="camera-controls">
-          <button type="button" onClick={props.addOperation}>Add operation</button>
-          <button type="button" onClick={props.removeOperation} disabled={props.activePreset.operations.length <= 1}>Remove operation</button>
+          <button type="button" onClick={props.addOperation}>オペレーション追加</button>
+          <button type="button" onClick={props.removeOperation} disabled={props.activePreset.operations.length <= 1}>オペレーション削除</button>
         </div>
       </div>
       <div className="operation-controls">
-        <label>Operation id
+        <label>オペレーションID
           <input type="text" value={op?.id ?? ''} onChange={(e) => props.updateOperation('id', e.target.value)} />
         </label>
         <label><input type="checkbox" checked={op?.enabled ?? false} onChange={(e) => props.updateOperation('enabled', e.target.checked)} />Operation enabled</label>
@@ -405,7 +405,7 @@ export function ControlPanel(props: Props) {
       <ul>
         <li>Status: {props.pipelineStatus}</li>
         <li>Preset version: {props.activePreset.version}</li>
-        <li>Operation id: {op?.id}</li>
+        <li>オペレーションID: {op?.id}</li>
         <li>Operation type: {op?.type}</li>
       </ul>
     </Panel>

@@ -9,16 +9,17 @@ type Props = {
   rendererState: CanvasRendererState;
   rendererMode: RendererMode;
   onCaptureProcessed: () => void;
+  previewAspectRatio: string;
 };
 
-export function ProcessedPreviewPanel({ canvas2dRef, webglCanvasRef, rendererState, rendererMode, onCaptureProcessed }: Props) {
+export function ProcessedPreviewPanel({ canvas2dRef, webglCanvasRef, rendererState, rendererMode, onCaptureProcessed, previewAspectRatio }: Props) {
   return (
-    <Panel title="Processed Preview">
-      <canvas className="processed-canvas" ref={canvas2dRef} style={{ display: rendererMode === 'webgl' ? 'none' : 'block' }} />
-      <canvas className="processed-canvas" ref={webglCanvasRef} style={{ display: rendererMode === 'webgl' ? 'block' : 'none' }} />
-      <p className="camera-status">Renderer backend: {getRendererModeLabel(rendererMode)}</p>
-      <p className="camera-status">Renderer state: {rendererState}</p>
-      <button type="button" onClick={onCaptureProcessed}>Capture Processed</button>
+    <Panel title="加工プレビュー">
+      <canvas className="processed-canvas preview-mirror" ref={canvas2dRef} style={{ aspectRatio: previewAspectRatio, display: rendererMode === 'webgl' ? 'none' : 'block' }} />
+      <canvas className="processed-canvas preview-mirror" ref={webglCanvasRef} style={{ aspectRatio: previewAspectRatio, display: rendererMode === 'webgl' ? 'block' : 'none' }} />
+      <p className="camera-status">描画方式: {getRendererModeLabel(rendererMode)}</p>
+      <p className="camera-status">描画状態: {rendererState}</p>
+      <button type="button" onClick={onCaptureProcessed}>加工映像を撮影</button>
     </Panel>
   );
 }

@@ -103,6 +103,7 @@ export function useBeautyLabRuntime(
   const [poseAttenuation, setPoseAttenuation] = useState<PoseAttenuation>({ factor: 1, yawFactor: 1, pitchFactor: 1 });
   const [adaptiveQuality, setAdaptiveQuality] = useState<AdaptiveQualityState>(adaptiveQualityRef.current);
   const [faceStability, setFaceStability] = useState<FaceStabilitySnapshot>(faceStabilityRef.current.getSnapshot());
+  const [previewSize, setPreviewSize] = useState<{ width: number; height: number }>({ width: 16, height: 9 });
 
   const runtimeQuality = resolveRuntimeQuality(adaptiveQualityRef.current);
   const runtimePreset = QUALITY_PRESETS[runtimeQuality];
@@ -289,6 +290,11 @@ export function useBeautyLabRuntime(
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
+        const width = videoRef.current.videoWidth;
+        const height = videoRef.current.videoHeight;
+        if (width > 0 && height > 0) {
+          setPreviewSize({ width, height });
+        }
       }
 
       const videoElement = videoRef.current;
@@ -374,13 +380,14 @@ export function useBeautyLabRuntime(
     faceStabilityRef.current.reset();
     setFaceStability(faceStabilityRef.current.getSnapshot());
     setCameraState('idle');
+    setPreviewSize({ width: 16, height: 9 });
     setCameraErrorMessage(null);
     profilerRef.current.reset();
   };
 
   return {
     refs: { videoRef, overlayCanvasRef, canvas2dRef, webglCanvasRef },
-    state: { cameraState, cameraErrorMessage, rendererState, landmarkerState, landmarkFrame, faceGeometry },
+    state: { cameraState, cameraErrorMessage, rendererState, landmarkerState, landmarkFrame, faceGeometry, previewSize },
     pose: { facePose, poseAttenuation },
     profiler: profilerSnapshot,
     faceStability,

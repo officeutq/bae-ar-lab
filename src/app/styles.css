@@ -338,3 +338,7 @@ input[type='range'] {
 .keyframe-row--selected {
   background: rgba(255, 209, 102, 0.16);
 }
+
+.preview-mirror {
+  transform: scaleX(-1);
+}
