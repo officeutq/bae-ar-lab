@@ -109,6 +109,23 @@ export function createWarpVisualization(context: CanvasRenderingContext2D) {
       context.closePath();
       context.fillStyle = 'rgba(255, 160, 80, 0.12)';
       context.fill();
+      if (operation.weightMap?.type === 'radial_gradient') {
+        const gx = clamp01(operation.weightMap.center.x) * canvas.width;
+        const gy = clamp01(operation.weightMap.center.y) * canvas.height;
+        const gr = Math.max(1, operation.weightMap.radius * Math.min(canvas.width, canvas.height));
+        const grad = context.createRadialGradient(gx, gy, 0, gx, gy, gr);
+        grad.addColorStop(0, 'rgba(255, 80, 80, 0.45)');
+        grad.addColorStop(1, 'rgba(255, 80, 80, 0.0)');
+        context.save();
+        context.beginPath();
+        context.moveTo(polygon[0].x, polygon[0].y);
+        polygon.slice(1).forEach((point) => context.lineTo(point.x, point.y));
+        context.closePath();
+        context.clip();
+        context.fillStyle = grad;
+        context.fillRect(gx - gr, gy - gr, gr * 2, gr * 2);
+        context.restore();
+      }
       context.strokeStyle = 'rgba(255, 120, 40, 0.95)';
       context.lineWidth = 2;
       context.stroke();

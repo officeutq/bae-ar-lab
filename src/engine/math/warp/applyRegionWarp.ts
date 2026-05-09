@@ -1,8 +1,9 @@
 import { computeWarpInfluence } from './computeWarpInfluence';
 import type { Vec2 } from './types';
-import type { WarpFalloffType } from '@app-types/preset';
+import type { WarpFalloffType, WarpWeightMap } from '@app-types/preset';
 
 const EPSILON = 1e-6;
+import { evaluateWeightMap } from './evaluateWeightMap';
 
 export type RegionWarpInput = {
   uv: Vec2;
@@ -11,6 +12,7 @@ export type RegionWarpInput = {
   direction: Vec2;
   width: number;
   falloff: WarpFalloffType;
+  weightMap?: WarpWeightMap;
 };
 
 function pointToSegmentDistance(point: Vec2, start: Vec2, end: Vec2): number {
@@ -53,7 +55,9 @@ export function applyRegionWarp(input: RegionWarpInput) {
     minDistance = Math.min(minDistance, pointToSegmentDistance(input.uv, a, b));
   }
   const normalizedDistance = inside ? 0 : minDistance / width;
-  const influence = computeWarpInfluence(normalizedDistance, input.falloff);
+  const regionInfluence = computeWarpInfluence(normalizedDistance, input.falloff);
+  const weightInfluence = evaluateWeightMap(input.uv, input.weightMap);
+  const influence = regionInfluence * weightInfluence;
   return {
     warpedUv: {
       x: input.uv.x + input.direction.x * input.strength * influence,

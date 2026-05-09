@@ -58,8 +58,11 @@ export function createWebglRenderer({ video, canvas, getOperations, getFaceGeome
   const enabledOpsLocation = gl.getUniformLocation(program, 'uEnabledOps');
   const polygonPointsLocation = gl.getUniformLocation(program, 'uPolygonPoints');
   const polygonCountsLocation = gl.getUniformLocation(program, 'uPolygonCounts');
+  const weightMapTypesLocation = gl.getUniformLocation(program, 'uWeightMapTypes');
+  const weightMapCentersLocation = gl.getUniformLocation(program, 'uWeightMapCenters');
+  const weightMapRadiiLocation = gl.getUniformLocation(program, 'uWeightMapRadii');
 
-  if (positionLocation < 0 || !videoTextureLocation || !warpCentersLocation || !warpRadiiLocation || !warpStrengthsLocation || !warpAxesLocation || !warpDirectionsLocation || !lineStartsLocation || !lineEndsLocation || !lineWidthsLocation || !operationTypesLocation || !falloffTypesLocation || !enabledOpsLocation || !polygonPointsLocation || !polygonCountsLocation) {
+  if (positionLocation < 0 || !videoTextureLocation || !warpCentersLocation || !warpRadiiLocation || !warpStrengthsLocation || !warpAxesLocation || !warpDirectionsLocation || !lineStartsLocation || !lineEndsLocation || !lineWidthsLocation || !operationTypesLocation || !falloffTypesLocation || !enabledOpsLocation || !polygonPointsLocation || !polygonCountsLocation || !weightMapTypesLocation || !weightMapCentersLocation || !weightMapRadiiLocation) {
     gl.deleteProgram(program);
     throw new Error('Failed to resolve shader attributes or uniforms.');
   }
@@ -133,6 +136,9 @@ export function createWebglRenderer({ video, canvas, getOperations, getFaceGeome
       const lineWidths = new Float32Array(MAX_OPERATIONS);
       const polygonPoints = new Float32Array(MAX_OPERATIONS * MAX_POLYGON_POINTS * 2);
       const polygonCounts = new Int32Array(MAX_OPERATIONS);
+      const weightMapTypes = new Int32Array(MAX_OPERATIONS);
+      const weightMapCenters = new Float32Array(MAX_OPERATIONS * 2);
+      const weightMapRadii = new Float32Array(MAX_OPERATIONS);
 
       for (let i = 0; i < MAX_OPERATIONS; i += 1) {
         warpAxes[i * 2] = 1;
@@ -142,6 +148,10 @@ export function createWebglRenderer({ video, canvas, getOperations, getFaceGeome
         operationTypes[i] = 0;
         falloffTypes[i] = 1;
         lineWidths[i] = 0.0001;
+        weightMapTypes[i] = 0;
+        weightMapCenters[i * 2] = 0.5;
+        weightMapCenters[i * 2 + 1] = 0.5;
+        weightMapRadii[i] = 0.5;
       }
 
       if (geometry) {
@@ -159,6 +169,7 @@ export function createWebglRenderer({ video, canvas, getOperations, getFaceGeome
           const directionY = operation.direction.y;
           const operationType = operation.type === 'directional_warp' ? 1 : operation.type === 'line_warp' ? 2 : operation.type === 'region_warp' ? 3 : 0;
           const falloffType = getFalloffUniformValue(operation.falloff.type);
+          const weightMapType = operation.weightMap?.type === 'radial_gradient' ? 1 : 0;
 
           if (![warpCenterX, warpCenterY, warpRadius, warpStrength, warpAxisX, warpAxisY, directionX, directionY].every(Number.isFinite)) {
             return;
@@ -182,6 +193,10 @@ export function createWebglRenderer({ video, canvas, getOperations, getFaceGeome
           lineWidths[index] = Math.max(0.0001, operation.width);
           const pointCount = Math.min(MAX_POLYGON_POINTS, operation.polygon.length);
           polygonCounts[index] = pointCount;
+          weightMapTypes[index] = weightMapType;
+          weightMapCenters[index * 2] = clamp01(operation.weightMap?.center.x ?? 0.5);
+          weightMapCenters[index * 2 + 1] = clamp01(operation.weightMap?.center.y ?? 0.5);
+          weightMapRadii[index] = Math.max(0.0001, operation.weightMap?.radius ?? 0.5);
           for (let p = 0; p < pointCount; p += 1) {
             const point = operation.polygon[p];
             const base = (index * MAX_POLYGON_POINTS + p) * 2;
@@ -205,6 +220,9 @@ export function createWebglRenderer({ video, canvas, getOperations, getFaceGeome
       gl.uniform1fv(lineWidthsLocation, lineWidths);
       gl.uniform2fv(polygonPointsLocation, polygonPoints);
       gl.uniform1iv(polygonCountsLocation, polygonCounts);
+      gl.uniform1iv(weightMapTypesLocation, weightMapTypes);
+      gl.uniform2fv(weightMapCentersLocation, weightMapCenters);
+      gl.uniform1fv(weightMapRadiiLocation, weightMapRadii);
       gl.bindVertexArray(vao);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
       gl.bindVertexArray(null);

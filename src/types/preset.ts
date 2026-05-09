@@ -42,8 +42,16 @@ export type WarpDirection = {
   y: number;
 };
 
+export type WarpWeightMapType = 'uniform' | 'radial_gradient';
+
 export type WarpFalloff = {
   type: WarpFalloffType;
+};
+
+export type WarpWeightMap = {
+  type: WarpWeightMapType;
+  center: WarpAxis;
+  radius: number;
 };
 
 export type WarpOperation = {
@@ -61,6 +69,7 @@ export type WarpOperation = {
   width: number;
   polygon: WarpAxis[];
   binding?: LandmarkLineBinding | LandmarkRegionBinding;
+  weightMap?: WarpWeightMap;
 };
 
 export type WarpPreset = {

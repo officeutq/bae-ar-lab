@@ -17,6 +17,9 @@ uniform int uFalloffTypes[MAX_OPERATIONS];
 uniform int uEnabledOps[MAX_OPERATIONS];
 uniform vec2 uPolygonPoints[MAX_OPERATIONS * MAX_POLYGON_POINTS];
 uniform int uPolygonCounts[MAX_OPERATIONS];
+uniform int uWeightMapTypes[MAX_OPERATIONS];
+uniform vec2 uWeightMapCenters[MAX_OPERATIONS];
+uniform float uWeightMapRadii[MAX_OPERATIONS];
 
 in vec2 v_uv;
 out vec4 outColor;
@@ -75,6 +78,10 @@ void main() {
 
     if (normalizedDistance <= 1.0) {
       float influence = getFalloff(normalizedDistance, uFalloffTypes[i]);
+      if (uWeightMapTypes[i] == 1) {
+        float wDist = length(warpedUv - uWeightMapCenters[i]) / max(0.0001, uWeightMapRadii[i]);
+        influence *= clamp(1.0 - wDist, 0.0, 1.0);
+      }
       if (uOperationTypes[i] == 1 || uOperationTypes[i] == 2 || uOperationTypes[i] == 3) {
         warpedUv = clamp(warpedUv + uWarpDirections[i] * (uWarpStrengths[i] * influence), 0.0, 1.0);
       } else {
