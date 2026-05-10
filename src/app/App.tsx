@@ -437,7 +437,19 @@ export function App() {
     setPresetMessage(result.ok ? `Captured: ${result.filename}` : result.reason);
   };
 
-  const getActiveProcessedCanvas = () => (rendererMode === 'webgl' ? runtime.refs.webglCanvasRef.current : runtime.refs.canvas2dRef.current);
+  const getActiveProcessedCanvas = () => {
+    const preferredCanvas = rendererMode === 'webgl' ? runtime.refs.webglCanvasRef.current : runtime.refs.canvas2dRef.current;
+    const fallbackCanvas = rendererMode === 'webgl' ? runtime.refs.canvas2dRef.current : runtime.refs.webglCanvasRef.current;
+    const isDrawable = (canvas: HTMLCanvasElement | null) => Boolean(canvas && canvas.width > 0 && canvas.height > 0);
+
+    if (isDrawable(preferredCanvas)) {
+      return preferredCanvas;
+    }
+    if (isDrawable(fallbackCanvas)) {
+      return fallbackCanvas;
+    }
+    return preferredCanvas;
+  };
 
   const onCaptureProcessed = () => {
     const result = snapshotExporter.exportCanvasSnapshot(getActiveProcessedCanvas(), 'processed');
