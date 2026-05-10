@@ -36,6 +36,11 @@ viewer/publish stream: raw または service policy により決定
 - 視聴者へ raw を出すか mirror を出すか
 - snapshot / moderation / archive との整合
 
+
+### 6) WebGL processed snapshot の読み出し条件
+- processed snapshot が WebGL canvas を読むケースに対応するため、BAE AR Lab の WebGL context は `preserveDrawingBuffer: true` で生成する。
+- `preserveDrawingBuffer: true` は描画性能へ影響する可能性があるため、Butterflyve 本番 publish の capture 経路では再評価する。
+
 ## 現在実装との対応
 - Preview mirror: `SourcePreviewPanel` / `ProcessedPreviewPanel` の `preview-mirror` class で実現。
 - Snapshot raw: `createSnapshotExporter` は video/canvas の生ピクセルを PNG 化。

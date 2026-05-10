@@ -36,7 +36,13 @@ function getFalloffUniformValue(type: WarpOperation['falloff']['type']) {
 }
 
 export function createWebglRenderer({ video, canvas, getOperations, getFaceGeometry, getSkinSmoothing, getSkinTone, getRenderScale, getFrameSkip, getSmoothingSampleCount, onRenderFrame }: CreateWebglRendererOptions): RendererBackend {
-  const gl = canvas.getContext('webgl2');
+  // Required so processed snapshot/export can read the WebGL canvas.
+  // This may have a performance cost; revisit for production capture path.
+  const gl = canvas.getContext('webgl2', {
+    alpha: false,
+    antialias: true,
+    preserveDrawingBuffer: true,
+  });
 
   if (!gl) {
     throw new Error('WebGL2 context is not available.');
