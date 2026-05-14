@@ -207,3 +207,36 @@
 - Beauty Debug Overlay mode を追加 (`off` / `skin_mask` / `warp_influence` / `attenuation` / `stability`)。
 - 加工プレビュー上に専用 canvas を重ね、顔マスク・warp範囲・姿勢弱化・安定性を可視化。
 - debug overlay は UI 表示専用で、renderer の実処理および snapshot/export raw には非干渉。
+
+## 14. TikTok品質ガイドライン（2026-05-14 追加）
+- 追加ドキュメント: `docs/tiktok-quality-guidelines.md`。
+- 目的: TikTok品質の定義、評価軸、合格/不合格判定、preset優先順位、Butterflyve統合前チェック項目を明文化。
+- quality評価軸: A〜G（自然さ / 盛れ感 / 横顔耐性 / 動作安定性 / 低照度耐性 / パフォーマンス / 配信向けUX）を統一運用。
+- preset役割:
+  - `natural_beauty`: 安全側baseline
+  - `clean_beauty`: 少し盛れる比較軸
+  - `glam_beauty`: 盛り強め（予定）
+  - `lite_beauty`: 低負荷（予定）
+- overlay/compare運用:
+  - overlayは `skin_mask` / `warp_influence` / `attenuation` / `stability` の確認用途。
+  - compare/snapshot は ON/OFF・preset間の差分記録用途。
+- 今後のtuning roadmap:
+  1) baseline（natural）固定
+  2) clean最適化
+  3) lite整備（モバイル/長時間）
+  4) glam拡張（破綻回避ルール付き）
+- Butterflyve統合前の必須品質項目:
+  - 30分以上安定動作
+  - モバイル検証
+  - thermal確認
+  - 配信遅延確認
+  - snapshot/export確認
+  - mirror UX確認
+  - beauty ON/OFF比較
+  - low-light確認
+- 現時点の未達明示:
+  - モバイル thermal 未検証
+  - 長時間配信未検証
+  - 強加工系 preset 未調整
+  - 実配信 publish 未統合
+  - GPU負荷計測不足
