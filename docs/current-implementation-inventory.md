@@ -252,3 +252,10 @@
 - roadmap反映:
   - 今後の mobile/thermal 検証は `lite_beauty` を基準に比較評価する。
   - `clean_beauty` は表現比較軸、`natural_beauty` は安全側baseline、`lite_beauty` は低負荷運用軸として役割分離。
+
+## 16. モバイル実機検証ログ運用（2026-05-14 追加）
+- 追加ドキュメント: `docs/mobile-quality-test-log.md`。
+- iPhone / Android 実機検証ログを比較可能なフォーマットで記録する運用を整備。
+- 記録対象: 端末・OS・browser・preset・renderer・duration・FPS・frame time・MediaPipe time・renderer time・発熱・追従安定性・クラッシュ有無。
+- 検証フェーズ: mobile / thermal / long-running 評価フェーズへ移行。
+- 優先対象 preset: `lite_beauty` を最初の検証対象として 5分/10分/30分テストを開始。
