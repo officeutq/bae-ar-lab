@@ -12,7 +12,7 @@ iPhone Safari / Chrome で `getUserMedia` を使ったカメラ検証を行う�
 npm run dev:https
 ```
 
-`dev:https` は `vite --host 0.0.0.0` を実行し、`vite.config.ts` の `server.https` 設定により HTTPS 起動します。
+`dev:https` は `vite --host 0.0.0.0` を実行し、`vite.config.ts` の `server.https` 設定により HTTPS 起動します。さらに `vite-plugin-mkcert`（`mkcert()`）によりローカル開発用証明書を生成・利用します。
 
 ## iPhone 実機検証手順
 
