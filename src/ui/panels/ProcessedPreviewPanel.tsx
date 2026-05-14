@@ -17,10 +17,10 @@ type Props = {
 export function ProcessedPreviewPanel({ canvas2dRef, webglCanvasRef, beautyDebugOverlayCanvasRef, rendererState, rendererMode, beautyDebugOverlayMode, onCaptureProcessed, previewAspectRatio }: Props) {
   return (
     <Panel title="加工プレビュー">
-      <div className="source-preview preview-mirror preview-stack" style={{ aspectRatio: previewAspectRatio }}>
-        <canvas className="processed-canvas" ref={canvas2dRef} style={{ aspectRatio: previewAspectRatio, display: rendererMode === 'webgl' ? 'none' : 'block' }} />
-        <canvas className="processed-canvas" ref={webglCanvasRef} style={{ aspectRatio: previewAspectRatio, display: rendererMode === 'webgl' ? 'block' : 'none' }} />
-        <canvas className="overlay-canvas beauty-debug-overlay" ref={beautyDebugOverlayCanvasRef} style={{ display: beautyDebugOverlayMode === 'off' ? 'none' : 'block' }} />
+      <div className="processed-preview preview-mirror preview-stack" data-preview-role="processed" style={{ aspectRatio: previewAspectRatio }}>
+        <canvas className="processed-canvas" data-preview-role="processed-canvas2d" ref={canvas2dRef} style={{ aspectRatio: previewAspectRatio, display: rendererMode === 'webgl' ? 'none' : 'block' }} />
+        <canvas className="processed-canvas" data-preview-role="processed-webgl" ref={webglCanvasRef} style={{ aspectRatio: previewAspectRatio, display: rendererMode === 'webgl' ? 'block' : 'none' }} />
+        <canvas className="overlay-canvas beauty-debug-overlay" data-preview-role="beauty-debug-overlay" ref={beautyDebugOverlayCanvasRef} style={{ display: beautyDebugOverlayMode === 'off' ? 'none' : 'block' }} />
       </div>
       <p className="camera-status">描画方式: {getRendererModeLabel(rendererMode)}</p>
       <p className="camera-status">描画状態: {rendererState}</p>
