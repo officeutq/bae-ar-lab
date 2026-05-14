@@ -1,7 +1,7 @@
 import type { WarpFalloffType, WarpOperationType, WarpPreset, WarpTarget, WarpWeightMapType } from '@app-types/preset';
 import type { StoredPreset } from '@engine/presets/types';
 import type { RendererMode } from '@engine/render/types';
-import type { SamplePresetId } from '@algorithms/presets';
+import { samplePresetList, type SamplePresetId } from '@algorithms/presets';
 import type { QualityLevel } from '@engine/performance/adaptiveQuality';
 import type { BeautyDebugOverlayMode } from '@engine/overlay/beautyDebugOverlay';
 import type { DeviceCapabilities } from '@engine/performance/detectDeviceCapabilities';
@@ -119,11 +119,9 @@ export function ControlPanel(props: Props) {
             }}
           >
             <option value="">-- サンプルプリセットを選択 --</option>
-            <option value="natural_beauty">ナチュラル美顔</option>
-            <option value="soft_beauty">ソフトビューティー</option>
-            <option value="strong_beauty">ストロングビューティー</option>
-            <option value="face_slim">輪郭補正</option>
-            <option value="skin_tone">肌色</option>
+            {samplePresetList.map((sample) => (
+              <option key={sample.id} value={sample.id}>{sample.label}</option>
+            ))}
           </select>
         </label>
 
