@@ -141,7 +141,7 @@ BAE AR Lab が目指す TikTok品質は、以下を同時に満たす状態と�
 | natural_beauty | 安全側 baseline（自然寄りの標準） |
 | clean_beauty | 少し盛れる（比較・微調整用） |
 | glam_beauty | 盛り強め（予定） |
-| lite_beauty | 低負荷（予定） |
+| lite_beauty | 低負荷（モバイル/長時間配信向け基準プリセット） |
 
 ### tuning優先順位
 
@@ -190,6 +190,20 @@ BAE AR Lab が目指す TikTok品質は、以下を同時に満たす状態と�
 
 1. baseline固定: `natural_beauty` を評価軸A〜Gで再チューニング
 2. 比較軸整備: `clean_beauty` と ON/OFF 比較テンプレート化
-3. 運用性能整備: `lite_beauty` + thermal/長時間評価
+3. 運用性能整備: `lite_beauty` を基準に thermal/長時間評価（mobile優先）
 4. 表現拡張: `glam_beauty` を破綻回避ガード付きで追加
 5. 統合判定: Butterflyve組み込み前チェックリストを満たした preset のみ昇格
+
+
+## 10. lite_beauty の運用位置づけ（2026-05-14 追加）
+
+- `lite_beauty` は **モバイル端末・長時間配信向けの低負荷プリセット** として追加。
+- 目的は「自然さ > 軽さ > 少し盛れる」で、強加工ではなく安定運用を優先。
+- 評価対象:
+  - mobile thermal（発熱しにくさ）
+  - long-running（30分以上の連続運用安定性）
+  - 低照度時の破綻しにくさ
+- compare/overlay 運用基準:
+  - `warp_influence` で `clean_beauty` より影響範囲が小さいこと
+  - `natural_beauty` よりも軽量寄りであること
+  - compare ON/OFF で「わずかに印象改善、加工感は少ない」を満たすこと
