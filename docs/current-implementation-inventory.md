@@ -202,7 +202,7 @@
   - `clean_beauty`（きれいめ）: natural より一段強い比較用プリセット。
 - 次に作るべき preset 候補:
   - `glam_beauty`（盛り強め）
-  - `lite_beauty`（低負荷）
+  - `lite_beauty`（低負荷、追加済み）
 
 - Beauty Debug Overlay mode を追加 (`off` / `skin_mask` / `warp_influence` / `attenuation` / `stability`)。
 - 加工プレビュー上に専用 canvas を重ね、顔マスク・warp範囲・姿勢弱化・安定性を可視化。
@@ -216,7 +216,7 @@
   - `natural_beauty`: 安全側baseline
   - `clean_beauty`: 少し盛れる比較軸
   - `glam_beauty`: 盛り強め（予定）
-  - `lite_beauty`: 低負荷（予定）
+  - `lite_beauty`: 低負荷（モバイル/thermal/長時間評価の基準）
 - overlay/compare運用:
   - overlayは `skin_mask` / `warp_influence` / `attenuation` / `stability` の確認用途。
   - compare/snapshot は ON/OFF・preset間の差分記録用途。
@@ -240,3 +240,15 @@
   - 強加工系 preset 未調整
   - 実配信 publish 未統合
   - GPU負荷計測不足
+
+
+## 15. lite_beauty 追加（2026-05-14）
+- 追加preset: `lite_beauty`（表示名: `軽量美顔`）。
+- 位置づけ: mobile thermal / long-running 配信評価の基準となる low-cost preset。
+- 設計方針:
+  - operation数を `natural_beauty` 以下に抑制（目2 + 輪郭2 の計4）。
+  - nose/mouth warp は省略し、長時間運用での違和感と演算負荷を低減。
+  - appearance は弱め設定（skin smoothing / skin tone を軽量寄り）。
+- roadmap反映:
+  - 今後の mobile/thermal 検証は `lite_beauty` を基準に比較評価する。
+  - `clean_beauty` は表現比較軸、`natural_beauty` は安全側baseline、`lite_beauty` は低負荷運用軸として役割分離。
