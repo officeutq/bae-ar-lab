@@ -134,3 +134,19 @@
 6. `なし` に戻してオーバーレイが消えることを確認する
 
 ※ オーバーレイは preview 表示専用で、snapshot/export の raw 出力には含まれない。
+
+
+## 6. `natural_beauty` / `clean_beauty` 比較観点
+
+### 比較手順
+1. サンプルプリセットで `ナチュラル美顔`（`natural_beauty`）を選択し、正面で snapshot を保存する。
+2. 同一条件で `きれいめ美顔`（`clean_beauty`）へ切り替え、snapshot を保存する。
+3. Compare panel で source / natural / clean を切り替え、差分を確認する。
+4. 横顔（左右）でも同様に比較し、破綻がないか確認する。
+
+### 期待する差分
+- clean は natural より肌が少し均一に見える（skin smoothing が一段強い）。
+- clean は natural より目元が少しはっきりする（eye radial warp が強い）。
+- clean は natural より輪郭が少し整う（jaw line warp が強い）。
+- 鼻・口は clean で微増させるが、加工感が強すぎない。
+- Beauty Debug Overlay の `変形範囲` で、clean の影響が natural よりやや広く/強く見える。

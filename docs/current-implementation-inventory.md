@@ -198,8 +198,9 @@
   - 端末別（iOS/Android/PC）での最適強度チューニング。
   - 低照度 + 高ISO ノイズ時の skin smoothing 見え方調整。
   - 鼻・口の微調整量（自然さの個人差が出やすい）。
+- 追加済み preset:
+  - `clean_beauty`（きれいめ）: natural より一段強い比較用プリセット。
 - 次に作るべき preset 候補:
-  - `clean_beauty`（きれいめ）
   - `glam_beauty`（盛り強め）
   - `lite_beauty`（低負荷）
 
