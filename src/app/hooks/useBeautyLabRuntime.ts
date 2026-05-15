@@ -79,10 +79,10 @@ export function useBeautyLabRuntime(
   const profilerRef = useRef(createProfiler({ sampleWindow: 240 }));
   const detectFrameCountRef = useRef(0);
   const lastLandmarkFrameRef = useRef<FaceLandmarksFrame | null>(null);
-  const adaptiveQualityControllerRef = useRef(createAdaptiveQualityController(initialQuality));
+  const adaptiveQualityControllerRef = useRef(createAdaptiveQualityController('high'));
   const landmarkTemporalFilterRef = useRef(createTemporalFilter());
   const operationTemporalFilterRef = useRef(createTemporalFilter());
-  const adaptiveQualityRef = useRef<AdaptiveQualityState>({ enabled: adaptiveQualityEnabledByDefault, selectedQuality: initialQuality, currentQuality: initialQuality, reason: 'manual' });
+  const adaptiveQualityRef = useRef<AdaptiveQualityState>({ enabled: adaptiveQualityEnabledByDefault, selectedQuality: initialQuality, currentQuality: 'high', reason: 'manual' });
   const faceStabilityRef = useRef(createFaceStabilityController());
   const lastStableGeometryRef = useRef<FaceGeometry | null>(null);
   const skinSmoothingRef = useRef(skinSmoothing);
@@ -241,7 +241,7 @@ export function useBeautyLabRuntime(
       const nextSnapshot = profilerRef.current.commitFrame();
       const adaptiveRef = adaptiveQualityRef.current;
       if (adaptiveRef.enabled) {
-        const decision = adaptiveQualityControllerRef.current.evaluate(nextSnapshot.avgFps30, nextSnapshot.timestamp);
+        const decision = adaptiveQualityControllerRef.current.evaluate(nextSnapshot.avgFps30, nextSnapshot.timestamp, nextSnapshot.fpsSampleCount);
         setQualityLockRemainingMs(adaptiveQualityControllerRef.current.getLockRemainingMs(nextSnapshot.timestamp));
         setQualityRecoveryElapsedMs(adaptiveQualityControllerRef.current.getRecoveryElapsedMs(nextSnapshot.timestamp));
         if (decision.changed) {

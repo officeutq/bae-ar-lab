@@ -172,3 +172,16 @@
 - warmup: 起動後 `10s` は adaptive quality 判定を停止。
 - quality lock: quality変更後 `10s` は再変更を停止（chattering防止）。
 - Runtime Debug: `quality lock remaining` を秒表示して状態確認可能。
+
+## Adaptive Quality 起動時仕様（2026-05更新）
+
+- 起動時の `current quality` は常に `high` で初期化する。
+- 起動後 `QUALITY_WARMUP_MS = 10000ms` は warmup 期間として `high` 固定にする。
+- warmup 中は `fps_drop` 判定を行わない。
+- 以下のFPSは downshift 判定に使わない:
+  - `fps <= 0`
+  - `NaN`
+  - `Infinity` / 非有限値
+  - 必要サンプル数未満（`QUALITY_MIN_FPS_SAMPLES` 未満）
+- 無効FPS/サンプル不足時は quality を維持し、`insufficient_samples` または `warmup` として扱う。
+- warmup 終了後に FPS が既に低い場合は、段階回復待ちを挟まず、現在FPSに応じた適切な quality へ速やかに downshift する。

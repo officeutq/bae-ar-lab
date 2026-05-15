@@ -3,6 +3,7 @@ export type ProfilerPhase = 'frame' | 'mediapipe' | 'render';
 export type ProfilerSnapshot = {
   fps: number;
   avgFps30: number;
+  fpsSampleCount: number;
   frameTimeMs: number;
   avgFrameTimeMs30: number;
   mediapipeMs: number;
@@ -38,6 +39,7 @@ export function createProfiler({ sampleWindow = 30 }: CreateProfilerOptions = {}
   let snapshot: ProfilerSnapshot = {
     fps: 0,
     avgFps30: 0,
+    fpsSampleCount: 0,
     frameTimeMs: 0,
     avgFrameTimeMs30: 0,
     mediapipeMs: 0,
@@ -76,6 +78,7 @@ export function createProfiler({ sampleWindow = 30 }: CreateProfilerOptions = {}
     snapshot = {
       fps: frameTime > 0 ? 1000 / frameTime : 0,
       avgFps30: avgFrameTime > 0 ? 1000 / avgFrameTime : 0,
+      fpsSampleCount: frameDurations.length,
       frameTimeMs: frameTime,
       avgFrameTimeMs30: avgFrameTime,
       mediapipeMs: latestMediapipeMs,
