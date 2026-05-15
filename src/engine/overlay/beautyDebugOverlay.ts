@@ -61,6 +61,23 @@ const resolveLineWarpPoints = (operation: WarpOperation, geometry: FaceGeometry)
   };
 };
 
+const resolveRegionWarpPolygon = (operation: WarpOperation, geometry: FaceGeometry): Point2D[] | null => {
+  if (operation.binding?.type === 'landmark_region') {
+    if (operation.binding.region === 'jaw_region') return geometry.jawPolygon;
+    if (operation.binding.region === 'left_cheek') return geometry.leftCheekPolygon;
+    if (operation.binding.region === 'right_cheek') return geometry.rightCheekPolygon;
+  }
+
+  if (operation.target === 'jaw_region') {
+    return geometry.jawPolygon;
+  }
+
+  if (operation.target === 'left_cheek') return geometry.leftCheekPolygon;
+  if (operation.target === 'right_cheek') return geometry.rightCheekPolygon;
+
+  return null;
+};
+
 const faceMaskFromGeometry = (geometry: FaceGeometry): Point2D[] => {
   const region = [...geometry.leftCheekPolygon, ...[...geometry.rightCheekPolygon].reverse()];
   if (region.length >= 6) return region;
@@ -117,7 +134,11 @@ export function renderBeautyDebugOverlay(canvas: HTMLCanvasElement, snapshot: Be
         return;
       }
       if (operation.type === 'region_warp') {
-        const polygon = operation.polygon.map((point) => toCanvasPoint(canvas, point));
+        const resolvedPolygon = resolveRegionWarpPolygon(operation, geometry);
+        if (!resolvedPolygon || resolvedPolygon.length < 3) {
+          return;
+        }
+        const polygon = resolvedPolygon.map((point) => toCanvasPoint(canvas, point));
         drawPolygon(context, polygon);
         context.fill();
         context.stroke();
