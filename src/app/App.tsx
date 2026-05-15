@@ -565,7 +565,10 @@ export function App() {
           poseAttenuationFactor={runtime.pose.poseAttenuation.factor}
           poseAttenuationYawFactor={runtime.pose.poseAttenuation.yawFactor}
           poseAttenuationPitchFactor={runtime.pose.poseAttenuation.pitchFactor}
-          activeOperationCount={runtime.profiler.operationCount}
+          activeOperationCount={runtime.warpDebug.activeOperationCount}
+          resolvedOperationCount={runtime.warpDebug.resolvedOperationCount}
+          filteredOperationCount={runtime.warpDebug.filteredOperationCount}
+          warpStrengthScale={runtime.quality.runtimePreset.warpStrengthScale}
           frameSkip={runtime.quality.runtimePreset.frameSkip}
           currentQuality={runtime.quality.runtimeQuality}
           selectedQuality={runtime.quality.adaptiveQuality.selectedQuality}
