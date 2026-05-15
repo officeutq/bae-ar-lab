@@ -538,6 +538,7 @@ export function App() {
           currentQuality={runtime.quality.runtimeQuality}
           selectedQuality={runtime.quality.adaptiveQuality.selectedQuality}
           adaptiveQualityEnabled={runtime.quality.adaptiveQuality.enabled}
+          adaptiveQualityReason={runtime.quality.adaptiveQuality.reason}
           renderScale={runtime.quality.runtimePreset.renderScale}
           rendererMode={rendererMode}
           fps={runtime.profiler.fps}

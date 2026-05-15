@@ -82,7 +82,7 @@ export function useBeautyLabRuntime(
   const adaptiveQualityControllerRef = useRef(createAdaptiveQualityController(initialQuality));
   const landmarkTemporalFilterRef = useRef(createTemporalFilter());
   const operationTemporalFilterRef = useRef(createTemporalFilter());
-  const adaptiveQualityRef = useRef<AdaptiveQualityState>({ enabled: adaptiveQualityEnabledByDefault, selectedQuality: initialQuality, currentQuality: initialQuality });
+  const adaptiveQualityRef = useRef<AdaptiveQualityState>({ enabled: adaptiveQualityEnabledByDefault, selectedQuality: initialQuality, currentQuality: initialQuality, reason: 'manual' });
   const faceStabilityRef = useRef(createFaceStabilityController());
   const lastStableGeometryRef = useRef<FaceGeometry | null>(null);
   const skinSmoothingRef = useRef(skinSmoothing);
@@ -216,13 +216,20 @@ export function useBeautyLabRuntime(
       const geometryForRuntime = detectedGeometry ?? (stability.fade > 0 ? lastStableGeometryRef.current : null);
       setFaceGeometry(geometryForRuntime);
       faceGeometryRef.current = geometryForRuntime;
-      const boundOperations = resolveOperationBindings(operationsRef.current, geometryForRuntime).map((operation) => ({
-        ...operation,
-        strength: operation.strength * stability.fade * runtimeAttenuation.factor,
-      }));
+      const runtimeQualityLevel = resolveRuntimeQuality(adaptiveQualityRef.current);
+      const runtimeQualityPreset = QUALITY_PRESETS[runtimeQualityLevel];
+      const boundOperations = resolveOperationBindings(operationsRef.current, geometryForRuntime)
+        .filter((operation) => !runtimeQualityPreset.disabledTargets.includes(operation.target))
+        .map((operation) => ({
+          ...operation,
+          strength: operation.strength * runtimeQualityPreset.warpStrengthScale * stability.fade * runtimeAttenuation.factor,
+        }));
+      const cappedOperations = runtimeQualityPreset.maxActiveOperations === null
+        ? boundOperations
+        : boundOperations.map((operation, index) => ({ ...operation, enabled: operation.enabled && index < (runtimeQualityPreset.maxActiveOperations ?? Number.POSITIVE_INFINITY) }));
       const resolvedOperations = temporalSmoothing.enabled
-        ? smoothOperations(boundOperations, operationTemporalFilterRef.current, temporalSmoothing.alpha)
-        : boundOperations;
+        ? smoothOperations(cappedOperations, operationTemporalFilterRef.current, temporalSmoothing.alpha)
+        : cappedOperations;
       resolvedOperationsRef.current = resolvedOperations;
       const activeIndex = operationsRef.current.findIndex((op) => op.id === activeOperationRef.current?.id);
       resolvedActiveOperationRef.current = activeIndex >= 0 ? resolvedOperations[activeIndex] : null;
@@ -234,7 +241,7 @@ export function useBeautyLabRuntime(
       if (adaptiveRef.enabled) {
         const decision = adaptiveQualityControllerRef.current.evaluate(nextSnapshot.avgFps30, nextSnapshot.timestamp);
         if (decision.changed) {
-          adaptiveQualityRef.current = { ...adaptiveRef, currentQuality: decision.nextQuality };
+          adaptiveQualityRef.current = { ...adaptiveRef, currentQuality: decision.nextQuality, reason: decision.reason };
           setAdaptiveQuality(adaptiveQualityRef.current);
         }
       }
@@ -368,12 +375,12 @@ export function useBeautyLabRuntime(
       runtimeQuality,
       runtimePreset,
       setAdaptiveEnabled: (enabled: boolean) => {
-        adaptiveQualityRef.current = { ...adaptiveQualityRef.current, enabled };
+        adaptiveQualityRef.current = { ...adaptiveQualityRef.current, enabled, reason: 'manual' };
         setAdaptiveQuality(adaptiveQualityRef.current);
       },
       setSelectedQuality: (selectedQuality: QualityLevel) => {
         adaptiveQualityControllerRef.current.setQuality(selectedQuality);
-        adaptiveQualityRef.current = { ...adaptiveQualityRef.current, selectedQuality, currentQuality: selectedQuality };
+        adaptiveQualityRef.current = { ...adaptiveQualityRef.current, selectedQuality, currentQuality: selectedQuality, reason: 'manual' };
         setAdaptiveQuality(adaptiveQualityRef.current);
       },
     },

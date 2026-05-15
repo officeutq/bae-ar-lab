@@ -50,7 +50,7 @@ export function detectDeviceCapabilities(): DeviceCapabilities {
   } else if (isMobileBrowser) {
     recommendedQuality = 'medium';
   } else if ((deviceMemoryGb ?? 8) >= 8 && (hardwareConcurrency ?? 8) >= 8) {
-    recommendedQuality = 'ultra';
+    recommendedQuality = 'high';
   }
 
   const recommendedRendererMode: RendererMode = webgl2Available ? 'webgl' : 'canvas2d';
@@ -61,7 +61,7 @@ export function detectDeviceCapabilities(): DeviceCapabilities {
     hardwareConcurrency,
     isMobileBrowser,
     deviceType: isMobileBrowser ? 'mobile' : 'desktop',
-    maxRecommendedOperationCount: recommendedQuality === 'ultra' ? 16 : recommendedQuality === 'high' ? 12 : recommendedQuality === 'medium' ? 8 : 5,
+    maxRecommendedOperationCount: recommendedQuality === 'high' ? 12 : recommendedQuality === 'medium' ? 8 : recommendedQuality === 'low' ? 6 : 5,
     recommendedQuality,
     recommendedRendererMode,
     adaptiveQualityDefaultEnabled: true,
