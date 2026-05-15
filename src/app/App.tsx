@@ -569,6 +569,7 @@ export function App() {
           adaptiveQualityEnabled={runtime.quality.adaptiveQuality.enabled}
           adaptiveQualityReason={runtime.quality.adaptiveQuality.reason}
           qualityLockRemainingMs={runtime.quality.qualityLockRemainingMs}
+          qualityRecoveryElapsedMs={runtime.quality.qualityRecoveryElapsedMs}
           renderScale={runtime.quality.runtimePreset.renderScale}
           rendererMode={rendererMode}
           fps={runtime.profiler.fps}

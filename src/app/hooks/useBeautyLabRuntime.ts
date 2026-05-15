@@ -99,6 +99,7 @@ export function useBeautyLabRuntime(
   const [poseAttenuation, setPoseAttenuation] = useState<PoseAttenuation>({ factor: 1, yawFactor: 1, pitchFactor: 1 });
   const [adaptiveQuality, setAdaptiveQuality] = useState<AdaptiveQualityState>(adaptiveQualityRef.current);
   const [qualityLockRemainingMs, setQualityLockRemainingMs] = useState(0);
+  const [qualityRecoveryElapsedMs, setQualityRecoveryElapsedMs] = useState(0);
   const [faceStability, setFaceStability] = useState<FaceStabilitySnapshot>(faceStabilityRef.current.getSnapshot());
   const [previewSize, setPreviewSize] = useState<{ width: number; height: number }>({ width: 16, height: 9 });
 
@@ -242,6 +243,7 @@ export function useBeautyLabRuntime(
       if (adaptiveRef.enabled) {
         const decision = adaptiveQualityControllerRef.current.evaluate(nextSnapshot.avgFps30, nextSnapshot.timestamp);
         setQualityLockRemainingMs(adaptiveQualityControllerRef.current.getLockRemainingMs(nextSnapshot.timestamp));
+        setQualityRecoveryElapsedMs(adaptiveQualityControllerRef.current.getRecoveryElapsedMs(nextSnapshot.timestamp));
         if (decision.changed) {
           adaptiveQualityRef.current = { ...adaptiveRef, currentQuality: decision.nextQuality, reason: decision.reason };
           setAdaptiveQuality(adaptiveQualityRef.current);
@@ -377,6 +379,7 @@ export function useBeautyLabRuntime(
       runtimeQuality,
       runtimePreset,
       qualityLockRemainingMs,
+      qualityRecoveryElapsedMs,
       setAdaptiveEnabled: (enabled: boolean) => {
         adaptiveQualityRef.current = { ...adaptiveQualityRef.current, enabled, reason: 'manual' };
         setAdaptiveQuality(adaptiveQualityRef.current);
