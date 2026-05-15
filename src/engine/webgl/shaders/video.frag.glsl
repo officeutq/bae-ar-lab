@@ -20,6 +20,8 @@ uniform int uPolygonCounts[MAX_OPERATIONS];
 uniform int uWeightMapTypes[MAX_OPERATIONS];
 uniform vec2 uWeightMapCenters[MAX_OPERATIONS];
 uniform float uWeightMapRadii[MAX_OPERATIONS];
+uniform int uOperationCount;
+uniform int uDebugWarpMode;
 uniform int uSmoothingEnabled;
 uniform float uSmoothingStrength;
 uniform float uSmoothingRadius;
@@ -63,6 +65,7 @@ void main() {
   vec2 warpedUv = vec2(v_uv.x, 1.0 - v_uv.y);
 
   for (int i = 0; i < MAX_OPERATIONS; i++) {
+    if (i >= uOperationCount) break;
     if (uEnabledOps[i] == 0) continue;
 
     float normalizedDistance = 2.0;
@@ -119,6 +122,13 @@ void main() {
   }
 
   vec4 baseColor = texture(uVideoTexture, warpedUv);
+  if (uDebugWarpMode == 1) {
+    vec2 debugCenter = vec2(0.5, 0.5);
+    vec2 towardCenter = (debugCenter - warpedUv) * 0.2;
+    vec2 debugUv = clamp(warpedUv + towardCenter, 0.0, 1.0);
+    baseColor = texture(uVideoTexture, debugUv);
+    baseColor.rgb = mix(baseColor.rgb, vec3(1.0, 0.2, 0.2), 0.2);
+  }
   float mask = polygonMask(warpedUv) * clamp(uSmoothingMaskOpacity, 0.0, 1.0);
   if (uSmoothingEnabled == 1 && mask > 0.0) {
     vec2 texel = vec2(1.0 / 1920.0, 1.0 / 1080.0) * max(0.001, uSmoothingRadius);
