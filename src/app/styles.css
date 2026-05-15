@@ -119,6 +119,36 @@ ul {
   inset: 0;
 }
 
+.adaptive-quality-hud {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  z-index: 4;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 214, 120, 0.5);
+  background: rgba(23, 27, 38, 0.88);
+  color: #ffe6a8;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  pointer-events: none;
+}
+
+.adaptive-quality-hud__title {
+  font-weight: 700;
+}
+
+.adaptive-quality-hud__transition,
+.adaptive-quality-hud__reason {
+  color: #f6f0d5;
+}
+
+.adaptive-quality-hud__details {
+  display: grid;
+  margin-top: 3px;
+  color: #dccfa6;
+}
+
 .camera-status {
   margin: 10px 0 0;
   color: #d2d9ea;

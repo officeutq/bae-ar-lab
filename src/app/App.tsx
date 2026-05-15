@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type MouseEvent } from 'react';
+import type { AdaptiveQualityReason, QualityLevel } from '@engine/performance/adaptiveQuality';
 import type { WarpFalloffType } from '@app-types/preset';
 import { defaultWarpPreset } from '@algorithms/defaultPreset';
 import { samplePresets, type SamplePresetId } from '@algorithms/presets';
@@ -163,6 +164,12 @@ export function App() {
   const [compareCapture, setCompareCapture] = useState<CompareCapture | null>(null);
   const [temporalSmoothingEnabled, setTemporalSmoothingEnabled] = useState(true);
   const [temporalSmoothingAlpha, setTemporalSmoothingAlpha] = useState(0.35);
+  const [adaptiveQualityHud, setAdaptiveQualityHud] = useState<{ visible: boolean; from: QualityLevel; to: QualityLevel; reason: AdaptiveQualityReason }>({
+    visible: false,
+    from: capabilities.recommendedQuality,
+    to: capabilities.recommendedQuality,
+    reason: 'manual',
+  });
   useEffect(() => {
     timelineRef.setLoop(typeof loadedAnimationClip.loop === 'boolean' ? loadedAnimationClip.loop : animationLoop);
   }, [animationLoop, timelineRef]);
@@ -207,6 +214,28 @@ export function App() {
   const runtime = useBeautyLabRuntime(activeOperation, runtimePreset.operations, {
     showLandmarks, showCenters, showWarpInfluence, showWarpCenter, showFalloffRings,
   }, rendererMode, skinSmoothing, skinTone, { enabled: temporalSmoothingEnabled, alpha: temporalSmoothingAlpha }, capabilities.recommendedQuality, capabilities.adaptiveQualityDefaultEnabled);
+
+  useEffect(() => {
+    let hideTimer = 0;
+    setAdaptiveQualityHud((current) => {
+      if (runtime.quality.adaptiveQuality.reason === 'stable') return current;
+      if (current.to === runtime.quality.runtimeQuality && current.reason === runtime.quality.adaptiveQuality.reason) return current;
+      return {
+        visible: true,
+        from: current.to,
+        to: runtime.quality.runtimeQuality,
+        reason: runtime.quality.adaptiveQuality.reason,
+      };
+    });
+    if (runtime.quality.adaptiveQuality.reason !== 'stable') {
+      hideTimer = window.setTimeout(() => {
+        setAdaptiveQualityHud((current) => ({ ...current, visible: false }));
+      }, 3000);
+    }
+    return () => {
+      if (hideTimer) window.clearTimeout(hideTimer);
+    };
+  }, [runtime.quality.runtimeQuality, runtime.quality.adaptiveQuality.reason]);
 
 
   useEffect(() => {
@@ -497,7 +526,7 @@ export function App() {
       <h1 className="app-shell__title">ビューティーAR・フェイスワープ実験ラボ</h1>
       <div className="panel-grid">
         <SourcePreviewPanel videoRef={runtime.refs.videoRef} overlayCanvasRef={runtime.refs.overlayCanvasRef} cameraState={runtime.state.cameraState} landmarkerState={runtime.state.landmarkerState} cameraErrorMessage={runtime.state.cameraErrorMessage} onCaptureSource={onCaptureSource} previewAspectRatio={previewAspectRatio} />
-        <ProcessedPreviewPanel canvas2dRef={runtime.refs.canvas2dRef} webglCanvasRef={runtime.refs.webglCanvasRef} beautyDebugOverlayCanvasRef={runtime.refs.beautyDebugOverlayCanvasRef} rendererState={runtime.state.rendererState} rendererMode={rendererMode} beautyDebugOverlayMode={beautyDebugOverlayMode} onCaptureProcessed={onCaptureProcessed} previewAspectRatio={previewAspectRatio} />
+        <ProcessedPreviewPanel canvas2dRef={runtime.refs.canvas2dRef} webglCanvasRef={runtime.refs.webglCanvasRef} beautyDebugOverlayCanvasRef={runtime.refs.beautyDebugOverlayCanvasRef} rendererState={runtime.state.rendererState} rendererMode={rendererMode} beautyDebugOverlayMode={beautyDebugOverlayMode} adaptiveQualityHud={{ ...adaptiveQualityHud, preset: runtime.quality.runtimePreset }} onCaptureProcessed={onCaptureProcessed} previewAspectRatio={previewAspectRatio} />
         <Panel title="顔検出ステータス"><ul><li>顔: {runtime.state.landmarkFrame?.detected ? '検出中' : '顔が検出されていません'}</li><li>ランドマーク数: {runtime.state.landmarkFrame?.landmarkCount ?? 0}</li><li>顔数: {runtime.state.landmarkFrame?.faceCount ?? 0}</li><li>フレーム: {runtime.state.landmarkFrame?.frameCount ?? 0}</li><li>タイムスタンプ (ms): {Math.round(runtime.state.landmarkFrame?.timestampMs ?? 0)}</li></ul></Panel>
         <Panel title="リアルタイムプロファイラ">
           <div className="profiler-overlay">

@@ -159,3 +159,12 @@
 - upshift(hysteresis): critical>28, low>34, medium>40。
 - quality reason: `fps_drop` / `fps_recovered` / `stable` / `manual`。
 - thermal確認: 10分以上連続実行し、quality transitionと端末発熱体感を同時記録する。
+
+### Adaptive Quality HUD 確認手順
+1. `自動品質調整` を ON にしてカメラを開始する。
+2. 加工プレビュー上で FPS が低下する条件（複数operation有効 + 低照度 + 端末発熱時など）を作る。
+3. quality が変化した瞬間に、加工プレビュー左上に HUD が約3秒表示されることを確認する。
+   - 例: `品質調整: high → medium` / `理由: fps_drop`
+   - `Scale` / `Warp` / `MP every n frame` が current quality preset と一致すること
+4. quality が further downshift（medium→low, low→critical）した場合も同様にHUDが再表示されることを確認する。
+5. HUD は preview専用表示であり、source/processed snapshot と export raw には混入しないことを確認する。
