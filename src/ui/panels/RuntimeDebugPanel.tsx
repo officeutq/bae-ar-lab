@@ -18,6 +18,11 @@ type Props = {
   filteredOperationCount: number;
   warpStrengthScale: number;
   firstActiveOperationSummary: string;
+  beautyIntensity: number;
+  animatedBeautyIntensity: number;
+  rawOperationStrengthSummary: string[];
+  intensityOperationStrengthSummary: string[];
+  resolvedOperationStrengthSummary: string[];
   frameSkip: number;
   currentQuality: QualityLevel;
   selectedQuality: QualityLevel;
@@ -47,6 +52,11 @@ export function RuntimeDebugPanel({
   filteredOperationCount,
   warpStrengthScale,
   firstActiveOperationSummary,
+  beautyIntensity,
+  animatedBeautyIntensity,
+  rawOperationStrengthSummary,
+  intensityOperationStrengthSummary,
+  resolvedOperationStrengthSummary,
   frameSkip,
   currentQuality,
   selectedQuality,
@@ -102,6 +112,8 @@ export function RuntimeDebugPanel({
         <li>resolved operations: {resolvedOperationCount}</li>
         <li>quality filtered operations: {filteredOperationCount}</li>
         <li>active operations: {activeOperationCount}</li>
+        <li>beauty intensity (UI): {beautyIntensity.toFixed(3)}</li>
+        <li>beauty intensity (animated): {animatedBeautyIntensity.toFixed(3)}</li>
         <li>warp strength scale: {warpStrengthScale.toFixed(2)}</li>
         <li>first active operation: {firstActiveOperationSummary}</li>
         <li>FPS: {fps.toFixed(1)}</li>
@@ -109,6 +121,14 @@ export function RuntimeDebugPanel({
         <li>MediaPipe time: {mediapipeTimeMs.toFixed(2)} ms</li>
         <li>renderer time: {rendererTimeMs.toFixed(2)} ms</li>
       </ul>
+
+      <h4>Operation strengths</h4>
+      <div>raw preset</div>
+      <ul>{rawOperationStrengthSummary.map((line) => <li key={`raw-${line}`}>{line}</li>)}</ul>
+      <div>after animation/intensity tracks</div>
+      <ul>{intensityOperationStrengthSummary.map((line) => <li key={`intensity-${line}`}>{line}</li>)}</ul>
+      <div>resolved (quality/stability/pose applied)</div>
+      <ul>{resolvedOperationStrengthSummary.map((line) => <li key={`resolved-${line}`}>{line}</li>)}</ul>
     </Panel>
   );
 }

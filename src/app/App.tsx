@@ -48,7 +48,6 @@ const DEFAULT_ANIMATION_CLIP: AnimationClip = {
   loop: false,
   tracks: [
     { track: 'beauty.intensity', keyframes: [{ time: 0, value: 0.6 }, { time: 1.5, value: 1 }, { time: 3, value: 0.6 }] },
-    { track: 'operations.0.strength', keyframes: [{ time: 0, value: 0 }, { time: 1.5, value: 0.12 }, { time: 3, value: 0 }] },
     { track: 'appearance.skinTone.warmth', keyframes: [{ time: 0, value: 0 }, { time: 3, value: 0.4 }] },
   ],
 };
@@ -522,6 +521,15 @@ export function App() {
     if (!first) return 'none';
     return `${first.type} / ${first.target} / strength ${first.strength.toFixed(3)}`;
   })();
+  const rawOperationStrengthSummary = activePreset.operations
+    .filter((operation) => operation.enabled)
+    .map((operation, index) => `#${index} ${operation.type} ${operation.target} ${operation.strength.toFixed(3)}`);
+  const intensityOperationStrengthSummary = animated.preset.operations
+    .filter((operation) => operation.enabled)
+    .map((operation, index) => `#${index} ${operation.type} ${operation.target} ${operation.strength.toFixed(3)}`);
+  const resolvedOperationStrengthSummary = runtime.resolved.getOperations()
+    .filter((operation) => operation.enabled)
+    .map((operation, index) => `#${index} ${operation.type} ${operation.target} ${operation.strength.toFixed(3)}`);
 
   const debugWarpResult = applyWarpOperations(debugUv, debugOperation ? [debugOperation] : [], debugGeometry);
   const debugGridPoints = Array.from({ length: DEBUG_GRID_SIZE * DEBUG_GRID_SIZE }, (_, index) => {
@@ -576,6 +584,11 @@ export function App() {
           filteredOperationCount={runtime.warpDebug.filteredOperationCount}
           warpStrengthScale={runtime.quality.runtimePreset.warpStrengthScale}
           firstActiveOperationSummary={firstActiveOperationSummary}
+          beautyIntensity={beautyIntensity}
+          animatedBeautyIntensity={animated.beautyIntensity}
+          rawOperationStrengthSummary={rawOperationStrengthSummary}
+          intensityOperationStrengthSummary={intensityOperationStrengthSummary}
+          resolvedOperationStrengthSummary={resolvedOperationStrengthSummary}
           frameSkip={runtime.quality.runtimePreset.frameSkip}
           currentQuality={runtime.quality.runtimeQuality}
           selectedQuality={runtime.quality.adaptiveQuality.selectedQuality}
