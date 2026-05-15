@@ -82,8 +82,9 @@ export function createWebglRenderer({ video, canvas, getOperations, getFaceGeome
   const smoothingSampleCountLocation = gl.getUniformLocation(program, 'uSmoothingSampleCount');
   const operationCountLocation = gl.getUniformLocation(program, 'uOperationCount');
   const debugWarpModeLocation = gl.getUniformLocation(program, 'uDebugWarpMode');
+  const warpDebugGainLocation = gl.getUniformLocation(program, 'uWarpDebugGain');
 
-  if (positionLocation < 0 || !videoTextureLocation || !warpCentersLocation || !warpRadiiLocation || !warpStrengthsLocation || !warpAxesLocation || !warpDirectionsLocation || !lineStartsLocation || !lineEndsLocation || !lineWidthsLocation || !operationTypesLocation || !falloffTypesLocation || !enabledOpsLocation || !polygonPointsLocation || !polygonCountsLocation || !weightMapTypesLocation || !weightMapCentersLocation || !weightMapRadiiLocation || !smoothingEnabledLocation || !smoothingStrengthLocation || !smoothingRadiusLocation || !smoothingMaskOpacityLocation || !smoothingMaskPreviewLocation || !faceMaskPolygonLocation || !faceMaskCountLocation || !skinToneEnabledLocation || !skinToneBrightnessLocation || !skinToneSaturationLocation || !skinToneWarmthLocation || !skinToneBlendLocation || !smoothingSampleCountLocation || !operationCountLocation || !debugWarpModeLocation) {
+  if (positionLocation < 0 || !videoTextureLocation || !warpCentersLocation || !warpRadiiLocation || !warpStrengthsLocation || !warpAxesLocation || !warpDirectionsLocation || !lineStartsLocation || !lineEndsLocation || !lineWidthsLocation || !operationTypesLocation || !falloffTypesLocation || !enabledOpsLocation || !polygonPointsLocation || !polygonCountsLocation || !weightMapTypesLocation || !weightMapCentersLocation || !weightMapRadiiLocation || !smoothingEnabledLocation || !smoothingStrengthLocation || !smoothingRadiusLocation || !smoothingMaskOpacityLocation || !smoothingMaskPreviewLocation || !faceMaskPolygonLocation || !faceMaskCountLocation || !skinToneEnabledLocation || !skinToneBrightnessLocation || !skinToneSaturationLocation || !skinToneWarmthLocation || !skinToneBlendLocation || !smoothingSampleCountLocation || !operationCountLocation || !debugWarpModeLocation || !warpDebugGainLocation) {
     gl.deleteProgram(program);
     throw new Error('Failed to resolve shader attributes or uniforms.');
   }
@@ -258,6 +259,7 @@ export function createWebglRenderer({ video, canvas, getOperations, getFaceGeome
             firstOperationCenter: { x: warpCenters[0], y: warpCenters[1] },
             firstOperationRadius: warpRadii[0],
             firstUniformStrength: warpStrengths[0],
+            warpDebugGain: (globalThis as { __BEAUTY_WEBGL_WARP_GAIN__?: number }).__BEAUTY_WEBGL_WARP_GAIN__ ?? 1,
             firstUniformLine: {
               lineStart: { x: lineStarts[0], y: lineStarts[1] },
               lineEnd: { x: lineEnds[0], y: lineEnds[1] },
@@ -290,7 +292,10 @@ export function createWebglRenderer({ video, canvas, getOperations, getFaceGeome
       gl.uniform2fv(weightMapCentersLocation, weightMapCenters);
       gl.uniform1fv(weightMapRadiiLocation, weightMapRadii);
       gl.uniform1i(operationCountLocation, operationCount);
+      const rawWarpDebugGain = (globalThis as { __BEAUTY_WEBGL_WARP_GAIN__?: number }).__BEAUTY_WEBGL_WARP_GAIN__ ?? 1;
+      const warpDebugGain = Number.isFinite(rawWarpDebugGain) ? Math.max(0, rawWarpDebugGain) : 1;
       gl.uniform1i(debugWarpModeLocation, (globalThis as { __BEAUTY_WEBGL_STRONG_DEBUG__?: boolean }).__BEAUTY_WEBGL_STRONG_DEBUG__ ? 1 : 0);
+      gl.uniform1f(warpDebugGainLocation, warpDebugGain);
       gl.uniform1i(smoothingEnabledLocation, smoothing.enabled ? 1 : 0);
       gl.uniform1f(smoothingStrengthLocation, smoothing.strength);
       gl.uniform1f(smoothingRadiusLocation, smoothing.radius);

@@ -22,6 +22,7 @@ uniform vec2 uWeightMapCenters[MAX_OPERATIONS];
 uniform float uWeightMapRadii[MAX_OPERATIONS];
 uniform int uOperationCount;
 uniform int uDebugWarpMode;
+uniform float uWarpDebugGain;
 uniform int uSmoothingEnabled;
 uniform float uSmoothingStrength;
 uniform float uSmoothingRadius;
@@ -112,10 +113,12 @@ void main() {
         float wDist = length(warpedUv - uWeightMapCenters[i]) / max(0.0001, uWeightMapRadii[i]);
         influence *= clamp(1.0 - wDist, 0.0, 1.0);
       }
+      float gain = max(0.0, uWarpDebugGain);
+      float effectiveStrength = uWarpStrengths[i] * gain;
       if (uOperationTypes[i] == 1 || uOperationTypes[i] == 2 || uOperationTypes[i] == 3) {
-        warpedUv = clamp(warpedUv + uWarpDirections[i] * (uWarpStrengths[i] * influence), 0.0, 1.0);
+        warpedUv = clamp(warpedUv + uWarpDirections[i] * (effectiveStrength * influence), 0.0, 1.0);
       } else {
-        vec2 displacement = delta * (uWarpStrengths[i] * influence);
+        vec2 displacement = delta * (effectiveStrength * influence);
         warpedUv = clamp(warpedUv - displacement, 0.0, 1.0);
       }
     }
