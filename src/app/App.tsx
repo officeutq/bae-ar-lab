@@ -254,7 +254,7 @@ export function App() {
       poseAttenuationFactor: runtime.pose.poseAttenuation.factor,
       faceStabilityFade: runtime.faceStability.fade,
     });
-  }, [runtime, rendererMode, beautyDebugOverlayMode, runtime.state.faceGeometry, runtime.pose.poseAttenuation.factor, runtime.faceStability.fade, runtime.profiler.frameTimeMs]);
+  }, [runtime, rendererMode, beautyDebugOverlayMode, runtime.overlayFrame, runtime.state.faceGeometry, runtime.pose.poseAttenuation.factor, runtime.faceStability.fade]);
 
   const updateOperation = <K extends keyof (typeof activePreset.operations)[number]>(key: K, value: (typeof activePreset.operations)[number][K]) => {
     setActivePreset((currentPreset) => ({ ...currentPreset, operations: currentPreset.operations.map((operation, index) => index === activeOperationIndex ? { ...operation, [key]: value } : operation) }));
