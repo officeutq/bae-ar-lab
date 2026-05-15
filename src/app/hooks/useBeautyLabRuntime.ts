@@ -34,6 +34,10 @@ type OverlayToggles = {
   showWarpCenter: boolean;
   showFalloffRings: boolean;
 };
+type RuntimeExperimentMode = {
+  disablePoseAttenuation: boolean;
+  disableAdaptiveQuality: boolean;
+};
 
 function getCameraErrorMessage(error: CameraError) {
   switch (error.code) {
@@ -59,6 +63,7 @@ export function useBeautyLabRuntime(
   temporalSmoothing: { enabled: boolean; alpha: number },
   initialQuality: QualityLevel = 'high',
   adaptiveQualityEnabledByDefault = true,
+  experimentMode: RuntimeExperimentMode = { disablePoseAttenuation: false, disableAdaptiveQuality: false },
 ) {
   const cameraController = useMemo(() => createCameraController(), []);
   const faceLandmarkerController = useMemo(() => createFaceLandmarker(), []);
@@ -231,7 +236,9 @@ export function useBeautyLabRuntime(
       const detectedGeometry = runtimeFrame.detected ? computeFaceGeometry({ landmarks: runtimeFrame.landmarks }) : null;
       const detectedPose = runtimeFrame.detected ? computeFacePose(runtimeFrame.landmarks) : null;
       const runtimePose = detectedPose ?? (stability.fade > 0 ? facePose : null);
-      const runtimeAttenuation = computePoseAttenuation(runtimePose);
+      const runtimeAttenuation = experimentMode.disablePoseAttenuation
+        ? { factor: 1, yawFactor: 1, pitchFactor: 1 }
+        : computePoseAttenuation(runtimePose);
       setFacePose(runtimePose);
       setPoseAttenuation(runtimeAttenuation);
       if (detectedGeometry) {
@@ -240,13 +247,13 @@ export function useBeautyLabRuntime(
       const geometryForRuntime = detectedGeometry ?? (stability.fade > 0 ? lastStableGeometryRef.current : null);
       setFaceGeometry(geometryForRuntime);
       faceGeometryRef.current = geometryForRuntime;
-      const runtimeQualityLevel = resolveRuntimeQuality(adaptiveQualityRef.current);
+      const runtimeQualityLevel = experimentMode.disableAdaptiveQuality ? adaptiveQualityRef.current.selectedQuality : resolveRuntimeQuality(adaptiveQualityRef.current);
       const runtimeQualityPreset = QUALITY_PRESETS[runtimeQualityLevel];
       const boundOperations = resolveOperationBindings(operationsRef.current, geometryForRuntime)
         .filter((operation) => !runtimeQualityPreset.disabledTargets.includes(operation.target))
         .map((operation) => ({
           ...operation,
-          strength: operation.strength * runtimeQualityPreset.warpStrengthScale * stability.fade * runtimeAttenuation.factor,
+          strength: operation.strength * (experimentMode.disableAdaptiveQuality ? 1 : runtimeQualityPreset.warpStrengthScale) * stability.fade * runtimeAttenuation.factor,
         }));
       const cappedOperations = runtimeQualityPreset.maxActiveOperations === null
         ? boundOperations
@@ -268,7 +275,7 @@ export function useBeautyLabRuntime(
       profilerRef.current.setOperationCount(resolvedOperations.filter((operation) => operation.enabled).length);
       const nextSnapshot = profilerRef.current.commitFrame();
       const adaptiveRef = adaptiveQualityRef.current;
-      if (adaptiveRef.enabled) {
+      if (adaptiveRef.enabled && !experimentMode.disableAdaptiveQuality) {
         const decision = adaptiveQualityControllerRef.current.evaluate(nextSnapshot.avgFps30, nextSnapshot.timestamp, nextSnapshot.fpsSampleCount);
         setQualityLockRemainingMs(adaptiveQualityControllerRef.current.getLockRemainingMs(nextSnapshot.timestamp));
         setQualityRecoveryElapsedMs(adaptiveQualityControllerRef.current.getRecoveryElapsedMs(nextSnapshot.timestamp));
