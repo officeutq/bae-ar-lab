@@ -43,6 +43,7 @@ export function createRendererBackend(options: CreateRendererBackendOptions): Re
     video: options.video,
     canvas: options.canvas2d,
     getCpuWarpPreviewEnabled: () => options.mode === 'cpu_warp_debug',
+    getProcessedDebugMarkerEnabled: () => options.mode !== 'webgl',
     getActiveOperation: options.getActiveOperation,
     getFaceGeometry: options.getFaceGeometry,
     getOperations: options.getOperations,
