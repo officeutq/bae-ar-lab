@@ -69,16 +69,18 @@ ul {
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
-}
-
-.source-video {
-  position: relative;
-  z-index: 1;
-  width: 100%;
-  height: 100%;
   border-radius: 8px;
   background: #0b0e14;
   border: 1px solid #2d3340;
+  overflow: hidden;
+}
+
+.source-video {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
   display: block;
 }
@@ -105,18 +107,20 @@ ul {
 .processed-canvas {
   width: 100%;
   height: 100%;
-  aspect-ratio: 16 / 9;
-  border-radius: 8px;
-  background: #0b0e14;
-  border: 1px solid #2d3340;
+  border-radius: inherit;
+  background: transparent;
+  border: none;
   display: block;
-  position: relative;
+  position: absolute;
+  inset: 0;
   z-index: 1;
 }
 
-.processed-preview .processed-canvas {
-  position: absolute;
-  inset: 0;
+.processed-preview {
+  border-radius: 8px;
+  background: #0b0e14;
+  border: 1px solid #2d3340;
+  overflow: hidden;
 }
 
 .adaptive-quality-hud {

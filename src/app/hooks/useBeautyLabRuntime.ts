@@ -102,6 +102,7 @@ export function useBeautyLabRuntime(
   const [qualityRecoveryElapsedMs, setQualityRecoveryElapsedMs] = useState(0);
   const [faceStability, setFaceStability] = useState<FaceStabilitySnapshot>(faceStabilityRef.current.getSnapshot());
   const [previewSize, setPreviewSize] = useState<{ width: number; height: number }>({ width: 16, height: 9 });
+  const previewSizeRef = useRef<{ width: number; height: number }>({ width: 16, height: 9 });
   const [overlayFrame, setOverlayFrame] = useState(0);
 
   const runtimeQuality = resolveRuntimeQuality(adaptiveQualityRef.current);
@@ -125,6 +126,20 @@ export function useBeautyLabRuntime(
   useEffect(() => {
     overlayRef.current?.updateToggles(overlayToggles);
   }, [overlayToggles]);
+
+  const syncPreviewSizeFromVideo = () => {
+    const videoElement = videoRef.current;
+    if (!videoElement) return;
+    const width = Math.max(0, Math.round(videoElement.videoWidth));
+    const height = Math.max(0, Math.round(videoElement.videoHeight));
+    if (width <= 0 || height <= 0) return;
+    const current = previewSizeRef.current;
+    if (current.width === width && current.height === height) return;
+    const next = { width, height };
+    previewSizeRef.current = next;
+    setPreviewSize(next);
+    overlayRef.current?.syncSize();
+  };
 
   useEffect(() => {
     skinSmoothingRef.current = skinSmoothing;
@@ -185,6 +200,7 @@ export function useBeautyLabRuntime(
         detectAnimationRef.current = requestAnimationFrame(tick);
         return;
       }
+      syncPreviewSizeFromVideo();
 
       const preset = QUALITY_PRESETS[resolveRuntimeQuality(adaptiveQualityRef.current)];
       const shouldDetect = preset.mediapipeIntervalFrames <= 1
@@ -287,11 +303,7 @@ export function useBeautyLabRuntime(
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
-        const width = videoRef.current.videoWidth;
-        const height = videoRef.current.videoHeight;
-        if (width > 0 && height > 0) {
-          setPreviewSize({ width, height });
-        }
+        syncPreviewSizeFromVideo();
       }
 
       const videoElement = videoRef.current;
@@ -338,6 +350,23 @@ export function useBeautyLabRuntime(
     }
   };
 
+  useEffect(() => {
+    const videoElement = videoRef.current;
+    if (!videoElement) return;
+    const handleResizeLikeEvent = () => {
+      syncPreviewSizeFromVideo();
+      overlayRef.current?.syncSize();
+    };
+    videoElement.addEventListener('loadedmetadata', handleResizeLikeEvent);
+    videoElement.addEventListener('resize', handleResizeLikeEvent);
+    window.addEventListener('resize', handleResizeLikeEvent);
+    return () => {
+      videoElement.removeEventListener('loadedmetadata', handleResizeLikeEvent);
+      videoElement.removeEventListener('resize', handleResizeLikeEvent);
+      window.removeEventListener('resize', handleResizeLikeEvent);
+    };
+  }, []);
+
   const stopCamera = () => {
     if (detectAnimationRef.current !== null) {
       cancelAnimationFrame(detectAnimationRef.current);
@@ -365,7 +394,9 @@ export function useBeautyLabRuntime(
     faceStabilityRef.current.reset();
     setFaceStability(faceStabilityRef.current.getSnapshot());
     setCameraState('idle');
-    setPreviewSize({ width: 16, height: 9 });
+    const defaultPreviewSize = { width: 16, height: 9 };
+    previewSizeRef.current = defaultPreviewSize;
+    setPreviewSize(defaultPreviewSize);
     setCameraErrorMessage(null);
     profilerRef.current.reset();
   };
