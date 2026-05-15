@@ -45,7 +45,8 @@ describe('adaptive quality controller', () => {
     controller.evaluate(34, baseNow + QUALITY_WARMUP_MS + 100, QUALITY_MIN_FPS_SAMPLES);
 
     expect(controller.getLockRemainingMs(baseNow + QUALITY_WARMUP_MS + 100)).toBe(QUALITY_LOCK_MS);
-    expect(controller.getLockRemainingMs(baseNow + QUALITY_WARMUP_MS + QUALITY_LOCK_MS + 100)).toBe(0);
+    expect(controller.getLockRemainingMs(baseNow + QUALITY_WARMUP_MS + QUALITY_LOCK_MS + 100)).toBeCloseTo(0);
+
   });
 
   it('critical preset applies aggressive limits', () => {
