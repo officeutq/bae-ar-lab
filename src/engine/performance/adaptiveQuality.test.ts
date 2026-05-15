@@ -24,10 +24,16 @@ describe('adaptive quality controller', () => {
     expect(controller.evaluate(38, unlockedAt + 100, QUALITY_MIN_FPS_SAMPLES).nextQuality).toBe('low');
     expect(controller.getRecoveryElapsedMs(unlockedAt + 100)).toBe(0);
 
-    expect(controller.evaluate(38, unlockedAt + QUALITY_RECOVERY_MS - 100, QUALITY_MIN_FPS_SAMPLES).nextQuality).toBe('low');
-    expect(controller.getRecoveryElapsedMs(unlockedAt + QUALITY_RECOVERY_MS - 100)).toBe(QUALITY_RECOVERY_MS - 200);
+    expect(controller.evaluate(42, unlockedAt + 200, QUALITY_MIN_FPS_SAMPLES).nextQuality).toBe('low');
+    expect(controller.getRecoveryElapsedMs(unlockedAt + 200)).toBe(0);
 
-    const decision = controller.evaluate(38, unlockedAt + QUALITY_RECOVERY_MS + 100, QUALITY_MIN_FPS_SAMPLES);
+    expect(controller.evaluate(43, unlockedAt + 300, QUALITY_MIN_FPS_SAMPLES).nextQuality).toBe('low');
+    expect(controller.getRecoveryElapsedMs(unlockedAt + 300)).toBe(0);
+
+    expect(controller.evaluate(43, unlockedAt + QUALITY_RECOVERY_MS + 200, QUALITY_MIN_FPS_SAMPLES).nextQuality).toBe('low');
+    expect(controller.getRecoveryElapsedMs(unlockedAt + QUALITY_RECOVERY_MS + 200)).toBe(QUALITY_RECOVERY_MS - 100);
+
+    const decision = controller.evaluate(43, unlockedAt + QUALITY_RECOVERY_MS + 400, QUALITY_MIN_FPS_SAMPLES);
     expect(decision.nextQuality).toBe('medium');
     expect(decision.reason).toBe('fps_recovered');
     expect(controller.getRecoveryElapsedMs(unlockedAt + QUALITY_RECOVERY_MS + 100)).toBe(0);

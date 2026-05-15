@@ -77,7 +77,7 @@ const DOWNSHIFT_THRESHOLDS: Record<QualityLevel, number> = {
 const UPSHIFT_THRESHOLDS: Record<QualityLevel, number> = {
   high: Number.POSITIVE_INFINITY,
   medium: 40,
-  low: 37,
+  low: 42,
   critical: 30,
 };
 
