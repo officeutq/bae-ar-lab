@@ -39,100 +39,67 @@ type Props = {
   rendererTimeMs: number;
 };
 
-export function RuntimeDebugPanel({
-  temporalSmoothingEnabled,
-  temporalSmoothingAlpha,
-  faceDetected,
-  faceStability,
-  facePose,
-  poseAttenuationFactor,
-  poseAttenuationYawFactor,
-  poseAttenuationPitchFactor,
-  activeOperationCount,
-  resolvedOperationCount,
-  filteredOperationCount,
-  warpStrengthScale,
-  firstActiveOperationSummary,
-  beautyIntensity,
-  animatedBeautyIntensity,
-  rawOperationStrengthSummary,
-  intensityOperationStrengthSummary,
-  resolvedOperationStrengthSummary,
-  effectiveMultiplierSummary,
-  frameSkip,
-  currentQuality,
-  selectedQuality,
-  adaptiveQualityEnabled,
-  adaptiveQualityReason,
-  qualityLockRemainingMs,
-  qualityRecoveryElapsedMs,
-  renderScale,
-  rendererMode,
-  fps,
-  frameTimeMs,
-  mediapipeTimeMs,
-  rendererTimeMs,
-}: Props) {
+const item = (label: string, value: string) => <li><strong>{label}:</strong> {value}</li>;
+
+export function RuntimeDebugPanel(props: Props) {
   return (
-    <Panel title="Runtime Debug">
-      <h4>Temporal</h4>
+    <Panel title="Runtime Debug Panel（観測専用）">
+      <h4>性能 / Performance</h4>
       <ul>
-        <li>smoothing enabled: {temporalSmoothingEnabled ? 'true' : 'false'}</li>
-        <li>smoothing alpha: {temporalSmoothingAlpha.toFixed(2)}</li>
+        {item('FPS', props.fps.toFixed(1))}
+        {item('Frame time', `${props.frameTimeMs.toFixed(2)} ms`)}
+        {item('MediaPipe time', `${props.mediapipeTimeMs.toFixed(2)} ms`)}
+        {item('Renderer time', `${props.rendererTimeMs.toFixed(2)} ms`)}
       </ul>
 
-      <h4>Face Stability</h4>
+      <h4>顔検出・安定性 / Detection & Stability</h4>
       <ul>
-        <li>detected: {faceDetected ? 'yes' : 'no'}</li>
-        <li>state: {faceStability.status}</li>
-        <li>confidence: {faceStability.confidence.toFixed(2)}</li>
-        <li>fade: {faceStability.fade.toFixed(2)}</li>
+        {item('Detected', props.faceDetected ? 'yes' : 'no')}
+        {item('Stability state', props.faceStability.status)}
+        {item('Stability confidence', props.faceStability.confidence.toFixed(2))}
+        {item('Face stability fade', props.faceStability.fade.toFixed(2))}
+        {item('Temporal smoothing', `${props.temporalSmoothingEnabled ? 'on' : 'off'} / alpha ${props.temporalSmoothingAlpha.toFixed(2)}`)}
       </ul>
 
-      <h4>Pose</h4>
+      <h4>姿勢・弱化 / Pose & Attenuation</h4>
       <ul>
-        <li>yaw: {facePose?.yaw.toFixed(1) ?? 'n/a'}</li>
-        <li>pitch: {facePose?.pitch.toFixed(1) ?? 'n/a'}</li>
-        <li>roll: {facePose?.roll.toFixed(1) ?? 'n/a'}</li>
-        <li>attenuation factor: {poseAttenuationFactor.toFixed(2)}</li>
-        <li>yaw attenuation: {poseAttenuationYawFactor.toFixed(2)}</li>
-        <li>pitch attenuation: {poseAttenuationPitchFactor.toFixed(2)}</li>
+        {item('Yaw（左右向き）', props.facePose?.yaw.toFixed(1) ?? 'n/a')}
+        {item('Pitch（上下向き）', props.facePose?.pitch.toFixed(1) ?? 'n/a')}
+        {item('Roll（傾き）', props.facePose?.roll.toFixed(1) ?? 'n/a')}
+        {item('Attenuation total', props.poseAttenuationFactor.toFixed(2))}
+        {item('Attenuation yaw', props.poseAttenuationYawFactor.toFixed(2))}
+        {item('Attenuation pitch', props.poseAttenuationPitchFactor.toFixed(2))}
       </ul>
 
-      <h4>Quality</h4>
+      <h4>Adaptive Quality / 品質制御</h4>
       <ul>
-        <li>adaptive quality: {adaptiveQualityEnabled ? 'enabled' : 'disabled'}</li>
-        <li>adaptive active: {adaptiveQualityEnabled ? 'true' : 'false'}</li>
-        <li>quality reason: {adaptiveQualityReason}</li>
-        <li>quality lock remaining: {(qualityLockRemainingMs / 1000).toFixed(1)}s</li>
-        <li>recovery timer: {(qualityRecoveryElapsedMs / 1000).toFixed(1)}s</li>
-        <li>selected quality: {selectedQuality}</li>
-        <li>current quality: {currentQuality}</li>
-        <li>render scale: {renderScale.toFixed(2)}</li>
-        <li>frame skip: {frameSkip}</li>
-        <li>renderer backend: {rendererMode}</li>
-        <li>resolved operations: {resolvedOperationCount}</li>
-        <li>quality filtered operations: {filteredOperationCount}</li>
-        <li>active operations: {activeOperationCount}</li>
-        <li>beauty intensity (UI): {beautyIntensity.toFixed(3)}</li>
-        <li>beauty intensity (animated): {animatedBeautyIntensity.toFixed(3)}</li>
-        <li>warp strength scale: {warpStrengthScale.toFixed(2)}</li>
-        <li>first active operation: {firstActiveOperationSummary}</li>
-        <li>FPS: {fps.toFixed(1)}</li>
-        <li>frame time: {frameTimeMs.toFixed(2)} ms</li>
-        <li>MediaPipe time: {mediapipeTimeMs.toFixed(2)} ms</li>
-        <li>renderer time: {rendererTimeMs.toFixed(2)} ms</li>
+        {item('Adaptive quality', props.adaptiveQualityEnabled ? 'enabled' : 'disabled')}
+        {item('Reason', props.adaptiveQualityReason)}
+        {item('Selected quality', props.selectedQuality)}
+        {item('Current quality', props.currentQuality)}
+        {item('Render scale', props.renderScale.toFixed(2))}
+        {item('Frame skip', String(props.frameSkip))}
+        {item('Quality lock remaining', `${(props.qualityLockRemainingMs / 1000).toFixed(1)}s`)}
+        {item('Recovery timer', `${(props.qualityRecoveryElapsedMs / 1000).toFixed(1)}s`)}
       </ul>
 
-      <h4>Operation strengths</h4>
-      <div>raw preset</div>
-      <ul>{rawOperationStrengthSummary.map((line) => <li key={`raw-${line}`}>{line}</li>)}</ul>
-      <div>after animation/intensity tracks</div>
-      <ul>{intensityOperationStrengthSummary.map((line) => <li key={`intensity-${line}`}>{line}</li>)}</ul>
-      <div>resolved (quality/stability/pose applied)</div>
-      <ul>{resolvedOperationStrengthSummary.map((line) => <li key={`resolved-${line}`}>{line}</li>)}</ul>
-      <div>effective multiplier (resolved/raw)</div>
-      <ul>{effectiveMultiplierSummary.map((line) => <li key={`effective-${line}`}>{line}</li>)}</ul>
+      <h4>レンダラ・オペレーション / Renderer & Ops</h4>
+      <ul>
+        {item('Renderer backend', props.rendererMode)}
+        {item('Resolved operation count', String(props.resolvedOperationCount))}
+        {item('Quality filtered op count', String(props.filteredOperationCount))}
+        {item('Active operation count', String(props.activeOperationCount))}
+        {item('Beauty intensity (UI)', props.beautyIntensity.toFixed(3))}
+        {item('Beauty intensity (animated)', props.animatedBeautyIntensity.toFixed(3))}
+        {item('Warp strength scale', props.warpStrengthScale.toFixed(2))}
+        {item('First active operation', props.firstActiveOperationSummary)}
+      </ul>
+
+      <h4>Operation strengths（観測用）</h4>
+      <div>raw preset</div><ul>{props.rawOperationStrengthSummary.map((line) => <li key={`raw-${line}`}>{line}</li>)}</ul>
+      <div>after animation/intensity tracks</div><ul>{props.intensityOperationStrengthSummary.map((line) => <li key={`intensity-${line}`}>{line}</li>)}</ul>
+      <div>resolved (quality/stability/pose applied)</div><ul>{props.resolvedOperationStrengthSummary.map((line) => <li key={`resolved-${line}`}>{line}</li>)}</ul>
+      <div>effective multiplier (resolved/raw)</div><ul>{props.effectiveMultiplierSummary.map((line) => <li key={`effective-${line}`}>{line}</li>)}</ul>
     </Panel>
   );
 }

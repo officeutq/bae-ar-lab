@@ -402,3 +402,10 @@ input[type='range'] {
 .preview-mirror {
   transform: scaleX(-1);
 }
+
+.parameter-slider { border: 1px solid #334155; border-radius: 8px; padding: 8px; margin: 8px 0; }
+.parameter-slider__header { display: flex; justify-content: space-between; }
+.parameter-slider__description { margin: 4px 0; font-size: 12px; color: #cbd5e1; }
+.parameter-slider__range { margin: 2px 0; font-size: 11px; color: #94a3b8; }
+.parameter-slider__caution { margin: 2px 0; color: #fbbf24; font-size: 11px; }
+.parameter-slider__note { margin: 2px 0; font-size: 11px; color: #93c5fd; }
