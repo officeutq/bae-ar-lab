@@ -562,6 +562,30 @@ export function App() {
   return (
     <main className="app-shell">
       <h1 className="app-shell__title">ビューティーAR・フェイスワープ実験ラボ</h1>
+      <section className="runtime-controls" aria-label="Runtime Controls">
+        <h2 className="runtime-controls__title">Runtime Controls（実行コントロール）</h2>
+        <div className="runtime-controls__actions">
+          <button type="button" onClick={runtime.actions.startCamera} disabled={runtime.state.cameraState === 'starting' || runtime.state.cameraState === 'running'}>
+            カメラ起動
+          </button>
+          <button type="button" onClick={runtime.actions.stopCamera} disabled={runtime.state.cameraState !== 'running'}>
+            カメラ停止
+          </button>
+          <label className="runtime-controls__field">
+            <span>Renderer Backend</span>
+            <select value={rendererMode} onChange={(event) => setRendererMode(event.target.value as RendererMode)}>
+              <option value="canvas2d">canvas2d</option>
+              <option value="cpu_warp_debug">cpu_warp_debug</option>
+              <option value="webgl" disabled={!capabilities.webgl2Available}>webgl</option>
+            </select>
+          </label>
+        </div>
+        <div className="runtime-controls__status">
+          <span>camera: {runtime.state.cameraState}</span>
+          <span>landmarker: {runtime.state.landmarkerState}</span>
+          <span>renderer: {rendererMode}</span>
+        </div>
+      </section>
       <div className="panel-grid">
         <SourcePreviewPanel videoRef={runtime.refs.videoRef} overlayCanvasRef={runtime.refs.overlayCanvasRef} cameraState={runtime.state.cameraState} landmarkerState={runtime.state.landmarkerState} cameraErrorMessage={runtime.state.cameraErrorMessage} onCaptureSource={onCaptureSource} previewAspectRatio={previewAspectRatio} />
         <ProcessedPreviewPanel canvas2dRef={runtime.refs.canvas2dRef} webglCanvasRef={runtime.refs.webglCanvasRef} beautyDebugOverlayCanvasRef={runtime.refs.beautyDebugOverlayCanvasRef} rendererState={runtime.state.rendererState} rendererMode={rendererMode} beautyDebugOverlayMode={beautyDebugOverlayMode} adaptiveQualityHud={{ ...adaptiveQualityHud, preset: runtime.quality.runtimePreset }} onCaptureProcessed={onCaptureProcessed} previewAspectRatio={previewAspectRatio} />
