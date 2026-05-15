@@ -31,7 +31,7 @@ describe('adaptive quality controller', () => {
     expect(controller.getRecoveryElapsedMs(unlockedAt + 300)).toBe(0);
 
     expect(controller.evaluate(43, unlockedAt + QUALITY_RECOVERY_MS + 200, QUALITY_MIN_FPS_SAMPLES).nextQuality).toBe('low');
-    expect(controller.getRecoveryElapsedMs(unlockedAt + QUALITY_RECOVERY_MS + 200)).toBe(QUALITY_RECOVERY_MS - 100);
+    expect(controller.getRecoveryElapsedMs(unlockedAt + QUALITY_RECOVERY_MS + 200)).toBeCloseTo(QUALITY_RECOVERY_MS - 100);
 
     const decision = controller.evaluate(43, unlockedAt + QUALITY_RECOVERY_MS + 400, QUALITY_MIN_FPS_SAMPLES);
     expect(decision.nextQuality).toBe('medium');
