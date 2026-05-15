@@ -26,14 +26,34 @@ const toCanvasPoint = (canvas: HTMLCanvasElement, point: Point2D): Point2D => ({
   y: clamp01(point.y) * canvas.height,
 });
 
-const resolveLineWarpPoints = (operation: WarpOperation, geometry: FaceGeometry): { start: Point2D; end: Point2D } => {
-  if (operation.binding?.type === 'landmark_line') {
-    return {
-      start: operation.lineStart,
-      end: operation.lineEnd,
-    };
-  }
+const OP_COLORS: Record<WarpOperation['type'], { stroke: string; fill: string }> = {
+  radial_warp: { stroke: 'rgba(0, 255, 255, 0.95)', fill: 'rgba(0, 255, 255, 0.22)' },
+  directional_warp: { stroke: 'rgba(255, 165, 0, 0.95)', fill: 'rgba(255, 165, 0, 0.22)' },
+  line_warp: { stroke: 'rgba(50, 255, 80, 0.95)', fill: 'rgba(50, 255, 80, 0.2)' },
+  region_warp: { stroke: 'rgba(255, 0, 255, 0.95)', fill: 'rgba(255, 0, 255, 0.2)' },
+};
 
+const FALLBACK_COLOR = { stroke: 'rgba(255, 48, 48, 0.95)', fill: 'rgba(255, 48, 48, 0.22)' };
+
+const drawDebugLabel = (context: CanvasRenderingContext2D, anchor: Point2D, text: string, isFallback: boolean) => {
+  context.save();
+  context.font = '12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
+  context.textAlign = 'left';
+  context.textBaseline = 'bottom';
+  const padding = 4;
+  const metrics = context.measureText(text);
+  const width = Math.ceil(metrics.width) + padding * 2;
+  const height = 16;
+  const x = Math.max(2, Math.min(anchor.x + 6, context.canvas.width - width - 2));
+  const y = Math.max(height + 2, Math.min(anchor.y - 6, context.canvas.height - 2));
+  context.fillStyle = isFallback ? 'rgba(120, 0, 0, 0.82)' : 'rgba(12, 16, 24, 0.75)';
+  context.fillRect(x, y - height, width, height);
+  context.fillStyle = isFallback ? 'rgba(255, 170, 170, 1)' : 'rgba(240, 245, 255, 1)';
+  context.fillText(text, x + padding, y - 3);
+  context.restore();
+};
+
+const resolveLineWarpPoints = (operation: WarpOperation, geometry: FaceGeometry): { start: Point2D; end: Point2D } => {
   if (operation.target === 'left_jaw') {
     return {
       start: geometry.leftJawLine.start,
@@ -52,6 +72,13 @@ const resolveLineWarpPoints = (operation: WarpOperation, geometry: FaceGeometry)
     return {
       start: geometry.chinLine.start,
       end: geometry.chinLine.end,
+    };
+  }
+
+  if (operation.binding?.type === 'landmark_line') {
+    return {
+      start: operation.lineStart,
+      end: operation.lineEnd,
     };
   }
 
@@ -113,12 +140,20 @@ export function renderBeautyDebugOverlay(canvas: HTMLCanvasElement, snapshot: Be
 
     if (snapshot.mode === 'warp_influence') {
       if (!geometry) return;
-      snapshot.operations.filter((operation) => operation.enabled).forEach((operation) => {
+      snapshot.operations.filter((operation) => operation.enabled).forEach((operation, operationIndex) => {
       const alpha = 0.18 + Math.min(0.6, Math.abs(operation.strength) * 6);
-      context.strokeStyle = `rgba(255, 165, 64, ${alpha.toFixed(3)})`;
-      context.fillStyle = `rgba(255, 165, 64, ${(alpha * 0.4).toFixed(3)})`;
+      let isFallback = false;
+      const opColor = OP_COLORS[operation.type];
+      context.strokeStyle = opColor.stroke.replace('0.95', alpha.toFixed(3));
+      context.fillStyle = opColor.fill.replace('0.22', (alpha * 0.4).toFixed(3)).replace('0.2', (alpha * 0.4).toFixed(3));
       context.lineWidth = 2;
+      const baseLabel = `#${operationIndex} ${operation.type}:${operation.target}`;
       if (operation.type === 'line_warp') {
+        isFallback = operation.binding?.type === 'landmark_line';
+        if (isFallback) {
+          context.strokeStyle = FALLBACK_COLOR.stroke;
+          context.fillStyle = FALLBACK_COLOR.fill;
+        }
         const { start: resolvedStart, end: resolvedEnd } = resolveLineWarpPoints(operation, geometry);
         const start = toCanvasPoint(canvas, resolvedStart);
         const end = toCanvasPoint(canvas, resolvedEnd);
@@ -131,9 +166,16 @@ export function renderBeautyDebugOverlay(canvas: HTMLCanvasElement, snapshot: Be
         context.lineTo(end.x, end.y);
         context.lineWidth = Math.max(2, operation.width * Math.min(canvas.width, canvas.height) * 2);
         context.stroke();
+        const label = isFallback ? `STATIC/FALLBACK ${baseLabel}` : baseLabel;
+        drawDebugLabel(context, start, label, isFallback);
         return;
       }
       if (operation.type === 'region_warp') {
+        isFallback = !operation.binding || operation.binding.type !== 'landmark_region';
+        if (isFallback) {
+          context.strokeStyle = FALLBACK_COLOR.stroke;
+          context.fillStyle = FALLBACK_COLOR.fill;
+        }
         const resolvedPolygon = resolveRegionWarpPolygon(operation, geometry);
         if (!resolvedPolygon || resolvedPolygon.length < 3) {
           return;
@@ -142,6 +184,8 @@ export function renderBeautyDebugOverlay(canvas: HTMLCanvasElement, snapshot: Be
         drawPolygon(context, polygon);
         context.fill();
         context.stroke();
+        const label = isFallback ? `STATIC/FALLBACK ${baseLabel}` : baseLabel;
+        drawDebugLabel(context, polygon[0], label, isFallback);
         return;
       }
       const target = operation.target === 'left_eye' ? geometry.leftEyeCenter
@@ -161,6 +205,7 @@ export function renderBeautyDebugOverlay(canvas: HTMLCanvasElement, snapshot: Be
       context.ellipse(center.x, center.y, radiusX, radiusY, 0, 0, Math.PI * 2);
       context.fill();
       context.stroke();
+      drawDebugLabel(context, center, baseLabel, false);
       });
       return;
     }
