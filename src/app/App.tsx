@@ -148,7 +148,12 @@ export function App() {
 
   const timelineSnapshot = timelineRef.getSnapshot();
   const animated = applyAnimatedValues(activePreset, beautyIntensity, timelineSnapshot.values);
-  const runtimePreset = useMemo(() => blendPresetByIntensity(animated.preset, animated.beautyIntensity), [animated.preset, animated.beautyIntensity]);
+  const debugWarpStrongBypassEnabled = selectedSamplePresetId === 'debug_warp_strong_bypass';
+  const effectiveBeautyIntensity = debugWarpStrongBypassEnabled ? 1 : animated.beautyIntensity;
+  const runtimePreset = useMemo(
+    () => blendPresetByIntensity(animated.preset, effectiveBeautyIntensity),
+    [animated.preset, effectiveBeautyIntensity],
+  );
   const pipelineState = useMemo(() => createInitialPipelineState(runtimePreset), [runtimePreset]);
   const [showLandmarks, setShowLandmarks] = useState(true);
   const [showCenters, setShowCenters] = useState(true);
@@ -212,7 +217,10 @@ export function App() {
   const activeOperation = runtimePreset.operations[activeOperationIndex] ?? null;
   const runtime = useBeautyLabRuntime(activeOperation, runtimePreset.operations, {
     showLandmarks, showCenters, showWarpInfluence, showWarpCenter, showFalloffRings,
-  }, rendererMode, skinSmoothing, skinTone, { enabled: temporalSmoothingEnabled, alpha: temporalSmoothingAlpha }, capabilities.recommendedQuality, capabilities.adaptiveQualityDefaultEnabled);
+  }, rendererMode, skinSmoothing, skinTone, { enabled: temporalSmoothingEnabled, alpha: temporalSmoothingAlpha }, capabilities.recommendedQuality, capabilities.adaptiveQualityDefaultEnabled, {
+    disablePoseAttenuation: debugWarpStrongBypassEnabled,
+    disableAdaptiveQuality: debugWarpStrongBypassEnabled,
+  });
 
   useEffect(() => {
     let hideTimer = 0;
@@ -425,6 +433,9 @@ export function App() {
     setSelectedAnimationClipId('runtime_default');
     setLoadedAnimationClip(DEFAULT_ANIMATION_CLIP);
     setPresetNameInput(sample.label);
+    if (id === 'debug_warp_strong_bypass') {
+      setBeautyIntensity(1);
+    }
     setPresetMessage(`Loaded sample preset: ${sample.label}`);
   };
 
