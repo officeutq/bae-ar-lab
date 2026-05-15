@@ -218,7 +218,10 @@ export function App() {
   useEffect(() => {
     let hideTimer = 0;
     setAdaptiveQualityHud((current) => {
-      if (runtime.quality.adaptiveQuality.reason === 'stable') return current;
+      if (runtime.quality.adaptiveQuality.reason === 'stable'
+        || runtime.quality.adaptiveQuality.reason === 'warmup'
+        || runtime.quality.adaptiveQuality.reason === 'insufficient_samples'
+        || runtime.quality.adaptiveQuality.reason === 'manual') return current;
       if (current.to === runtime.quality.runtimeQuality && current.reason === runtime.quality.adaptiveQuality.reason) return current;
       return {
         visible: true,
@@ -227,7 +230,7 @@ export function App() {
         reason: runtime.quality.adaptiveQuality.reason,
       };
     });
-    if (runtime.quality.adaptiveQuality.reason !== 'stable') {
+    if (runtime.quality.adaptiveQuality.reason === 'fps_drop' || runtime.quality.adaptiveQuality.reason === 'fps_recovered') {
       hideTimer = window.setTimeout(() => {
         setAdaptiveQualityHud((current) => ({ ...current, visible: false }));
       }, 3000);

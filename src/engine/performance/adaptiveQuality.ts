@@ -51,7 +51,7 @@ export const QUALITY_PRESETS: Record<QualityLevel, QualityPreset> = {
   },
 };
 
-export type AdaptiveQualityReason = 'stable' | 'fps_drop' | 'fps_recovered' | 'manual';
+export type AdaptiveQualityReason = 'stable' | 'warmup' | 'insufficient_samples' | 'fps_drop' | 'fps_recovered' | 'manual';
 
 export type AdaptiveQualityState = {
   enabled: boolean;
@@ -84,6 +84,7 @@ const UPSHIFT_THRESHOLDS: Record<QualityLevel, number> = {
 export const QUALITY_WARMUP_MS = 10000;
 export const QUALITY_LOCK_MS = 10000;
 export const QUALITY_RECOVERY_MS = 15000;
+export const QUALITY_MIN_FPS_SAMPLES = 30;
 
 export function resolveRuntimeQuality(state: AdaptiveQualityState): QualityLevel {
   return state.enabled ? state.currentQuality : state.selectedQuality;
@@ -105,20 +106,24 @@ export function createAdaptiveQualityController(initialQuality: QualityLevel = '
     },
     getLockRemainingMs: (now = performance.now()) => Math.max(0, QUALITY_LOCK_MS - (now - lastAdjustAt)),
     getRecoveryElapsedMs: (now = performance.now()) => (recoveryStartedAt === null ? 0 : Math.max(0, now - recoveryStartedAt)),
-    evaluate(avgFps: number, now = performance.now()): AutoAdjustDecision {
+    evaluate(avgFps: number, now = performance.now(), fpsSampleCount = QUALITY_MIN_FPS_SAMPLES): AutoAdjustDecision {
       if (now - warmupStartedAt < QUALITY_WARMUP_MS) {
         recoveryStartedAt = null;
-        return { nextQuality: currentQuality, changed: false, reason: 'stable', avgFps };
+        return { nextQuality: currentQuality, changed: false, reason: 'warmup', avgFps };
+      }
+      if (!Number.isFinite(avgFps) || avgFps <= 0 || fpsSampleCount < QUALITY_MIN_FPS_SAMPLES) {
+        return { nextQuality: currentQuality, changed: false, reason: 'insufficient_samples', avgFps };
       }
       if (now - lastAdjustAt < QUALITY_LOCK_MS) {
         recoveryStartedAt = null;
         return { nextQuality: currentQuality, changed: false, reason: 'stable', avgFps };
       }
       const index = QUALITY_ORDER.indexOf(currentQuality);
-      const shouldDownshift = avgFps < DOWNSHIFT_THRESHOLDS[currentQuality] && index < QUALITY_ORDER.length - 1;
-      if (shouldDownshift) {
+      const targetIndex = QUALITY_ORDER.findIndex((quality) => avgFps >= DOWNSHIFT_THRESHOLDS[quality]);
+      const clampedTargetIndex = targetIndex === -1 ? QUALITY_ORDER.length - 1 : targetIndex;
+      if (clampedTargetIndex > index) {
         recoveryStartedAt = null;
-        currentQuality = QUALITY_ORDER[index + 1];
+        currentQuality = QUALITY_ORDER[clampedTargetIndex];
         lastAdjustAt = now;
         return { nextQuality: currentQuality, changed: true, reason: 'fps_drop', avgFps };
       }

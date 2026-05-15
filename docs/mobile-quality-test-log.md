@@ -151,3 +151,9 @@
 - FPS 低下が軽微
 - 顔追従が継続
 - preset 切替・snapshot が動作
+
+## Warmup運用ルール（2026-05更新）
+
+- 起動直後の warmup 区間（最初の10秒）は quality 遷移ログの評価対象外とする。
+- 実測評価は warmup 終了後から記録する。
+- warmup 中の一時的な低FPS/無効FPSは `fps_drop` として扱わない。

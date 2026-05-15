@@ -270,3 +270,10 @@
 - HUDはCSSレイヤ表示のみで、snapshot/export rawには混入しない。
 - criticalでは鼻/口/輪郭系ターゲットを停止して長時間安定を優先。
 - long-running roadmap: iPhone 30分連続運用で thermal throttling耐性を継続評価。
+
+## Adaptive Quality 起動時 critical 問題の対策（2026-05）
+
+- adaptive controller と runtime current quality の初期値を `high` 固定化。
+- warmup (`10s`) 中は quality を変更しないガードを適用。
+- invalid FPS (`NaN` / `Infinity` / `<=0`) とサンプル不足時は downshift しないガードを追加。
+- warmup終了後に低FPSが継続する場合、現在FPSに応じて適切なqualityへ速やかに downshift する仕様に更新。
