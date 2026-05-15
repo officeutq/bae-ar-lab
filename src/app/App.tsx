@@ -47,7 +47,7 @@ const DEFAULT_ANIMATION_CLIP: AnimationClip = {
   duration: 3,
   loop: false,
   tracks: [
-    { track: 'beauty.intensity', keyframes: [{ time: 0, value: 0.6 }, { time: 1.5, value: 1 }, { time: 3, value: 0.6 }] },
+    { track: 'beauty.intensity', keyframes: [{ time: 0, value: 0.8 }, { time: 1.5, value: 1 }, { time: 3, value: 0.8 }] },
     { track: 'appearance.skinTone.warmth', keyframes: [{ time: 0, value: 0 }, { time: 3, value: 0.4 }] },
   ],
 };
@@ -541,6 +541,16 @@ export function App() {
   const resolvedOperationStrengthSummary = runtime.resolved.getOperations()
     .filter((operation) => operation.enabled)
     .map((operation, index) => `#${index} ${operation.type} ${operation.target} ${operation.strength.toFixed(3)}`);
+  const effectiveMultiplierSummary = activePreset.operations
+    .map((operation, index) => {
+      if (!operation.enabled) return null;
+      const resolved = runtime.resolved.getOperations()[index];
+      const multiplier = Math.abs(operation.strength) > 1e-6 && resolved
+        ? resolved.strength / operation.strength
+        : 0;
+      return `#${index} ${operation.type} ${operation.target} x${multiplier.toFixed(3)}`;
+    })
+    .filter((line): line is string => Boolean(line));
 
   const debugWarpResult = applyWarpOperations(debugUv, debugOperation ? [debugOperation] : [], debugGeometry);
   const debugGridPoints = Array.from({ length: DEBUG_GRID_SIZE * DEBUG_GRID_SIZE }, (_, index) => {
@@ -600,6 +610,7 @@ export function App() {
           rawOperationStrengthSummary={rawOperationStrengthSummary}
           intensityOperationStrengthSummary={intensityOperationStrengthSummary}
           resolvedOperationStrengthSummary={resolvedOperationStrengthSummary}
+          effectiveMultiplierSummary={effectiveMultiplierSummary}
           frameSkip={runtime.quality.runtimePreset.frameSkip}
           currentQuality={runtime.quality.runtimeQuality}
           selectedQuality={runtime.quality.adaptiveQuality.selectedQuality}
