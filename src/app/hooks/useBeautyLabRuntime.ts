@@ -104,6 +104,11 @@ export function useBeautyLabRuntime(
   const [previewSize, setPreviewSize] = useState<{ width: number; height: number }>({ width: 16, height: 9 });
   const previewSizeRef = useRef<{ width: number; height: number }>({ width: 16, height: 9 });
   const [overlayFrame, setOverlayFrame] = useState(0);
+  const [warpDebug, setWarpDebug] = useState({
+    resolvedOperationCount: operations.length,
+    filteredOperationCount: operations.length,
+    activeOperationCount: operations.filter((operation) => operation.enabled).length,
+  });
 
   const runtimeQuality = resolveRuntimeQuality(adaptiveQualityRef.current);
   const runtimePreset = QUALITY_PRESETS[runtimeQuality];
@@ -249,6 +254,11 @@ export function useBeautyLabRuntime(
       const resolvedOperations = temporalSmoothing.enabled
         ? smoothOperations(cappedOperations, operationTemporalFilterRef.current, temporalSmoothing.alpha)
         : cappedOperations;
+      setWarpDebug({
+        resolvedOperationCount: operationsRef.current.length,
+        filteredOperationCount: boundOperations.length,
+        activeOperationCount: resolvedOperations.filter((operation) => operation.enabled).length,
+      });
       resolvedOperationsRef.current = resolvedOperations;
       setOverlayFrame((current) => current + 1);
       const activeIndex = operationsRef.current.findIndex((op) => op.id === activeOperationRef.current?.id);
@@ -424,6 +434,7 @@ export function useBeautyLabRuntime(
         setAdaptiveQuality(adaptiveQualityRef.current);
       },
     },
+    warpDebug,
     actions: { startCamera, stopCamera },
     resolved: {
       getOperations: () => resolvedOperationsRef.current,

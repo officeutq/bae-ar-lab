@@ -14,6 +14,9 @@ type Props = {
   poseAttenuationYawFactor: number;
   poseAttenuationPitchFactor: number;
   activeOperationCount: number;
+  resolvedOperationCount: number;
+  filteredOperationCount: number;
+  warpStrengthScale: number;
   frameSkip: number;
   currentQuality: QualityLevel;
   selectedQuality: QualityLevel;
@@ -39,6 +42,9 @@ export function RuntimeDebugPanel({
   poseAttenuationYawFactor,
   poseAttenuationPitchFactor,
   activeOperationCount,
+  resolvedOperationCount,
+  filteredOperationCount,
+  warpStrengthScale,
   frameSkip,
   currentQuality,
   selectedQuality,
@@ -91,7 +97,10 @@ export function RuntimeDebugPanel({
         <li>render scale: {renderScale.toFixed(2)}</li>
         <li>frame skip: {frameSkip}</li>
         <li>renderer backend: {rendererMode}</li>
+        <li>resolved operations: {resolvedOperationCount}</li>
+        <li>quality filtered operations: {filteredOperationCount}</li>
         <li>active operations: {activeOperationCount}</li>
+        <li>warp strength scale: {warpStrengthScale.toFixed(2)}</li>
         <li>FPS: {fps.toFixed(1)}</li>
         <li>frame time: {frameTimeMs.toFixed(2)} ms</li>
         <li>MediaPipe time: {mediapipeTimeMs.toFixed(2)} ms</li>
