@@ -19,6 +19,7 @@ type Props = {
   selectedQuality: QualityLevel;
   adaptiveQualityEnabled: boolean;
   adaptiveQualityReason: AdaptiveQualityReason;
+  qualityLockRemainingMs: number;
   renderScale: number;
   rendererMode: RendererMode;
   fps: number;
@@ -42,6 +43,7 @@ export function RuntimeDebugPanel({
   selectedQuality,
   adaptiveQualityEnabled,
   adaptiveQualityReason,
+  qualityLockRemainingMs,
   renderScale,
   rendererMode,
   fps,
@@ -80,6 +82,7 @@ export function RuntimeDebugPanel({
         <li>adaptive quality: {adaptiveQualityEnabled ? 'enabled' : 'disabled'}</li>
         <li>adaptive active: {adaptiveQualityEnabled ? 'true' : 'false'}</li>
         <li>quality reason: {adaptiveQualityReason}</li>
+        <li>quality lock remaining: {(qualityLockRemainingMs / 1000).toFixed(1)}s</li>
         <li>selected quality: {selectedQuality}</li>
         <li>current quality: {currentQuality}</li>
         <li>render scale: {renderScale.toFixed(2)}</li>

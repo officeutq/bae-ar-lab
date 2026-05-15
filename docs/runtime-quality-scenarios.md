@@ -154,9 +154,9 @@
 
 ## Adaptive Quality 強化 (2026-05)
 - quality level: `high -> medium -> low -> critical`。
-- 評価は profiler の `avgFps30`（約3〜5秒移動平均）を利用し、瞬間低下では切り替えない。
+- 評価は profiler の `avgFps30`（sample window: 240 frame, おおむね8〜10秒相当）を利用し、瞬間低下では切り替えない。
 - downshift: high<35, medium<30, low<24。
-- upshift(hysteresis): critical>28, low>34, medium>40。
+- upshift(hysteresis): critical>30, low>37, medium>40。
 - quality reason: `fps_drop` / `fps_recovered` / `stable` / `manual`。
 - thermal確認: 10分以上連続実行し、quality transitionと端末発熱体感を同時記録する。
 
@@ -168,3 +168,7 @@
    - `Scale` / `Warp` / `MP every n frame` が current quality preset と一致すること
 4. quality が further downshift（medium→low, low→critical）した場合も同様にHUDが再表示されることを確認する。
 5. HUD は preview専用表示であり、source/processed snapshot と export raw には混入しないことを確認する。
+
+- warmup: 起動後 `10s` は adaptive quality 判定を停止。
+- quality lock: quality変更後 `10s` は再変更を停止（chattering防止）。
+- Runtime Debug: `quality lock remaining` を秒表示して状態確認可能。

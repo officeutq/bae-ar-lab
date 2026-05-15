@@ -531,7 +531,7 @@ export function App() {
         <Panel title="リアルタイムプロファイラ">
           <div className="profiler-overlay">
             <div>FPS: {runtime.profiler.fps.toFixed(1)}</div>
-            <div>AVG FPS (30): {runtime.profiler.avgFps30.toFixed(1)}</div>
+            <div>AVG FPS (window): {runtime.profiler.avgFps30.toFixed(1)}</div>
             <div>Frame (ms): {runtime.profiler.frameTimeMs.toFixed(2)}</div>
             <div>AVG Frame (ms): {runtime.profiler.avgFrameTimeMs30.toFixed(2)}</div>
             <div>Backend: {runtime.profiler.backend}</div>
@@ -568,6 +568,7 @@ export function App() {
           selectedQuality={runtime.quality.adaptiveQuality.selectedQuality}
           adaptiveQualityEnabled={runtime.quality.adaptiveQuality.enabled}
           adaptiveQualityReason={runtime.quality.adaptiveQuality.reason}
+          qualityLockRemainingMs={runtime.quality.qualityLockRemainingMs}
           renderScale={runtime.quality.runtimePreset.renderScale}
           rendererMode={rendererMode}
           fps={runtime.profiler.fps}
