@@ -265,5 +265,7 @@
 - adaptive quality を4段階化（high/medium/low/critical）。
 - `avgFps30` ベースの段階的切替とヒステリシスを導入。
 - render scale / smoothing sample / frame skip / MediaPipe間引き / warp強度 / operation制限をquality連動化。
+- adaptive quality HUD を加工プレビューに追加（quality変化時のみ約3秒表示、reason/scale/warp/MP intervalを表示）。
+- HUDはCSSレイヤ表示のみで、snapshot/export rawには混入しない。
 - criticalでは鼻/口/輪郭系ターゲットを停止して長時間安定を優先。
 - long-running roadmap: iPhone 30分連続運用で thermal throttling耐性を継続評価。
