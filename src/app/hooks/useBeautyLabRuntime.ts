@@ -102,6 +102,7 @@ export function useBeautyLabRuntime(
   const [qualityRecoveryElapsedMs, setQualityRecoveryElapsedMs] = useState(0);
   const [faceStability, setFaceStability] = useState<FaceStabilitySnapshot>(faceStabilityRef.current.getSnapshot());
   const [previewSize, setPreviewSize] = useState<{ width: number; height: number }>({ width: 16, height: 9 });
+  const [overlayFrame, setOverlayFrame] = useState(0);
 
   const runtimeQuality = resolveRuntimeQuality(adaptiveQualityRef.current);
   const runtimePreset = QUALITY_PRESETS[runtimeQuality];
@@ -233,6 +234,7 @@ export function useBeautyLabRuntime(
         ? smoothOperations(cappedOperations, operationTemporalFilterRef.current, temporalSmoothing.alpha)
         : cappedOperations;
       resolvedOperationsRef.current = resolvedOperations;
+      setOverlayFrame((current) => current + 1);
       const activeIndex = operationsRef.current.findIndex((op) => op.id === activeOperationRef.current?.id);
       resolvedActiveOperationRef.current = activeIndex >= 0 ? resolvedOperations[activeIndex] : null;
       overlayRef.current?.render(runtimeFrame.landmarks, geometryForRuntime, resolvedActiveOperationRef.current);
@@ -373,6 +375,7 @@ export function useBeautyLabRuntime(
     state: { cameraState, cameraErrorMessage, rendererState, landmarkerState, landmarkFrame, faceGeometry, previewSize },
     pose: { facePose, poseAttenuation },
     profiler: profilerSnapshot,
+    overlayFrame,
     faceStability,
     quality: {
       adaptiveQuality,
