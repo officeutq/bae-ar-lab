@@ -7,6 +7,7 @@ type CreateCanvasRendererOptions = {
   video: HTMLVideoElement;
   canvas: HTMLCanvasElement;
   getCpuWarpPreviewEnabled?: () => boolean;
+  getProcessedDebugMarkerEnabled?: () => boolean;
   getActiveOperation?: () => WarpOperation | null;
   getOperations?: () => WarpOperation[];
   getFaceGeometry?: () => FaceGeometry | null;
@@ -19,6 +20,7 @@ export function createCanvasRenderer({
   video,
   canvas,
   getCpuWarpPreviewEnabled,
+  getProcessedDebugMarkerEnabled,
   getActiveOperation,
   getFaceGeometry,
   getOperations,
@@ -68,20 +70,27 @@ export function createCanvasRenderer({
 
     if (hasSize && !shouldSkip) {
       const renderStart = performance.now();
-      if (getCpuWarpPreviewEnabled?.()) {
-        const activeOperation = getActiveOperation?.() ?? null;
-        const operations = getOperations?.() ?? (activeOperation ? [activeOperation] : []);
+      const activeOperation = getActiveOperation?.() ?? null;
+      const operations = getOperations?.() ?? (activeOperation ? [activeOperation] : []);
+      const geometry = getFaceGeometry?.() ?? null;
 
+      if (operations.length > 0 && geometry) {
         cpuWarpRenderer.render({
           video,
           canvas,
           context,
           operations,
-          geometry: getFaceGeometry?.() ?? null,
+          geometry,
         });
       } else {
         context.clearRect(0, 0, canvas.width, canvas.height);
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      }
+
+      if (getCpuWarpPreviewEnabled?.() || getProcessedDebugMarkerEnabled?.()) {
+        context.fillStyle = 'rgba(255, 40, 40, 0.78)';
+        context.font = 'bold 14px system-ui, sans-serif';
+        context.fillText(getCpuWarpPreviewEnabled?.() ? 'PROCESSED / CPU WARP DEBUG' : 'PROCESSED', 10, 22);
       }
       onRenderFrame?.(performance.now() - renderStart);
     }

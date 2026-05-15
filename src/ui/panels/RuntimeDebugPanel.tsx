@@ -17,6 +17,7 @@ type Props = {
   resolvedOperationCount: number;
   filteredOperationCount: number;
   warpStrengthScale: number;
+  firstActiveOperationSummary: string;
   frameSkip: number;
   currentQuality: QualityLevel;
   selectedQuality: QualityLevel;
@@ -45,6 +46,7 @@ export function RuntimeDebugPanel({
   resolvedOperationCount,
   filteredOperationCount,
   warpStrengthScale,
+  firstActiveOperationSummary,
   frameSkip,
   currentQuality,
   selectedQuality,
@@ -101,6 +103,7 @@ export function RuntimeDebugPanel({
         <li>quality filtered operations: {filteredOperationCount}</li>
         <li>active operations: {activeOperationCount}</li>
         <li>warp strength scale: {warpStrengthScale.toFixed(2)}</li>
+        <li>first active operation: {firstActiveOperationSummary}</li>
         <li>FPS: {fps.toFixed(1)}</li>
         <li>frame time: {frameTimeMs.toFixed(2)} ms</li>
         <li>MediaPipe time: {mediapipeTimeMs.toFixed(2)} ms</li>

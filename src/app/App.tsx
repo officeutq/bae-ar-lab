@@ -517,6 +517,12 @@ export function App() {
     rightCheekPolygon: [debugCenter, debugCenter, debugCenter],
     jawPolygon: [debugCenter, debugCenter, debugCenter],
   };
+  const firstActiveOperationSummary = (() => {
+    const first = runtime.resolved.getOperations().find((operation) => operation.enabled);
+    if (!first) return 'none';
+    return `${first.type} / ${first.target} / strength ${first.strength.toFixed(3)}`;
+  })();
+
   const debugWarpResult = applyWarpOperations(debugUv, debugOperation ? [debugOperation] : [], debugGeometry);
   const debugGridPoints = Array.from({ length: DEBUG_GRID_SIZE * DEBUG_GRID_SIZE }, (_, index) => {
     const gx = index % DEBUG_GRID_SIZE; const gy = Math.floor(index / DEBUG_GRID_SIZE); const uv = { x: gx / (DEBUG_GRID_SIZE - 1), y: gy / (DEBUG_GRID_SIZE - 1) };
@@ -569,6 +575,7 @@ export function App() {
           resolvedOperationCount={runtime.warpDebug.resolvedOperationCount}
           filteredOperationCount={runtime.warpDebug.filteredOperationCount}
           warpStrengthScale={runtime.quality.runtimePreset.warpStrengthScale}
+          firstActiveOperationSummary={firstActiveOperationSummary}
           frameSkip={runtime.quality.runtimePreset.frameSkip}
           currentQuality={runtime.quality.runtimeQuality}
           selectedQuality={runtime.quality.adaptiveQuality.selectedQuality}
