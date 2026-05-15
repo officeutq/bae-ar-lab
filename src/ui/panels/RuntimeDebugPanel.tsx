@@ -1,7 +1,7 @@
 import type { RendererMode } from '@engine/render/types';
 import type { FacePose } from '@engine/geometry/types';
 import type { FaceStabilitySnapshot } from '@engine/temporal/createFaceStabilityController';
-import type { QualityLevel } from '@engine/performance/adaptiveQuality';
+import type { AdaptiveQualityReason, QualityLevel } from '@engine/performance/adaptiveQuality';
 import { Panel } from '@ui/Panel';
 
 type Props = {
@@ -18,6 +18,7 @@ type Props = {
   currentQuality: QualityLevel;
   selectedQuality: QualityLevel;
   adaptiveQualityEnabled: boolean;
+  adaptiveQualityReason: AdaptiveQualityReason;
   renderScale: number;
   rendererMode: RendererMode;
   fps: number;
@@ -40,6 +41,7 @@ export function RuntimeDebugPanel({
   currentQuality,
   selectedQuality,
   adaptiveQualityEnabled,
+  adaptiveQualityReason,
   renderScale,
   rendererMode,
   fps,
@@ -76,6 +78,8 @@ export function RuntimeDebugPanel({
       <h4>Quality</h4>
       <ul>
         <li>adaptive quality: {adaptiveQualityEnabled ? 'enabled' : 'disabled'}</li>
+        <li>adaptive active: {adaptiveQualityEnabled ? 'true' : 'false'}</li>
+        <li>quality reason: {adaptiveQualityReason}</li>
         <li>selected quality: {selectedQuality}</li>
         <li>current quality: {currentQuality}</li>
         <li>render scale: {renderScale.toFixed(2)}</li>

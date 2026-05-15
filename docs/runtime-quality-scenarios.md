@@ -150,3 +150,12 @@
 - clean は natural より輪郭が少し整う（jaw line warp が強い）。
 - 鼻・口は clean で微増させるが、加工感が強すぎない。
 - Beauty Debug Overlay の `変形範囲` で、clean の影響が natural よりやや広く/強く見える。
+
+
+## Adaptive Quality 強化 (2026-05)
+- quality level: `high -> medium -> low -> critical`。
+- 評価は profiler の `avgFps30`（約3〜5秒移動平均）を利用し、瞬間低下では切り替えない。
+- downshift: high<35, medium<30, low<24。
+- upshift(hysteresis): critical>28, low>34, medium>40。
+- quality reason: `fps_drop` / `fps_recovered` / `stable` / `manual`。
+- thermal確認: 10分以上連続実行し、quality transitionと端末発熱体感を同時記録する。

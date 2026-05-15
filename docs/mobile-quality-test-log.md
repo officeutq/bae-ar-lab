@@ -31,6 +31,8 @@
 | preset | lite_beauty / natural_beauty / clean_beauty |
 | renderer | webgl / canvas2d / cpu_warp_debug |
 | quality preset |  |
+| adaptive quality level | high / medium / low / critical |
+| quality transition | 例: high→medium (fps_drop) |
 | duration | 5分 / 10分 / 30分 |
 | lighting | 通常 / 逆光 / 低照度 |
 | camera orientation | portrait / landscape |
