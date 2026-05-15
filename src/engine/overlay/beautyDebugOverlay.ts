@@ -26,6 +26,41 @@ const toCanvasPoint = (canvas: HTMLCanvasElement, point: Point2D): Point2D => ({
   y: clamp01(point.y) * canvas.height,
 });
 
+const resolveLineWarpPoints = (operation: WarpOperation, geometry: FaceGeometry): { start: Point2D; end: Point2D } => {
+  if (operation.binding?.type === 'landmark_line') {
+    return {
+      start: operation.lineStart,
+      end: operation.lineEnd,
+    };
+  }
+
+  if (operation.target === 'left_jaw') {
+    return {
+      start: geometry.leftJawLine.start,
+      end: geometry.leftJawLine.end,
+    };
+  }
+
+  if (operation.target === 'right_jaw') {
+    return {
+      start: geometry.rightJawLine.start,
+      end: geometry.rightJawLine.end,
+    };
+  }
+
+  if (operation.target === 'chin_line') {
+    return {
+      start: geometry.chinLine.start,
+      end: geometry.chinLine.end,
+    };
+  }
+
+  return {
+    start: operation.lineStart,
+    end: operation.lineEnd,
+  };
+};
+
 const faceMaskFromGeometry = (geometry: FaceGeometry): Point2D[] => {
   const region = [...geometry.leftCheekPolygon, ...[...geometry.rightCheekPolygon].reverse()];
   if (region.length >= 6) return region;
@@ -67,8 +102,9 @@ export function renderBeautyDebugOverlay(canvas: HTMLCanvasElement, snapshot: Be
       context.fillStyle = `rgba(255, 165, 64, ${(alpha * 0.4).toFixed(3)})`;
       context.lineWidth = 2;
       if (operation.type === 'line_warp') {
-        const start = toCanvasPoint(canvas, operation.lineStart);
-        const end = toCanvasPoint(canvas, operation.lineEnd);
+        const { start: resolvedStart, end: resolvedEnd } = resolveLineWarpPoints(operation, geometry);
+        const start = toCanvasPoint(canvas, resolvedStart);
+        const end = toCanvasPoint(canvas, resolvedEnd);
         context.beginPath();
         context.moveTo(start.x, start.y);
         context.lineTo(end.x, end.y);
