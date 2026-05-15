@@ -66,10 +66,10 @@ export function computePoseAttenuation(pose: FacePose | null): PoseAttenuation {
   const yawAbs = Math.abs(pose.yaw);
   const pitchAbs = Math.abs(pose.pitch);
   const yawReduction = smoothstep(12, 35, yawAbs);
-  const pitchReduction = smoothstep(10, 25, pitchAbs);
+  const pitchReduction = smoothstep(14, 32, pitchAbs);
 
   const yawFactor = 1 - yawReduction * 0.7;
-  const pitchFactor = 1 - pitchReduction * 0.45;
+  const pitchFactor = 1 - pitchReduction * 0.35;
 
   return {
     factor: clamp01(yawFactor * pitchFactor),

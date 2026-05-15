@@ -23,6 +23,7 @@ type Props = {
   rawOperationStrengthSummary: string[];
   intensityOperationStrengthSummary: string[];
   resolvedOperationStrengthSummary: string[];
+  effectiveMultiplierSummary: string[];
   frameSkip: number;
   currentQuality: QualityLevel;
   selectedQuality: QualityLevel;
@@ -57,6 +58,7 @@ export function RuntimeDebugPanel({
   rawOperationStrengthSummary,
   intensityOperationStrengthSummary,
   resolvedOperationStrengthSummary,
+  effectiveMultiplierSummary,
   frameSkip,
   currentQuality,
   selectedQuality,
@@ -129,6 +131,8 @@ export function RuntimeDebugPanel({
       <ul>{intensityOperationStrengthSummary.map((line) => <li key={`intensity-${line}`}>{line}</li>)}</ul>
       <div>resolved (quality/stability/pose applied)</div>
       <ul>{resolvedOperationStrengthSummary.map((line) => <li key={`resolved-${line}`}>{line}</li>)}</ul>
+      <div>effective multiplier (resolved/raw)</div>
+      <ul>{effectiveMultiplierSummary.map((line) => <li key={`effective-${line}`}>{line}</li>)}</ul>
     </Panel>
   );
 }
