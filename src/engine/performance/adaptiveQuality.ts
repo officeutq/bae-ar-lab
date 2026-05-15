@@ -77,11 +77,12 @@ const DOWNSHIFT_THRESHOLDS: Record<QualityLevel, number> = {
 const UPSHIFT_THRESHOLDS: Record<QualityLevel, number> = {
   high: Number.POSITIVE_INFINITY,
   medium: 40,
-  low: 34,
-  critical: 28,
+  low: 37,
+  critical: 30,
 };
 
-const MIN_ADJUST_GAP_MS = 2500;
+export const QUALITY_WARMUP_MS = 10000;
+export const QUALITY_LOCK_MS = 10000;
 
 export function resolveRuntimeQuality(state: AdaptiveQualityState): QualityLevel {
   return state.enabled ? state.currentQuality : state.selectedQuality;
@@ -89,16 +90,22 @@ export function resolveRuntimeQuality(state: AdaptiveQualityState): QualityLevel
 
 export function createAdaptiveQualityController(initialQuality: QualityLevel = 'high') {
   let currentQuality: QualityLevel = initialQuality;
-  let lastAdjustAt = 0;
+  let lastAdjustAt = Number.NEGATIVE_INFINITY;
+  let warmupStartedAt = performance.now();
 
   return {
     getQuality: () => currentQuality,
     setQuality: (quality: QualityLevel) => {
       currentQuality = quality;
-      lastAdjustAt = 0;
+      lastAdjustAt = Number.NEGATIVE_INFINITY;
+      warmupStartedAt = performance.now();
     },
+    getLockRemainingMs: (now = performance.now()) => Math.max(0, QUALITY_LOCK_MS - (now - lastAdjustAt)),
     evaluate(avgFps: number, now = performance.now()): AutoAdjustDecision {
-      if (now - lastAdjustAt < MIN_ADJUST_GAP_MS) {
+      if (now - warmupStartedAt < QUALITY_WARMUP_MS) {
+        return { nextQuality: currentQuality, changed: false, reason: 'stable', avgFps };
+      }
+      if (now - lastAdjustAt < QUALITY_LOCK_MS) {
         return { nextQuality: currentQuality, changed: false, reason: 'stable', avgFps };
       }
       const index = QUALITY_ORDER.indexOf(currentQuality);

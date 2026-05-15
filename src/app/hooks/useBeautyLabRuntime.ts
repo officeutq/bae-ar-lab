@@ -76,7 +76,7 @@ export function useBeautyLabRuntime(
   const operationsRef = useRef<WarpOperation[]>(operations);
   const resolvedOperationsRef = useRef<WarpOperation[]>(operations);
   const resolvedActiveOperationRef = useRef<WarpOperation | null>(activeOperation);
-  const profilerRef = useRef(createProfiler({ sampleWindow: 30 }));
+  const profilerRef = useRef(createProfiler({ sampleWindow: 240 }));
   const detectFrameCountRef = useRef(0);
   const lastLandmarkFrameRef = useRef<FaceLandmarksFrame | null>(null);
   const adaptiveQualityControllerRef = useRef(createAdaptiveQualityController(initialQuality));
@@ -98,6 +98,7 @@ export function useBeautyLabRuntime(
   const [facePose, setFacePose] = useState<FacePose | null>(null);
   const [poseAttenuation, setPoseAttenuation] = useState<PoseAttenuation>({ factor: 1, yawFactor: 1, pitchFactor: 1 });
   const [adaptiveQuality, setAdaptiveQuality] = useState<AdaptiveQualityState>(adaptiveQualityRef.current);
+  const [qualityLockRemainingMs, setQualityLockRemainingMs] = useState(0);
   const [faceStability, setFaceStability] = useState<FaceStabilitySnapshot>(faceStabilityRef.current.getSnapshot());
   const [previewSize, setPreviewSize] = useState<{ width: number; height: number }>({ width: 16, height: 9 });
 
@@ -240,6 +241,7 @@ export function useBeautyLabRuntime(
       const adaptiveRef = adaptiveQualityRef.current;
       if (adaptiveRef.enabled) {
         const decision = adaptiveQualityControllerRef.current.evaluate(nextSnapshot.avgFps30, nextSnapshot.timestamp);
+        setQualityLockRemainingMs(adaptiveQualityControllerRef.current.getLockRemainingMs(nextSnapshot.timestamp));
         if (decision.changed) {
           adaptiveQualityRef.current = { ...adaptiveRef, currentQuality: decision.nextQuality, reason: decision.reason };
           setAdaptiveQuality(adaptiveQualityRef.current);
@@ -374,6 +376,7 @@ export function useBeautyLabRuntime(
       adaptiveQuality,
       runtimeQuality,
       runtimePreset,
+      qualityLockRemainingMs,
       setAdaptiveEnabled: (enabled: boolean) => {
         adaptiveQualityRef.current = { ...adaptiveQualityRef.current, enabled, reason: 'manual' };
         setAdaptiveQuality(adaptiveQualityRef.current);

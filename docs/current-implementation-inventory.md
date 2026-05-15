@@ -264,6 +264,7 @@
 ## Adaptive Quality / Thermal 対策アップデート (2026-05)
 - adaptive quality を4段階化（high/medium/low/critical）。
 - `avgFps30` ベースの段階的切替とヒステリシスを導入。
+- adaptive stabilization: warmup 10s + quality lock 10s + longer moving average window で quality chattering を抑制。
 - render scale / smoothing sample / frame skip / MediaPipe間引き / warp強度 / operation制限をquality連動化。
 - adaptive quality HUD を加工プレビューに追加（quality変化時のみ約3秒表示、reason/scale/warp/MP intervalを表示）。
 - HUDはCSSレイヤ表示のみで、snapshot/export rawには混入しない。
