@@ -24,6 +24,7 @@ import {
   type AdaptiveQualityState,
   type QualityLevel,
 } from '@engine/performance/adaptiveQuality';
+import type { DeveloperTuningState } from '@engine/tuning/developerTuning';
 
 type CameraViewState = 'idle' | 'starting' | 'running' | 'error';
 
@@ -60,7 +61,7 @@ export function useBeautyLabRuntime(
   rendererMode: RendererBackendMode,
   skinSmoothing: { enabled: boolean; strength: number; radius: number; maskOpacity: number; showMaskPreview: boolean },
   skinTone: { enabled: boolean; brightness: number; saturation: number; warmth: number; blend: number },
-  temporalSmoothing: { enabled: boolean; alpha: number },
+  tuning: DeveloperTuningState,
   initialQuality: QualityLevel = 'high',
   adaptiveQualityEnabledByDefault = true,
   experimentMode: RuntimeExperimentMode = { disablePoseAttenuation: false, disableAdaptiveQuality: false },
@@ -88,7 +89,10 @@ export function useBeautyLabRuntime(
   const landmarkTemporalFilterRef = useRef(createTemporalFilter());
   const operationTemporalFilterRef = useRef(createTemporalFilter());
   const adaptiveQualityRef = useRef<AdaptiveQualityState>({ enabled: adaptiveQualityEnabledByDefault, selectedQuality: initialQuality, currentQuality: 'high', reason: 'manual' });
-  const faceStabilityRef = useRef(createFaceStabilityController());
+  const faceStabilityRef = useRef(createFaceStabilityController({
+    fadeOutPerFrame: tuning.stability.fadeOutSpeed,
+    fadeInPerFrame: tuning.stability.fadeInSpeed,
+  }));
   const lastStableGeometryRef = useRef<FaceGeometry | null>(null);
   const skinSmoothingRef = useRef(skinSmoothing);
   const skinToneRef = useRef(skinTone);
@@ -220,8 +224,8 @@ export function useBeautyLabRuntime(
       const result = shouldDetect
         ? faceLandmarkerController.detectForVideoFrame(videoElement, performance.now())
         : (lastLandmarkFrameRef.current ?? { detected: false, landmarks: [], frameCount: 0, timestampMs: performance.now(), faceCount: 0, landmarkCount: 0 });
-      const smoothedLandmarks = temporalSmoothing.enabled && result.detected
-        ? smoothLandmarks(result.landmarks, landmarkTemporalFilterRef.current, temporalSmoothing.alpha)
+      const smoothedLandmarks = result.detected
+        ? smoothLandmarks(result.landmarks, landmarkTemporalFilterRef.current, tuning.temporal.landmarkSmoothingAlpha)
         : result.landmarks;
       const runtimeFrame = { ...result, landmarks: smoothedLandmarks };
       const mediapipeMs = shouldDetect ? performance.now() - detectStart : 0;
@@ -238,7 +242,14 @@ export function useBeautyLabRuntime(
       const runtimePose = detectedPose ?? (stability.fade > 0 ? facePose : null);
       const runtimeAttenuation = experimentMode.disablePoseAttenuation
         ? { factor: 1, yawFactor: 1, pitchFactor: 1 }
-        : computePoseAttenuation(runtimePose);
+        : computePoseAttenuation(runtimePose, {
+          yawStart: tuning.pose.yawStart,
+          yawEnd: tuning.pose.yawEnd,
+          yawMin: tuning.pose.yawMin,
+          pitchStart: tuning.pose.pitchStart,
+          pitchEnd: tuning.pose.pitchEnd,
+          pitchMin: tuning.pose.pitchMin,
+        });
       setFacePose(runtimePose);
       setPoseAttenuation(runtimeAttenuation);
       if (detectedGeometry) {
@@ -253,14 +264,13 @@ export function useBeautyLabRuntime(
         .filter((operation) => !runtimeQualityPreset.disabledTargets.includes(operation.target))
         .map((operation) => ({
           ...operation,
-          strength: operation.strength * (experimentMode.disableAdaptiveQuality ? 1 : runtimeQualityPreset.warpStrengthScale) * stability.fade * runtimeAttenuation.factor,
+          strength: Math.max(-tuning.warpSafety.maxOperationStrength, Math.min(tuning.warpSafety.maxOperationStrength, operation.strength * (experimentMode.disableAdaptiveQuality ? 1 : runtimeQualityPreset.warpStrengthScale) * tuning.warpSafety.globalWarpStrengthScale * stability.fade * runtimeAttenuation.factor)),
+          radius: Math.max(tuning.warpSafety.minRadius, Math.min(tuning.warpSafety.maxRadius, operation.radius)),
         }));
       const cappedOperations = runtimeQualityPreset.maxActiveOperations === null
         ? boundOperations
         : boundOperations.map((operation, index) => ({ ...operation, enabled: operation.enabled && index < (runtimeQualityPreset.maxActiveOperations ?? Number.POSITIVE_INFINITY) }));
-      const resolvedOperations = temporalSmoothing.enabled
-        ? smoothOperations(cappedOperations, operationTemporalFilterRef.current, temporalSmoothing.alpha)
-        : cappedOperations;
+      const resolvedOperations = smoothOperations(cappedOperations, operationTemporalFilterRef.current, tuning.temporal.operationSmoothingAlpha);
       setWarpDebug({
         resolvedOperationCount: operationsRef.current.length,
         filteredOperationCount: boundOperations.length,
@@ -308,6 +318,8 @@ export function useBeautyLabRuntime(
     setPoseAttenuation({ factor: 1, yawFactor: 1, pitchFactor: 1 });
     faceGeometryRef.current = null;
     lastStableGeometryRef.current = null;
+    faceStabilityRef.current = createFaceStabilityController({ fadeOutPerFrame: tuning.stability.fadeOutSpeed, fadeInPerFrame: tuning.stability.fadeInSpeed });
+    faceStabilityRef.current = createFaceStabilityController({ fadeOutPerFrame: tuning.stability.fadeOutSpeed, fadeInPerFrame: tuning.stability.fadeInSpeed });
     faceStabilityRef.current.reset();
     setFaceStability(faceStabilityRef.current.getSnapshot());
 
@@ -408,6 +420,7 @@ export function useBeautyLabRuntime(
     setPoseAttenuation({ factor: 1, yawFactor: 1, pitchFactor: 1 });
     faceGeometryRef.current = null;
     lastStableGeometryRef.current = null;
+    faceStabilityRef.current = createFaceStabilityController({ fadeOutPerFrame: tuning.stability.fadeOutSpeed, fadeInPerFrame: tuning.stability.fadeInSpeed });
     faceStabilityRef.current.reset();
     setFaceStability(faceStabilityRef.current.getSnapshot());
     setCameraState('idle');
@@ -442,6 +455,7 @@ export function useBeautyLabRuntime(
       },
     },
     warpDebug,
+    tuning,
     actions: { startCamera, stopCamera },
     resolved: {
       getOperations: () => resolvedOperationsRef.current,

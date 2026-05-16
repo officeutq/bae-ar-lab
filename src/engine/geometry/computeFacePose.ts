@@ -58,18 +58,18 @@ export function computeFacePose(landmarks: FaceLandmarkPoint[]): FacePose | null
   };
 }
 
-export function computePoseAttenuation(pose: FacePose | null): PoseAttenuation {
+export function computePoseAttenuation(pose: FacePose | null, config: { yawStart: number; yawEnd: number; yawMin: number; pitchStart: number; pitchEnd: number; pitchMin: number }): PoseAttenuation {
   if (!pose) {
     return { factor: 1, yawFactor: 1, pitchFactor: 1 };
   }
 
   const yawAbs = Math.abs(pose.yaw);
   const pitchAbs = Math.abs(pose.pitch);
-  const yawReduction = smoothstep(12, 35, yawAbs);
-  const pitchReduction = smoothstep(14, 32, pitchAbs);
+  const yawReduction = smoothstep(config.yawStart, config.yawEnd, yawAbs);
+  const pitchReduction = smoothstep(config.pitchStart, config.pitchEnd, pitchAbs);
 
-  const yawFactor = 1 - yawReduction * 0.7;
-  const pitchFactor = 1 - pitchReduction * 0.35;
+  const yawFactor = 1 - yawReduction * (1 - config.yawMin);
+  const pitchFactor = 1 - pitchReduction * (1 - config.pitchMin);
 
   return {
     factor: clamp01(yawFactor * pitchFactor),
