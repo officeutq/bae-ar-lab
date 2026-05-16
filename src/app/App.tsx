@@ -19,6 +19,7 @@ import { renderBeautyDebugOverlay, type BeautyDebugOverlayMode } from '@engine/o
 import { useBeautyLabRuntime } from './hooks/useBeautyLabRuntime';
 import type { RendererMode } from '@engine/render/types';
 import { detectDeviceCapabilities } from '@engine/performance/detectDeviceCapabilities';
+import { DEFAULT_DEVELOPER_TUNING, type DeveloperTuningState } from '@engine/tuning/developerTuning';
 import { createSnapshotExporter } from '@engine/capture/createSnapshotExporter';
 import { createTimeline } from '@engine/animation/createTimeline';
 import type { WarpOperation, WarpPreset } from '@app-types/preset';
@@ -166,14 +167,17 @@ export function App() {
   const [debugUv, setDebugUv] = useState({ x: 0.5, y: 0.5 });
   const snapshotExporter = useMemo(() => createSnapshotExporter(), []);
   const [compareCapture, setCompareCapture] = useState<CompareCapture | null>(null);
-  const [temporalSmoothingEnabled, setTemporalSmoothingEnabled] = useState(true);
-  const [temporalSmoothingAlpha, setTemporalSmoothingAlpha] = useState(0.35);
+  const [developerTuning, setDeveloperTuning] = useState<DeveloperTuningState>(DEFAULT_DEVELOPER_TUNING);
   const [adaptiveQualityHud, setAdaptiveQualityHud] = useState<{ visible: boolean; from: QualityLevel; to: QualityLevel; reason: AdaptiveQualityReason }>({
     visible: false,
     from: capabilities.recommendedQuality,
     to: capabilities.recommendedQuality,
     reason: 'manual',
   });
+
+  useEffect(() => {
+    (globalThis as { __BEAUTY_WEBGL_WARP_GAIN__?: number }).__BEAUTY_WEBGL_WARP_GAIN__ = developerTuning.debug.webglWarpGain;
+  }, [developerTuning.debug.webglWarpGain]);
   useEffect(() => {
     timelineRef.setLoop(typeof loadedAnimationClip.loop === 'boolean' ? loadedAnimationClip.loop : animationLoop);
   }, [animationLoop, timelineRef]);
@@ -217,7 +221,7 @@ export function App() {
   const activeOperation = runtimePreset.operations[activeOperationIndex] ?? null;
   const runtime = useBeautyLabRuntime(activeOperation, runtimePreset.operations, {
     showLandmarks, showCenters, showWarpInfluence, showWarpCenter, showFalloffRings,
-  }, rendererMode, skinSmoothing, skinTone, { enabled: temporalSmoothingEnabled, alpha: temporalSmoothingAlpha }, capabilities.recommendedQuality, capabilities.adaptiveQualityDefaultEnabled, {
+  }, rendererMode, skinSmoothing, skinTone, developerTuning, capabilities.recommendedQuality, capabilities.adaptiveQualityDefaultEnabled, {
     disablePoseAttenuation: debugWarpStrongBypassEnabled,
     disableAdaptiveQuality: debugWarpStrongBypassEnabled,
   });
@@ -616,8 +620,8 @@ export function App() {
           </div>
         </Panel>
         <RuntimeDebugPanel
-          temporalSmoothingEnabled={temporalSmoothingEnabled}
-          temporalSmoothingAlpha={temporalSmoothingAlpha}
+          temporalSmoothingEnabled={true}
+          temporalSmoothingAlpha={developerTuning.temporal.operationSmoothingAlpha}
           faceDetected={Boolean(runtime.state.landmarkFrame?.detected)}
           faceStability={runtime.faceStability}
           facePose={runtime.pose.facePose}
@@ -664,7 +668,7 @@ export function App() {
             ...track,
             keyframes: track.keyframes.map((keyframe, kIndex) => kIndex === keyframeIndex ? { ...keyframe, value } : keyframe),
           } : track),
-        }))} onAddKeyframe={addSelectedTrackKeyframe} onDeleteKeyframe={deleteSelectedKeyframe} onPlayAnimation={() => { timelineRef.play(); syncTimelineSnapshot(); }} onPauseAnimation={() => { timelineRef.pause(); syncTimelineSnapshot(); }} onStopAnimation={() => { timelineRef.stop(); syncTimelineSnapshot(); }} onTimelineTimeChange={(value) => { timelineRef.seek(value); syncTimelineSnapshot(); }} setAnimationLoop={setAnimationLoop} onCaptureCompare={onCaptureCompare} presetNameInput={presetNameInput} setPresetNameInput={setPresetNameInput} presets={presets} activeStoredPresetId={activeStoredPresetId} onSavePreset={onSavePreset} onCreatePreset={onCreatePreset} onDeletePreset={onDeletePreset} onRenamePreset={onRenamePreset} onLoadPreset={onLoadPreset} selectedSamplePresetId={selectedSamplePresetId} onSelectSamplePreset={onSelectSamplePreset} onExportPreset={onExportPreset} onImportPresetText={onImportPresetText} presetMessage={presetMessage} pipelineStatus={pipelineState.status} onStartCamera={runtime.actions.startCamera} onStopCamera={runtime.actions.stopCamera} cameraState={runtime.state.cameraState} showLandmarks={showLandmarks} setShowLandmarks={setShowLandmarks} showCenters={showCenters} setShowCenters={setShowCenters} showWarpInfluence={showWarpInfluence} setShowWarpInfluence={setShowWarpInfluence} showWarpCenter={showWarpCenter} setShowWarpCenter={setShowWarpCenter} showFalloffRings={showFalloffRings} setShowFalloffRings={setShowFalloffRings} beautyDebugOverlayMode={beautyDebugOverlayMode} setBeautyDebugOverlayMode={setBeautyDebugOverlayMode} rendererMode={rendererMode} setRendererMode={setRendererMode} activeOperationIndex={activeOperationIndex} setActiveOperationIndex={setActiveOperationIndex} addOperation={addOperation} removeOperation={removeOperation} updateOperation={updateOperation} updateAxis={updateAxis} updateFalloffType={updateFalloffType} updateDirection={updateDirection} resolvedActiveOperation={resolvedActiveOperation} skinSmoothing={skinSmoothing} updateSkinSmoothing={updateSkinSmoothing} skinTone={skinTone} updateSkinTone={updateSkinTone} adaptiveQualityEnabled={runtime.quality.adaptiveQuality.enabled} onAdaptiveQualityEnabledChange={runtime.quality.setAdaptiveEnabled} selectedQuality={runtime.quality.adaptiveQuality.selectedQuality} currentQuality={runtime.quality.runtimeQuality} onSelectedQualityChange={runtime.quality.setSelectedQuality} capabilities={capabilities} temporalSmoothingEnabled={temporalSmoothingEnabled} setTemporalSmoothingEnabled={setTemporalSmoothingEnabled} temporalSmoothingAmount={temporalSmoothingAlpha} setTemporalSmoothingAmount={setTemporalSmoothingAlpha} />
+        }))} onAddKeyframe={addSelectedTrackKeyframe} onDeleteKeyframe={deleteSelectedKeyframe} onPlayAnimation={() => { timelineRef.play(); syncTimelineSnapshot(); }} onPauseAnimation={() => { timelineRef.pause(); syncTimelineSnapshot(); }} onStopAnimation={() => { timelineRef.stop(); syncTimelineSnapshot(); }} onTimelineTimeChange={(value) => { timelineRef.seek(value); syncTimelineSnapshot(); }} setAnimationLoop={setAnimationLoop} onCaptureCompare={onCaptureCompare} presetNameInput={presetNameInput} setPresetNameInput={setPresetNameInput} presets={presets} activeStoredPresetId={activeStoredPresetId} onSavePreset={onSavePreset} onCreatePreset={onCreatePreset} onDeletePreset={onDeletePreset} onRenamePreset={onRenamePreset} onLoadPreset={onLoadPreset} selectedSamplePresetId={selectedSamplePresetId} onSelectSamplePreset={onSelectSamplePreset} onExportPreset={onExportPreset} onImportPresetText={onImportPresetText} presetMessage={presetMessage} pipelineStatus={pipelineState.status} onStartCamera={runtime.actions.startCamera} onStopCamera={runtime.actions.stopCamera} cameraState={runtime.state.cameraState} showLandmarks={showLandmarks} setShowLandmarks={setShowLandmarks} showCenters={showCenters} setShowCenters={setShowCenters} showWarpInfluence={showWarpInfluence} setShowWarpInfluence={setShowWarpInfluence} showWarpCenter={showWarpCenter} setShowWarpCenter={setShowWarpCenter} showFalloffRings={showFalloffRings} setShowFalloffRings={setShowFalloffRings} beautyDebugOverlayMode={beautyDebugOverlayMode} setBeautyDebugOverlayMode={setBeautyDebugOverlayMode} rendererMode={rendererMode} setRendererMode={setRendererMode} activeOperationIndex={activeOperationIndex} setActiveOperationIndex={setActiveOperationIndex} addOperation={addOperation} removeOperation={removeOperation} updateOperation={updateOperation} updateAxis={updateAxis} updateFalloffType={updateFalloffType} updateDirection={updateDirection} resolvedActiveOperation={resolvedActiveOperation} skinSmoothing={skinSmoothing} updateSkinSmoothing={updateSkinSmoothing} skinTone={skinTone} updateSkinTone={updateSkinTone} adaptiveQualityEnabled={runtime.quality.adaptiveQuality.enabled} onAdaptiveQualityEnabledChange={runtime.quality.setAdaptiveEnabled} selectedQuality={runtime.quality.adaptiveQuality.selectedQuality} currentQuality={runtime.quality.runtimeQuality} onSelectedQualityChange={runtime.quality.setSelectedQuality} capabilities={capabilities} temporalSmoothingEnabled={true} setTemporalSmoothingEnabled={()=>{}} temporalSmoothingAmount={developerTuning.temporal.operationSmoothingAlpha} setTemporalSmoothingAmount={(v)=>setDeveloperTuning((c)=>({...c, temporal:{...c.temporal, operationSmoothingAlpha:v, landmarkSmoothingAlpha:v}}))} developerTuning={developerTuning} setDeveloperTuning={setDeveloperTuning} onResetDeveloperTuning={()=>setDeveloperTuning(DEFAULT_DEVELOPER_TUNING)} />
         <TimelinePanel clip={loadedAnimationClip} currentTime={animationTime} currentValues={timelineSnapshot.values} selectedTrackIndex={selectedTrackIndex} selectedKeyframeIndex={selectedKeyframeIndex} onSelectKeyframe={selectKeyframe} onSeek={(time) => {
           timelineRef.seek(time);
           syncTimelineSnapshot();
