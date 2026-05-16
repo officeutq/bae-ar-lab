@@ -52,6 +52,7 @@ const DEFAULT_ANIMATION_CLIP: AnimationClip = {
     { track: 'appearance.skinTone.warmth', keyframes: [{ time: 0, value: 0 }, { time: 3, value: 0.4 }] },
   ],
 };
+type LeftPaneTab = 'source' | 'processed';
 type RightPaneTab = 'face' | 'profiler' | 'runtimeDebug' | 'tuning' | 'timeline' | 'warpDebug' | 'json' | 'compare';
 
 export function App() {
@@ -175,6 +176,7 @@ export function App() {
     to: capabilities.recommendedQuality,
     reason: 'manual',
   });
+  const [activeLeftPaneTab, setActiveLeftPaneTab] = useState<LeftPaneTab>('source');
   const [activeRightPaneTab, setActiveRightPaneTab] = useState<RightPaneTab>('tuning');
 
   useEffect(() => {
@@ -580,9 +582,23 @@ export function App() {
       </header>
       <div className="workspace-layout">
         <section className="workspace-layout__left">
-          <div className="workspace-layout__left-inner">
-            <SourcePreviewPanel videoRef={runtime.refs.videoRef} overlayCanvasRef={runtime.refs.overlayCanvasRef} cameraState={runtime.state.cameraState} landmarkerState={runtime.state.landmarkerState} cameraErrorMessage={runtime.state.cameraErrorMessage} onCaptureSource={onCaptureSource} previewAspectRatio={previewAspectRatio} />
-            <ProcessedPreviewPanel canvas2dRef={runtime.refs.canvas2dRef} webglCanvasRef={runtime.refs.webglCanvasRef} beautyDebugOverlayCanvasRef={runtime.refs.beautyDebugOverlayCanvasRef} rendererState={runtime.state.rendererState} rendererMode={rendererMode} beautyDebugOverlayMode={beautyDebugOverlayMode} adaptiveQualityHud={{ ...adaptiveQualityHud, preset: runtime.quality.runtimePreset }} onCaptureProcessed={onCaptureProcessed} previewAspectRatio={previewAspectRatio} />
+          <div className="workspace-layout__left-grid">
+            <div className="left-pane-tabs">
+              {[{ key: 'source', label: '入力' }, { key: 'processed', label: '加工' }].map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  className={`left-pane-tab ${activeLeftPaneTab === tab.key ? 'is-active' : ''}`}
+                  onClick={() => setActiveLeftPaneTab(tab.key as LeftPaneTab)}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+            <div className="workspace-layout__left-scroll">
+              {activeLeftPaneTab === 'source' ? <SourcePreviewPanel videoRef={runtime.refs.videoRef} overlayCanvasRef={runtime.refs.overlayCanvasRef} cameraState={runtime.state.cameraState} landmarkerState={runtime.state.landmarkerState} cameraErrorMessage={runtime.state.cameraErrorMessage} onCaptureSource={onCaptureSource} previewAspectRatio={previewAspectRatio} /> : null}
+              {activeLeftPaneTab === 'processed' ? <ProcessedPreviewPanel canvas2dRef={runtime.refs.canvas2dRef} webglCanvasRef={runtime.refs.webglCanvasRef} beautyDebugOverlayCanvasRef={runtime.refs.beautyDebugOverlayCanvasRef} rendererState={runtime.state.rendererState} rendererMode={rendererMode} beautyDebugOverlayMode={beautyDebugOverlayMode} adaptiveQualityHud={{ ...adaptiveQualityHud, preset: runtime.quality.runtimePreset }} onCaptureProcessed={onCaptureProcessed} previewAspectRatio={previewAspectRatio} /> : null}
+            </div>
           </div>
         </section>
         <section className="workspace-layout__right">
