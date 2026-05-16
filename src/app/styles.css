@@ -17,6 +17,36 @@ body {
   padding: 20px;
 }
 
+.workspace-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 56%) minmax(340px, 44%);
+  gap: 16px;
+  align-items: start;
+}
+
+.workspace-layout__left {
+  position: sticky;
+  top: 16px;
+}
+
+.workspace-layout__left-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.workspace-layout__right {
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.workspace-layout__right-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+
 .app-shell__title {
   margin: 0 0 16px;
   font-size: 1.4rem;
@@ -62,6 +92,22 @@ body {
   display: grid;
   grid-template-columns: repeat(2, minmax(280px, 1fr));
   gap: 16px;
+}
+
+@media (max-width: 1100px) {
+  .workspace-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .workspace-layout__left {
+    position: static;
+  }
+
+  .workspace-layout__right {
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
 }
 
 .panel {
