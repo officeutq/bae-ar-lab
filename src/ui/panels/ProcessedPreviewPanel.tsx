@@ -24,7 +24,16 @@ type Props = {
 
 export function ProcessedPreviewPanel({ canvas2dRef, webglCanvasRef, beautyDebugOverlayCanvasRef, rendererState, rendererMode, beautyDebugOverlayMode, adaptiveQualityHud, onCaptureProcessed, previewAspectRatio }: Props) {
   return (
-    <Panel title="加工プレビュー">
+    <Panel
+      title="加工プレビュー"
+      headerExtras={(
+        <div className="preview-header-meta">
+          <span>renderer: {rendererState}</span>
+          <span>backend: {getRendererModeLabel(rendererMode)}</span>
+          <button type="button" onClick={onCaptureProcessed}>加工映像を撮影</button>
+        </div>
+      )}
+    >
       <div className="processed-preview preview-mirror preview-stack" data-preview-role="processed" style={{ aspectRatio: previewAspectRatio }}>
         <canvas className="processed-canvas" data-preview-role="processed-canvas2d" ref={canvas2dRef} style={{ aspectRatio: previewAspectRatio, display: rendererMode === 'webgl' ? 'none' : 'block' }} />
         <canvas className="processed-canvas" data-preview-role="processed-webgl" ref={webglCanvasRef} style={{ aspectRatio: previewAspectRatio, display: rendererMode === 'webgl' ? 'block' : 'none' }} />
@@ -42,10 +51,6 @@ export function ProcessedPreviewPanel({ canvas2dRef, webglCanvasRef, beautyDebug
           </div>
         )}
       </div>
-      <p className="camera-status">描画方式: {getRendererModeLabel(rendererMode)}</p>
-      <p className="camera-status">描画状態: {rendererState}</p>
-      <button type="button" onClick={onCaptureProcessed}>加工映像を撮影</button>
-      <p className="capture-note">保存画像はプレビュー表示ではなく実データ（raw）基準です。</p>
     </Panel>
   );
 }
