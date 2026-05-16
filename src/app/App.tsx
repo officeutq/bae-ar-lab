@@ -639,6 +639,12 @@ export function App() {
           intensityOperationStrengthSummary={intensityOperationStrengthSummary}
           resolvedOperationStrengthSummary={resolvedOperationStrengthSummary}
           effectiveMultiplierSummary={effectiveMultiplierSummary}
+          globalAttenuation={runtime.warpDebug.globalAttenuation}
+          partAttenuationSummary={`eye=${runtime.warpDebug.eyePartAttenuation.toFixed(3)}`}
+          eyePartAttenuation={runtime.warpDebug.eyePartAttenuation}
+          finalMultiplier={runtime.warpDebug.finalMultiplier}
+          firstEyeOperationSummary={runtime.warpDebug.firstEyeOperationSummary}
+          operationRuntimeMultiplierSummary={runtime.warpDebug.operationMultiplierSummary}
           frameSkip={runtime.quality.runtimePreset.frameSkip}
           currentQuality={runtime.quality.runtimeQuality}
           selectedQuality={runtime.quality.adaptiveQuality.selectedQuality}
