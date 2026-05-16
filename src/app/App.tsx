@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
+import { useEffect, useMemo, useState, type MouseEvent } from 'react';
 import type { AdaptiveQualityReason, QualityLevel } from '@engine/performance/adaptiveQuality';
 import type { WarpFalloffType } from '@app-types/preset';
 import { defaultWarpPreset } from '@algorithms/defaultPreset';
@@ -176,25 +176,6 @@ export function App() {
     reason: 'manual',
   });
   const [activeRightPaneTab, setActiveRightPaneTab] = useState<RightPaneTab>('tuning');
-
-  const leftColumnRef = useRef<HTMLElement | null>(null);
-  const [rightPaneMaxHeight, setRightPaneMaxHeight] = useState<number | null>(null);
-
-  useEffect(() => {
-    const updateRightPaneMaxHeight = () => {
-      const leftColumnElement = leftColumnRef.current;
-      if (!leftColumnElement) return;
-      setRightPaneMaxHeight(Math.round(leftColumnElement.getBoundingClientRect().height));
-    };
-    updateRightPaneMaxHeight();
-    const resizeObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(updateRightPaneMaxHeight) : null;
-    if (resizeObserver && leftColumnRef.current) resizeObserver.observe(leftColumnRef.current);
-    window.addEventListener('resize', updateRightPaneMaxHeight);
-    return () => {
-      resizeObserver?.disconnect();
-      window.removeEventListener('resize', updateRightPaneMaxHeight);
-    };
-  }, []);
 
   useEffect(() => {
     (globalThis as { __BEAUTY_WEBGL_WARP_GAIN__?: number }).__BEAUTY_WEBGL_WARP_GAIN__ = developerTuning.debug.webglWarpGain;
@@ -598,13 +579,13 @@ export function App() {
         </section>
       </header>
       <div className="workspace-layout">
-        <section className="workspace-layout__left" ref={leftColumnRef}>
+        <section className="workspace-layout__left">
           <div className="workspace-layout__left-inner">
             <SourcePreviewPanel videoRef={runtime.refs.videoRef} overlayCanvasRef={runtime.refs.overlayCanvasRef} cameraState={runtime.state.cameraState} landmarkerState={runtime.state.landmarkerState} cameraErrorMessage={runtime.state.cameraErrorMessage} onCaptureSource={onCaptureSource} previewAspectRatio={previewAspectRatio} />
             <ProcessedPreviewPanel canvas2dRef={runtime.refs.canvas2dRef} webglCanvasRef={runtime.refs.webglCanvasRef} beautyDebugOverlayCanvasRef={runtime.refs.beautyDebugOverlayCanvasRef} rendererState={runtime.state.rendererState} rendererMode={rendererMode} beautyDebugOverlayMode={beautyDebugOverlayMode} adaptiveQualityHud={{ ...adaptiveQualityHud, preset: runtime.quality.runtimePreset }} onCaptureProcessed={onCaptureProcessed} previewAspectRatio={previewAspectRatio} />
           </div>
         </section>
-        <section className="workspace-layout__right" style={{ ['--right-pane-max-height' as string]: rightPaneMaxHeight ? `${rightPaneMaxHeight}px` : undefined }}>
+        <section className="workspace-layout__right">
           <div className="workspace-layout__right-grid">
             <div className="right-pane-tabs">{[{ key: 'face', label: '顔検出' }, { key: 'profiler', label: 'プロファイラ' }, { key: 'runtimeDebug', label: 'Runtime Debug' }, { key: 'tuning', label: 'Tuning' }, { key: 'timeline', label: 'Timeline' }, { key: 'warpDebug', label: 'Warp Debug' }, { key: 'json', label: 'JSON' }, { key: 'compare', label: 'Compare' }].map((tab) => (<button key={tab.key} type="button" className={`right-pane-tab ${activeRightPaneTab === tab.key ? 'is-active' : ''}`} onClick={() => setActiveRightPaneTab(tab.key as RightPaneTab)}>{tab.label}</button>))}</div>
             <div className="workspace-layout__right-scroll">
