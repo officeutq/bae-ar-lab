@@ -14,16 +14,21 @@ type Props = {
 
 export function SourcePreviewPanel({ videoRef, overlayCanvasRef, cameraState, landmarkerState, cameraErrorMessage, onCaptureSource, previewAspectRatio }: Props) {
   return (
-    <Panel title="入力プレビュー">
+    <Panel
+      title="入力プレビュー"
+      headerExtras={(
+        <div className="preview-header-meta">
+          <span>camera: {cameraState}</span>
+          <span>landmarker: {landmarkerState}</span>
+          <button type="button" onClick={onCaptureSource}>元映像を撮影</button>
+        </div>
+      )}
+    >
       <div className="source-preview preview-mirror" data-preview-role="source" style={{ aspectRatio: previewAspectRatio }}>
         <video className="source-video" data-preview-role="source-video" ref={videoRef} autoPlay playsInline muted />
         <canvas className="overlay-canvas" data-preview-role="source-overlay" ref={overlayCanvasRef} />
       </div>
-      <p className="camera-status">カメラ状態: {cameraState}</p>
-      <p className="camera-status">ランドマーカー状態: {landmarkerState}</p>
       {cameraErrorMessage ? <p className="camera-error">{cameraErrorMessage}</p> : null}
-      <button type="button" onClick={onCaptureSource}>元映像を撮影</button>
-      <p className="capture-note">保存画像はプレビュー表示ではなく実データ（raw）基準です。</p>
     </Panel>
   );
 }

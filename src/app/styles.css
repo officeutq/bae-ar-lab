@@ -16,6 +16,7 @@ body {
   min-height: 100vh;
   padding: 20px;
 }
+.app-shell__header { display: flex; gap: 16px; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
 
 .workspace-layout {
   display: grid;
@@ -47,10 +48,7 @@ body {
   gap: 16px;
 }
 
-.app-shell__title {
-  margin: 0 0 16px;
-  font-size: 1.4rem;
-}
+.app-shell__title { margin: 0; font-size: 1.4rem; }
 
 .runtime-controls {
   border: 1px solid #2d3340;
@@ -59,6 +57,7 @@ body {
   margin-bottom: 16px;
   background: #151a24;
 }
+.runtime-controls--header { margin-bottom: 0; padding: 10px 12px; flex: 1; max-width: 760px; }
 
 .runtime-controls__title {
   margin: 0 0 10px;
@@ -95,6 +94,7 @@ body {
 }
 
 @media (max-width: 1100px) {
+  .app-shell__header { flex-direction: column; }
   .workspace-layout {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -125,7 +125,13 @@ body {
   font-weight: 600;
   border-bottom: 1px solid #2d3340;
   background: #1a2030;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
 }
+.panel__header-extras { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 0.82rem; font-weight: 500; }
 
 .panel__body {
   padding: 14px;
@@ -155,6 +161,7 @@ ul {
   background: #0b0e14;
   border: 1px solid #2d3340;
   overflow: hidden;
+  max-height: 260px;
 }
 
 .source-video {
@@ -203,6 +210,7 @@ ul {
   background: #0b0e14;
   border: 1px solid #2d3340;
   overflow: hidden;
+  max-height: 260px;
 }
 
 .adaptive-quality-hud {
@@ -235,15 +243,14 @@ ul {
   color: #dccfa6;
 }
 
-.camera-status {
-  margin: 10px 0 0;
-  color: #d2d9ea;
-}
-
 .camera-error {
   margin: 8px 0 0;
   color: #ff9aa8;
 }
+.preview-header-meta button { padding: 5px 8px; font-size: 0.78rem; }
+.right-pane-tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+.right-pane-tab { padding: 6px 10px; font-size: 0.84rem; }
+.right-pane-tab.is-active { border-color: #70b6ff; background: #24344f; }
 
 .capture-note {
   margin: 8px 0 0;
