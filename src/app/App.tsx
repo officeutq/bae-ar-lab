@@ -566,33 +566,40 @@ export function App() {
   return (
     <main className="app-shell">
       <h1 className="app-shell__title">ビューティーAR・フェイスワープ実験ラボ</h1>
-      <section className="runtime-controls" aria-label="Runtime Controls">
-        <h2 className="runtime-controls__title">Runtime Controls（実行コントロール）</h2>
-        <div className="runtime-controls__actions">
-          <button type="button" onClick={runtime.actions.startCamera} disabled={runtime.state.cameraState === 'starting' || runtime.state.cameraState === 'running'}>
-            カメラ起動
-          </button>
-          <button type="button" onClick={runtime.actions.stopCamera} disabled={runtime.state.cameraState !== 'running'}>
-            カメラ停止
-          </button>
-          <label className="runtime-controls__field">
-            <span>Renderer Backend</span>
-            <select value={rendererMode} onChange={(event) => setRendererMode(event.target.value as RendererMode)}>
-              <option value="canvas2d">canvas2d</option>
-              <option value="cpu_warp_debug">cpu_warp_debug</option>
-              <option value="webgl" disabled={!capabilities.webgl2Available}>webgl</option>
-            </select>
-          </label>
-        </div>
-        <div className="runtime-controls__status">
-          <span>camera: {runtime.state.cameraState}</span>
-          <span>landmarker: {runtime.state.landmarkerState}</span>
-          <span>renderer: {rendererMode}</span>
-        </div>
-      </section>
-      <div className="panel-grid">
-        <SourcePreviewPanel videoRef={runtime.refs.videoRef} overlayCanvasRef={runtime.refs.overlayCanvasRef} cameraState={runtime.state.cameraState} landmarkerState={runtime.state.landmarkerState} cameraErrorMessage={runtime.state.cameraErrorMessage} onCaptureSource={onCaptureSource} previewAspectRatio={previewAspectRatio} />
-        <ProcessedPreviewPanel canvas2dRef={runtime.refs.canvas2dRef} webglCanvasRef={runtime.refs.webglCanvasRef} beautyDebugOverlayCanvasRef={runtime.refs.beautyDebugOverlayCanvasRef} rendererState={runtime.state.rendererState} rendererMode={rendererMode} beautyDebugOverlayMode={beautyDebugOverlayMode} adaptiveQualityHud={{ ...adaptiveQualityHud, preset: runtime.quality.runtimePreset }} onCaptureProcessed={onCaptureProcessed} previewAspectRatio={previewAspectRatio} />
+      <div className="workspace-layout">
+        <section className="workspace-layout__left">
+          <div className="workspace-layout__left-inner">
+            <section className="runtime-controls" aria-label="Runtime Controls">
+              <h2 className="runtime-controls__title">Runtime Controls（実行コントロール）</h2>
+              <div className="runtime-controls__actions">
+                <button type="button" onClick={runtime.actions.startCamera} disabled={runtime.state.cameraState === 'starting' || runtime.state.cameraState === 'running'}>
+                  カメラ起動
+                </button>
+                <button type="button" onClick={runtime.actions.stopCamera} disabled={runtime.state.cameraState !== 'running'}>
+                  カメラ停止
+                </button>
+                <label className="runtime-controls__field">
+                  <span>Renderer Backend</span>
+                  <select value={rendererMode} onChange={(event) => setRendererMode(event.target.value as RendererMode)}>
+                    <option value="canvas2d">canvas2d</option>
+                    <option value="cpu_warp_debug">cpu_warp_debug</option>
+                    <option value="webgl" disabled={!capabilities.webgl2Available}>webgl</option>
+                  </select>
+                </label>
+              </div>
+              <div className="runtime-controls__status">
+                <span>camera: {runtime.state.cameraState}</span>
+                <span>landmarker: {runtime.state.landmarkerState}</span>
+                <span>renderer: {rendererMode}</span>
+              </div>
+            </section>
+            <SourcePreviewPanel videoRef={runtime.refs.videoRef} overlayCanvasRef={runtime.refs.overlayCanvasRef} cameraState={runtime.state.cameraState} landmarkerState={runtime.state.landmarkerState} cameraErrorMessage={runtime.state.cameraErrorMessage} onCaptureSource={onCaptureSource} previewAspectRatio={previewAspectRatio} />
+            <ProcessedPreviewPanel canvas2dRef={runtime.refs.canvas2dRef} webglCanvasRef={runtime.refs.webglCanvasRef} beautyDebugOverlayCanvasRef={runtime.refs.beautyDebugOverlayCanvasRef} rendererState={runtime.state.rendererState} rendererMode={rendererMode} beautyDebugOverlayMode={beautyDebugOverlayMode} adaptiveQualityHud={{ ...adaptiveQualityHud, preset: runtime.quality.runtimePreset }} onCaptureProcessed={onCaptureProcessed} previewAspectRatio={previewAspectRatio} />
+            <ComparePanel capture={compareCapture} />
+          </div>
+        </section>
+        <section className="workspace-layout__right">
+          <div className="workspace-layout__right-grid">
         <Panel title="顔検出ステータス"><ul><li>顔: {runtime.state.landmarkFrame?.detected ? '検出中' : '顔が検出されていません'}</li><li>ランドマーク数: {runtime.state.landmarkFrame?.landmarkCount ?? 0}</li><li>顔数: {runtime.state.landmarkFrame?.faceCount ?? 0}</li><li>フレーム: {runtime.state.landmarkFrame?.frameCount ?? 0}</li><li>タイムスタンプ (ms): {Math.round(runtime.state.landmarkFrame?.timestampMs ?? 0)}</li></ul></Panel>
         <Panel title="リアルタイムプロファイラ">
           <div className="profiler-overlay">
@@ -686,9 +693,10 @@ export function App() {
           timelineRef.setPlaying(false);
           syncTimelineSnapshot();
         }} />
-        <ComparePanel capture={compareCapture} />
         <WarpMathDebugPanel debugUv={debugUv} debugCenter={debugCenter} debugWarpResult={{ warpedUv: debugWarpResult, influence: 0 }} debugGridPoints={debugGridPoints} onMouseMove={(event: MouseEvent<HTMLDivElement>) => { const rect = event.currentTarget.getBoundingClientRect(); setDebugUv({ x: clamp01((event.clientX - rect.left) / Math.max(1, rect.width)), y: clamp01((event.clientY - rect.top) / Math.max(1, rect.height)) }); }} />
         <JsonOutputPanel preset={pipelineState.activePreset} geometry={runtime.state.faceGeometry} />
+          </div>
+        </section>
       </div>
     </main>
   );
