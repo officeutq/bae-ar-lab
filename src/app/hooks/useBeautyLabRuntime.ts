@@ -40,6 +40,26 @@ type RuntimeExperimentMode = {
   disableAdaptiveQuality: boolean;
 };
 
+function clamp01(value: number): number {
+  return Math.min(1, Math.max(0, value));
+}
+
+function blendToMultiplier(attenuationStrength: number, multiplier: number): number {
+  return 1 - clamp01(attenuationStrength) * (1 - multiplier);
+}
+
+function isEyeTarget(target: WarpOperation['target']): boolean {
+  return target.includes('eye');
+}
+
+function isMouthTarget(target: WarpOperation['target']): boolean {
+  return target.includes('mouth') || target.includes('lip');
+}
+
+function isJawTarget(target: WarpOperation['target']): boolean {
+  return target.includes('jaw') || target.includes('chin') || target.includes('face_contour') || target.includes('jawline');
+}
+
 function getCameraErrorMessage(error: CameraError) {
   switch (error.code) {
     case 'permission-denied':
@@ -117,6 +137,12 @@ export function useBeautyLabRuntime(
     resolvedOperationCount: operations.length,
     filteredOperationCount: operations.length,
     activeOperationCount: operations.filter((operation) => operation.enabled).length,
+    globalAttenuation: 1,
+    partAttenuation: 1,
+    finalMultiplier: 1,
+    eyePartAttenuation: 1,
+    firstEyeOperationSummary: 'none',
+    operationMultiplierSummary: [] as string[],
   });
 
   const runtimeQuality = resolveRuntimeQuality(adaptiveQualityRef.current);
@@ -260,21 +286,61 @@ export function useBeautyLabRuntime(
       faceGeometryRef.current = geometryForRuntime;
       const runtimeQualityLevel = experimentMode.disableAdaptiveQuality ? adaptiveQualityRef.current.selectedQuality : resolveRuntimeQuality(adaptiveQualityRef.current);
       const runtimeQualityPreset = QUALITY_PRESETS[runtimeQualityLevel];
+      const globalAttenuation = runtimeAttenuation.factor;
+      const pitchAttenuationStrength = 1 - runtimeAttenuation.pitchFactor;
+      const yawAttenuationStrength = 1 - runtimeAttenuation.yawFactor;
+      const qualityMultiplier = experimentMode.disableAdaptiveQuality ? 1 : runtimeQualityPreset.warpStrengthScale;
+      const globalStrengthScale = tuning.warpSafety.globalWarpStrengthScale;
       const boundOperations = resolveOperationBindings(operationsRef.current, geometryForRuntime)
         .filter((operation) => !runtimeQualityPreset.disabledTargets.includes(operation.target))
         .map((operation) => ({
           ...operation,
-          strength: Math.max(-tuning.warpSafety.maxOperationStrength, Math.min(tuning.warpSafety.maxOperationStrength, operation.strength * (experimentMode.disableAdaptiveQuality ? 1 : runtimeQualityPreset.warpStrengthScale) * tuning.warpSafety.globalWarpStrengthScale * stability.fade * runtimeAttenuation.factor)),
+          strength: (() => {
+            const eyePitchFactor = blendToMultiplier(pitchAttenuationStrength, tuning.partAttenuation.eyePitchMultiplier);
+            const eyeYawFactor = blendToMultiplier(yawAttenuationStrength, tuning.partAttenuation.eyeYawMultiplier);
+            const mouthPitchFactor = blendToMultiplier(pitchAttenuationStrength, tuning.partAttenuation.mouthPitchMultiplier);
+            const jawYawFactor = blendToMultiplier(yawAttenuationStrength, tuning.partAttenuation.jawYawMultiplier);
+            const partAttenuationFactor = isEyeTarget(operation.target)
+              ? eyePitchFactor * eyeYawFactor
+              : isMouthTarget(operation.target)
+                ? mouthPitchFactor
+                : isJawTarget(operation.target)
+                  ? jawYawFactor
+                  : 1;
+            const finalMultiplier = globalAttenuation * partAttenuationFactor * qualityMultiplier * globalStrengthScale * stability.fade;
+            return Math.max(-tuning.warpSafety.maxOperationStrength, Math.min(tuning.warpSafety.maxOperationStrength, operation.strength * finalMultiplier));
+          })(),
           radius: Math.max(tuning.warpSafety.minRadius, Math.min(tuning.warpSafety.maxRadius, operation.radius)),
         }));
       const cappedOperations = runtimeQualityPreset.maxActiveOperations === null
         ? boundOperations
         : boundOperations.map((operation, index) => ({ ...operation, enabled: operation.enabled && index < (runtimeQualityPreset.maxActiveOperations ?? Number.POSITIVE_INFINITY) }));
       const resolvedOperations = smoothOperations(cappedOperations, operationTemporalFilterRef.current, tuning.temporal.operationSmoothingAlpha);
+      const eyePartAttenuation = blendToMultiplier(pitchAttenuationStrength, tuning.partAttenuation.eyePitchMultiplier)
+        * blendToMultiplier(yawAttenuationStrength, tuning.partAttenuation.eyeYawMultiplier);
+      const partMultiplierSummary = boundOperations
+        .map((operation, index) => {
+          const raw = operationsRef.current[index];
+          if (!operation.enabled || !raw?.enabled || Math.abs(raw.strength) < 1e-6) return null;
+          const multiplier = operation.strength / raw.strength;
+          return `#${index} ${operation.target} x${multiplier.toFixed(3)}`;
+        })
+        .filter((line): line is string => Boolean(line));
+      const firstEyeOperationSummary = (() => {
+        const eyeOp = boundOperations.find((operation) => operation.enabled && isEyeTarget(operation.target));
+        if (!eyeOp) return 'none';
+        return `${eyeOp.id} (${eyeOp.target}) ${eyeOp.strength.toFixed(3)}`;
+      })();
       setWarpDebug({
         resolvedOperationCount: operationsRef.current.length,
         filteredOperationCount: boundOperations.length,
         activeOperationCount: resolvedOperations.filter((operation) => operation.enabled).length,
+        globalAttenuation,
+        partAttenuation: eyePartAttenuation,
+        finalMultiplier: globalAttenuation * eyePartAttenuation * qualityMultiplier * globalStrengthScale * stability.fade,
+        eyePartAttenuation,
+        firstEyeOperationSummary,
+        operationMultiplierSummary: partMultiplierSummary,
       });
       resolvedOperationsRef.current = resolvedOperations;
       setOverlayFrame((current) => current + 1);

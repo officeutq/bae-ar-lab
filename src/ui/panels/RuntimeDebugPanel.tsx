@@ -24,6 +24,12 @@ type Props = {
   intensityOperationStrengthSummary: string[];
   resolvedOperationStrengthSummary: string[];
   effectiveMultiplierSummary: string[];
+  globalAttenuation: number;
+  partAttenuationSummary: string;
+  eyePartAttenuation: number;
+  finalMultiplier: number;
+  firstEyeOperationSummary: string;
+  operationRuntimeMultiplierSummary: string[];
   frameSkip: number;
   currentQuality: QualityLevel;
   selectedQuality: QualityLevel;
@@ -92,7 +98,12 @@ export function RuntimeDebugPanel(props: Props) {
         {item('Beauty intensity (UI)', props.beautyIntensity.toFixed(3))}
         {item('Beauty intensity (animated)', props.animatedBeautyIntensity.toFixed(3))}
         {item('Warp strength scale', props.warpStrengthScale.toFixed(2))}
+        {item('Global pose attenuation', props.globalAttenuation.toFixed(3))}
+        {item('Part attenuation summary', props.partAttenuationSummary)}
+        {item('Eye part attenuation', props.eyePartAttenuation.toFixed(3))}
+        {item('Final multiplier', props.finalMultiplier.toFixed(3))}
         {item('First active operation', props.firstActiveOperationSummary)}
+        {item('First eye operation', props.firstEyeOperationSummary)}
       </ul>
 
       <h4>Operation strengths（観測用）</h4>
@@ -100,6 +111,7 @@ export function RuntimeDebugPanel(props: Props) {
       <div>after animation/intensity tracks</div><ul>{props.intensityOperationStrengthSummary.map((line) => <li key={`intensity-${line}`}>{line}</li>)}</ul>
       <div>resolved (quality/stability/pose applied)</div><ul>{props.resolvedOperationStrengthSummary.map((line) => <li key={`resolved-${line}`}>{line}</li>)}</ul>
       <div>effective multiplier (resolved/raw)</div><ul>{props.effectiveMultiplierSummary.map((line) => <li key={`effective-${line}`}>{line}</li>)}</ul>
+      <div>runtime multiplier before smoothing/clamp diff</div><ul>{props.operationRuntimeMultiplierSummary.map((line) => <li key={`runtime-${line}`}>{line}</li>)}</ul>
     </Panel>
   );
 }
