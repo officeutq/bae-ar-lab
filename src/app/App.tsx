@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type MouseEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import type { AdaptiveQualityReason, QualityLevel } from '@engine/performance/adaptiveQuality';
 import type { WarpFalloffType } from '@app-types/preset';
 import { defaultWarpPreset } from '@algorithms/defaultPreset';
@@ -176,6 +176,25 @@ export function App() {
     reason: 'manual',
   });
   const [activeRightPaneTab, setActiveRightPaneTab] = useState<RightPaneTab>('tuning');
+
+  const leftColumnRef = useRef<HTMLElement | null>(null);
+  const [rightPaneMaxHeight, setRightPaneMaxHeight] = useState<number | null>(null);
+
+  useEffect(() => {
+    const updateRightPaneMaxHeight = () => {
+      const leftColumnElement = leftColumnRef.current;
+      if (!leftColumnElement) return;
+      setRightPaneMaxHeight(Math.round(leftColumnElement.getBoundingClientRect().height));
+    };
+    updateRightPaneMaxHeight();
+    const resizeObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(updateRightPaneMaxHeight) : null;
+    if (resizeObserver && leftColumnRef.current) resizeObserver.observe(leftColumnRef.current);
+    window.addEventListener('resize', updateRightPaneMaxHeight);
+    return () => {
+      resizeObserver?.disconnect();
+      window.removeEventListener('resize', updateRightPaneMaxHeight);
+    };
+  }, []);
 
   useEffect(() => {
     (globalThis as { __BEAUTY_WEBGL_WARP_GAIN__?: number }).__BEAUTY_WEBGL_WARP_GAIN__ = developerTuning.debug.webglWarpGain;
@@ -579,15 +598,16 @@ export function App() {
         </section>
       </header>
       <div className="workspace-layout">
-        <section className="workspace-layout__left">
+        <section className="workspace-layout__left" ref={leftColumnRef}>
           <div className="workspace-layout__left-inner">
             <SourcePreviewPanel videoRef={runtime.refs.videoRef} overlayCanvasRef={runtime.refs.overlayCanvasRef} cameraState={runtime.state.cameraState} landmarkerState={runtime.state.landmarkerState} cameraErrorMessage={runtime.state.cameraErrorMessage} onCaptureSource={onCaptureSource} previewAspectRatio={previewAspectRatio} />
             <ProcessedPreviewPanel canvas2dRef={runtime.refs.canvas2dRef} webglCanvasRef={runtime.refs.webglCanvasRef} beautyDebugOverlayCanvasRef={runtime.refs.beautyDebugOverlayCanvasRef} rendererState={runtime.state.rendererState} rendererMode={rendererMode} beautyDebugOverlayMode={beautyDebugOverlayMode} adaptiveQualityHud={{ ...adaptiveQualityHud, preset: runtime.quality.runtimePreset }} onCaptureProcessed={onCaptureProcessed} previewAspectRatio={previewAspectRatio} />
           </div>
         </section>
-        <section className="workspace-layout__right">
+        <section className="workspace-layout__right" style={{ ['--right-pane-max-height' as string]: rightPaneMaxHeight ? `${rightPaneMaxHeight}px` : undefined }}>
           <div className="workspace-layout__right-grid">
             <div className="right-pane-tabs">{[{ key: 'face', label: '顔検出' }, { key: 'profiler', label: 'プロファイラ' }, { key: 'runtimeDebug', label: 'Runtime Debug' }, { key: 'tuning', label: 'Tuning' }, { key: 'timeline', label: 'Timeline' }, { key: 'warpDebug', label: 'Warp Debug' }, { key: 'json', label: 'JSON' }, { key: 'compare', label: 'Compare' }].map((tab) => (<button key={tab.key} type="button" className={`right-pane-tab ${activeRightPaneTab === tab.key ? 'is-active' : ''}`} onClick={() => setActiveRightPaneTab(tab.key as RightPaneTab)}>{tab.label}</button>))}</div>
+            <div className="workspace-layout__right-scroll">
             {activeRightPaneTab === 'face' ? <Panel title="顔検出ステータス"><ul><li>顔: {runtime.state.landmarkFrame?.detected ? '検出中' : '顔が検出されていません'}</li><li>ランドマーク数: {runtime.state.landmarkFrame?.landmarkCount ?? 0}</li><li>顔数: {runtime.state.landmarkFrame?.faceCount ?? 0}</li><li>フレーム: {runtime.state.landmarkFrame?.frameCount ?? 0}</li><li>タイムスタンプ (ms): {Math.round(runtime.state.landmarkFrame?.timestampMs ?? 0)}</li></ul></Panel> : null}
             {activeRightPaneTab === 'profiler' ? <Panel title="リアルタイムプロファイラ"><div className="profiler-overlay"><div>FPS: {runtime.profiler.fps.toFixed(1)}</div><div>AVG FPS (window): {runtime.profiler.avgFps30.toFixed(1)}</div><div>Frame (ms): {runtime.profiler.frameTimeMs.toFixed(2)}</div><div>AVG Frame (ms): {runtime.profiler.avgFrameTimeMs30.toFixed(2)}</div><div>Backend: {runtime.profiler.backend}</div><div>MediaPipe (ms): {runtime.profiler.mediapipeMs.toFixed(2)}</div><div>Render (ms): {runtime.profiler.renderMs.toFixed(2)}</div><div>Operation count: {runtime.profiler.operationCount}</div><div>Yaw (deg): {runtime.pose.facePose?.yaw.toFixed(1) ?? 'n/a'}</div><div>Pitch (deg): {runtime.pose.facePose?.pitch.toFixed(1) ?? 'n/a'}</div><div>Roll (deg): {runtime.pose.facePose?.roll.toFixed(1) ?? 'n/a'}</div><div>Pose attenuation: {runtime.pose.poseAttenuation.factor.toFixed(2)}</div><div>Face stability: {runtime.faceStability.status}</div><div>Stability fade: {runtime.faceStability.fade.toFixed(2)}</div><div>Quality: {runtime.quality.runtimeQuality}</div><div>Render scale: {runtime.quality.runtimePreset.renderScale.toFixed(2)}</div><div>Device: {capabilities.deviceType}</div><div>WebGL2: {capabilities.webgl2Available ? '利用可能' : '利用不可'}</div><div>メモリ (GB): {capabilities.deviceMemoryGb ?? 'n/a'}</div><div>CPUコア数: {capabilities.hardwareConcurrency ?? 'n/a'}</div><div>推奨品質: {capabilities.recommendedQuality}</div></div></Panel> : null}
             {activeRightPaneTab === 'runtimeDebug' ? <RuntimeDebugPanel temporalSmoothingEnabled={true} temporalSmoothingAlpha={developerTuning.temporal.operationSmoothingAlpha} faceDetected={Boolean(runtime.state.landmarkFrame?.detected)} faceStability={runtime.faceStability} facePose={runtime.pose.facePose} poseAttenuationFactor={runtime.pose.poseAttenuation.factor} poseAttenuationYawFactor={runtime.pose.poseAttenuation.yawFactor} poseAttenuationPitchFactor={runtime.pose.poseAttenuation.pitchFactor} activeOperationCount={runtime.warpDebug.activeOperationCount} resolvedOperationCount={runtime.warpDebug.resolvedOperationCount} filteredOperationCount={runtime.warpDebug.filteredOperationCount} warpStrengthScale={runtime.quality.runtimePreset.warpStrengthScale} firstActiveOperationSummary={firstActiveOperationSummary} beautyIntensity={beautyIntensity} animatedBeautyIntensity={animated.beautyIntensity} rawOperationStrengthSummary={rawOperationStrengthSummary} intensityOperationStrengthSummary={intensityOperationStrengthSummary} resolvedOperationStrengthSummary={resolvedOperationStrengthSummary} effectiveMultiplierSummary={effectiveMultiplierSummary} globalAttenuation={runtime.warpDebug.globalAttenuation} partAttenuationSummary={`eye=${runtime.warpDebug.eyePartAttenuation.toFixed(3)}`} eyePartAttenuation={runtime.warpDebug.eyePartAttenuation} finalMultiplier={runtime.warpDebug.finalMultiplier} firstEyeOperationSummary={runtime.warpDebug.firstEyeOperationSummary} operationRuntimeMultiplierSummary={runtime.warpDebug.operationMultiplierSummary} frameSkip={runtime.quality.runtimePreset.frameSkip} currentQuality={runtime.quality.runtimeQuality} selectedQuality={runtime.quality.adaptiveQuality.selectedQuality} adaptiveQualityEnabled={runtime.quality.adaptiveQuality.enabled} adaptiveQualityReason={runtime.quality.adaptiveQuality.reason} qualityLockRemainingMs={runtime.quality.qualityLockRemainingMs} qualityRecoveryElapsedMs={runtime.quality.qualityRecoveryElapsedMs} renderScale={runtime.quality.runtimePreset.renderScale} rendererMode={rendererMode} fps={runtime.profiler.fps} frameTimeMs={runtime.profiler.frameTimeMs} mediapipeTimeMs={runtime.profiler.mediapipeMs} rendererTimeMs={runtime.profiler.renderMs} /> : null}
@@ -596,6 +616,7 @@ export function App() {
             {activeRightPaneTab === 'warpDebug' ? <WarpMathDebugPanel debugUv={debugUv} debugCenter={debugCenter} debugWarpResult={{ warpedUv: debugWarpResult, influence: 0 }} debugGridPoints={debugGridPoints} onMouseMove={(event: MouseEvent<HTMLDivElement>) => { const rect = event.currentTarget.getBoundingClientRect(); setDebugUv({ x: clamp01((event.clientX - rect.left) / Math.max(1, rect.width)), y: clamp01((event.clientY - rect.top) / Math.max(1, rect.height)) }); }} /> : null}
             {activeRightPaneTab === 'json' ? <JsonOutputPanel preset={pipelineState.activePreset} geometry={runtime.state.faceGeometry} /> : null}
             {activeRightPaneTab === 'compare' ? <ComparePanel capture={compareCapture} /> : null}
+            </div>
           </div>
         </section>
       </div>

@@ -24,7 +24,7 @@ export function SourcePreviewPanel({ videoRef, overlayCanvasRef, cameraState, la
         </div>
       )}
     >
-      <div className="source-preview preview-mirror" data-preview-role="source" style={{ aspectRatio: previewAspectRatio }}>
+      <div className="preview-frame source-preview preview-mirror preview-stack" data-preview-role="source" style={{ aspectRatio: previewAspectRatio }}>
         <video className="source-video" data-preview-role="source-video" ref={videoRef} autoPlay playsInline muted />
         <canvas className="overlay-canvas" data-preview-role="source-overlay" ref={overlayCanvasRef} />
       </div>

@@ -34,7 +34,7 @@ export function ProcessedPreviewPanel({ canvas2dRef, webglCanvasRef, beautyDebug
         </div>
       )}
     >
-      <div className="processed-preview preview-mirror preview-stack" data-preview-role="processed" style={{ aspectRatio: previewAspectRatio }}>
+      <div className="preview-frame processed-preview preview-mirror preview-stack" data-preview-role="processed" style={{ aspectRatio: previewAspectRatio }}>
         <canvas className="processed-canvas" data-preview-role="processed-canvas2d" ref={canvas2dRef} style={{ aspectRatio: previewAspectRatio, display: rendererMode === 'webgl' ? 'none' : 'block' }} />
         <canvas className="processed-canvas" data-preview-role="processed-webgl" ref={webglCanvasRef} style={{ aspectRatio: previewAspectRatio, display: rendererMode === 'webgl' ? 'block' : 'none' }} />
         <canvas className="overlay-canvas beauty-debug-overlay" data-preview-role="beauty-debug-overlay" ref={beautyDebugOverlayCanvasRef} style={{ display: beautyDebugOverlayMode === 'off' ? 'none' : 'block' }} />

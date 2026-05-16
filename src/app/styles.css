@@ -37,8 +37,8 @@ body {
 }
 
 .workspace-layout__right {
-  max-height: calc(100vh - 40px);
-  overflow-y: auto;
+  min-height: 0;
+  max-height: var(--right-pane-max-height, none);
   padding-right: 4px;
 }
 
@@ -46,6 +46,14 @@ body {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 16px;
+  max-height: 100%;
+  min-height: 0;
+}
+
+.workspace-layout__right-scroll {
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 2px;
 }
 
 .app-shell__title { margin: 0; font-size: 1.4rem; }
@@ -105,6 +113,11 @@ body {
 
   .workspace-layout__right {
     max-height: none;
+    min-height: initial;
+    padding-right: 0;
+  }
+
+  .workspace-layout__right-scroll {
     overflow: visible;
     padding-right: 0;
   }
@@ -153,15 +166,18 @@ ul {
   padding-left: 18px;
 }
 
-.source-preview {
+.preview-frame {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 9;
   border-radius: 8px;
   background: #0b0e14;
   border: 1px solid #2d3340;
   overflow: hidden;
   max-height: 260px;
+}
+
+.source-preview {
+  aspect-ratio: 16 / 9;
 }
 
 .source-video {
@@ -206,11 +222,7 @@ ul {
 }
 
 .processed-preview {
-  border-radius: 8px;
-  background: #0b0e14;
-  border: 1px solid #2d3340;
-  overflow: hidden;
-  max-height: 260px;
+  aspect-ratio: 16 / 9;
 }
 
 .adaptive-quality-hud {
