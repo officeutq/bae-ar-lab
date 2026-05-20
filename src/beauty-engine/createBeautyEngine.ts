@@ -7,6 +7,7 @@ import type {
   BeautyPreset,
   IdealFace,
 } from './types';
+import type { CurrentFace, CurrentFaceSnapshot } from './face';
 
 type BeautyEngineInternalState = {
   lifecycleState: BeautyEngineLifecycleState;
@@ -17,6 +18,7 @@ type BeautyEngineInternalState = {
   startedAtMs: number | null;
   stoppedAtMs: number | null;
   disposedAtMs: number | null;
+  currentFace: CurrentFace | null;
 };
 
 const defaultClock = () => performance.now();
@@ -36,6 +38,19 @@ function assertUsable(state: BeautyEngineInternalState): void {
 }
 
 function createSnapshot(state: BeautyEngineInternalState): BeautyEngineRuntimeSnapshot {
+  const currentFace: CurrentFaceSnapshot =
+    state.currentFace === null
+      ? {
+          detected: false,
+          landmarkCount: 0,
+          detectedAt: null,
+        }
+      : {
+          detected: true,
+          landmarkCount: state.currentFace.landmarkCount,
+          detectedAt: state.currentFace.detectedAt,
+        };
+
   return {
     state: state.lifecycleState,
     lifecycleState: state.lifecycleState,
@@ -50,6 +65,7 @@ function createSnapshot(state: BeautyEngineInternalState): BeautyEngineRuntimeSn
     startedAtMs: state.startedAtMs,
     stoppedAtMs: state.stoppedAtMs,
     disposedAtMs: state.disposedAtMs,
+    currentFace,
   };
 }
 
@@ -64,6 +80,7 @@ export function createBeautyEngine(options: BeautyEngineOptions = {}): BeautyEng
     startedAtMs: null,
     stoppedAtMs: null,
     disposedAtMs: null,
+    currentFace: null,
   };
 
   return {
