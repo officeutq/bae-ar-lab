@@ -37,7 +37,11 @@ function assertUsable(state: BeautyEngineInternalState): void {
 
 function createSnapshot(state: BeautyEngineInternalState): BeautyEngineRuntimeSnapshot {
   return {
+    state: state.lifecycleState,
     lifecycleState: state.lifecycleState,
+    hasInput: state.input !== null,
+    hasPreset: state.preset !== null,
+    hasIdealFace: state.idealFace !== null,
     presetId: state.preset?.id ?? null,
     idealFaceId: state.idealFace?.id ?? null,
     correctionStrength: state.correctionStrength,
@@ -74,11 +78,11 @@ export function createBeautyEngine(options: BeautyEngineOptions = {}): BeautyEng
     async stop() {
       assertUsable(state);
       if (state.lifecycleState !== 'running') {
-        state.lifecycleState = 'stopped';
+        state.lifecycleState = 'idle';
         return;
       }
 
-      state.lifecycleState = 'stopped';
+      state.lifecycleState = 'idle';
       state.stoppedAtMs = clock();
     },
 
