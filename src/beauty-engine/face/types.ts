@@ -14,4 +14,5 @@ export type CurrentFaceSnapshot = {
   detected: boolean;
   landmarkCount: number;
   detectedAt: number | null;
+  hasGeometry: boolean;
 };
