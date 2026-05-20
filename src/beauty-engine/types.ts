@@ -49,7 +49,11 @@ export type IdealFace = {
 };
 
 export type BeautyEngineRuntimeSnapshot = {
+  state: BeautyEngineLifecycleState;
   lifecycleState: BeautyEngineLifecycleState;
+  hasInput: boolean;
+  hasPreset: boolean;
+  hasIdealFace: boolean;
   presetId: string | null;
   idealFaceId: string | null;
   correctionStrength: number;
