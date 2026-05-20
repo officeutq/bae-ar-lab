@@ -1,5 +1,7 @@
 import type { WarpPreset } from '@app-types/preset';
+import type { FaceFrameAnalysis } from './analysis';
 import type { CurrentFaceSnapshot } from './face';
+import type { FaceLandmarkerAdapter } from './mediapipe';
 
 export type BeautyPreset = WarpPreset;
 
@@ -18,11 +20,17 @@ export type BeautyEngineInput = {
   output?: BeautyEngineOutputTarget;
 };
 
+export type BeautyEngineFrameInput = {
+  video: HTMLVideoElement;
+  timestamp: number;
+};
+
 export type BeautyEngineOptions = {
   initialPreset?: BeautyPreset;
   initialIdealFace?: IdealFace;
   initialCorrectionStrength?: number;
   clock?: () => number;
+  faceLandmarkerAdapter?: FaceLandmarkerAdapter;
 };
 
 export type IdealFaceLandmark = {
@@ -64,12 +72,14 @@ export type BeautyEngineRuntimeSnapshot = {
   stoppedAtMs: number | null;
   disposedAtMs: number | null;
   currentFace: CurrentFaceSnapshot;
+  errors: string[];
 };
 
 export type BeautyEngine = {
   start(input: BeautyEngineInput): Promise<void>;
   stop(): Promise<void>;
   dispose(): Promise<void>;
+  analyzeFrame(input: BeautyEngineFrameInput): Promise<FaceFrameAnalysis | null>;
   setPreset(preset: BeautyPreset): void;
   setIdealFace(idealFace: IdealFace): void;
   setCorrectionStrength(strength: number): void;

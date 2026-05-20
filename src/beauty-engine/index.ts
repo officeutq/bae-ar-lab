@@ -6,6 +6,7 @@ export { createFacePose } from './pose';
 export { createFaceLandmarkerAdapter } from './mediapipe';
 export type {
   BeautyEngine,
+  BeautyEngineFrameInput,
   BeautyEngineInput,
   BeautyEngineInputSource,
   BeautyEngineLifecycleState,
