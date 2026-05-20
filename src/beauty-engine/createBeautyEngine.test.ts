@@ -38,6 +38,7 @@ describe('createBeautyEngine', () => {
         detected: false,
         landmarkCount: 0,
         detectedAt: null,
+        hasGeometry: false,
       },
     });
   });

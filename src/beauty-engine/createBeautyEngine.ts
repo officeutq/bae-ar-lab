@@ -8,6 +8,7 @@ import type {
   IdealFace,
 } from './types';
 import type { CurrentFace, CurrentFaceSnapshot } from './face';
+import type { CurrentFaceGeometry } from './geometry';
 
 type BeautyEngineInternalState = {
   lifecycleState: BeautyEngineLifecycleState;
@@ -19,6 +20,7 @@ type BeautyEngineInternalState = {
   stoppedAtMs: number | null;
   disposedAtMs: number | null;
   currentFace: CurrentFace | null;
+  currentFaceGeometry: CurrentFaceGeometry | null;
 };
 
 const defaultClock = () => performance.now();
@@ -44,11 +46,13 @@ function createSnapshot(state: BeautyEngineInternalState): BeautyEngineRuntimeSn
           detected: false,
           landmarkCount: 0,
           detectedAt: null,
+          hasGeometry: false,
         }
       : {
           detected: true,
           landmarkCount: state.currentFace.landmarkCount,
           detectedAt: state.currentFace.detectedAt,
+          hasGeometry: state.currentFaceGeometry !== null,
         };
 
   return {
@@ -81,6 +85,7 @@ export function createBeautyEngine(options: BeautyEngineOptions = {}): BeautyEng
     stoppedAtMs: null,
     disposedAtMs: null,
     currentFace: null,
+    currentFaceGeometry: null,
   };
 
   return {
