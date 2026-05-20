@@ -40,6 +40,7 @@ describe('createBeautyEngine', () => {
         detectedAt: null,
         hasGeometry: false,
         hasPose: false,
+        analyzed: false,
       },
     });
   });

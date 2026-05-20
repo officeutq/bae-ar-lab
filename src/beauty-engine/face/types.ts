@@ -16,4 +16,5 @@ export type CurrentFaceSnapshot = {
   detectedAt: number | null;
   hasGeometry: boolean;
   hasPose: boolean;
+  analyzed: boolean;
 };
