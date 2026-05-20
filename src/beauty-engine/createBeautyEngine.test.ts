@@ -39,6 +39,7 @@ describe('createBeautyEngine', () => {
         landmarkCount: 0,
         detectedAt: null,
         hasGeometry: false,
+        hasPose: false,
       },
     });
   });

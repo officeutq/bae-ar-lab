@@ -1,6 +1,7 @@
 export { createBeautyEngine } from './createBeautyEngine';
 export { createCurrentFace } from './face';
 export { createCurrentFaceGeometry } from './geometry';
+export { createFacePose } from './pose';
 export { createFaceLandmarkerAdapter } from './mediapipe';
 export type {
   BeautyEngine,
@@ -17,6 +18,7 @@ export type {
 } from './types';
 export type { CurrentFace, CurrentFaceSnapshot, FacePoint3D } from './face';
 export type { CurrentFaceGeometry, FacePartCenters, FacePoint2D } from './geometry';
+export type { FacePose } from './pose';
 export type {
   FaceDetectionResult,
   FaceLandmarkerAdapter,
