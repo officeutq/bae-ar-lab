@@ -34,6 +34,11 @@ describe('createBeautyEngine', () => {
       presetId: null,
       idealFaceId: null,
       correctionStrength: 1,
+      currentFace: {
+        detected: false,
+        landmarkCount: 0,
+        detectedAt: null,
+      },
     });
   });
 

@@ -1,4 +1,5 @@
 import type { WarpPreset } from '@app-types/preset';
+import type { CurrentFaceSnapshot } from './face';
 
 export type BeautyPreset = WarpPreset;
 
@@ -62,6 +63,7 @@ export type BeautyEngineRuntimeSnapshot = {
   startedAtMs: number | null;
   stoppedAtMs: number | null;
   disposedAtMs: number | null;
+  currentFace: CurrentFaceSnapshot;
 };
 
 export type BeautyEngine = {
